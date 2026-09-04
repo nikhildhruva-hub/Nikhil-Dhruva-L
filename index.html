@@ -31,22 +31,22 @@ h1,.hero-name,.final{font-weight:800}
 /* drifting crowd behind the start screen */
 .drift{position:fixed;inset:0;pointer-events:none;z-index:-1;overflow:hidden;transition:opacity .5s}
 .drift img{position:absolute;opacity:.16;animation:bob 7s ease-in-out infinite;filter:none}
-.drift img:nth-child(1){width:22vmin;top:6%;left:4%;--tilt:-6deg;animation-duration:6.5s}
-.drift img:nth-child(2){width:17vmin;top:62%;left:8%;--tilt:5deg;animation-duration:8s;animation-delay:-2s}
-.drift img:nth-child(3){width:20vmin;top:12%;right:5%;--tilt:7deg;animation-duration:7.2s;animation-delay:-1s}
-.drift img:nth-child(4){width:24vmin;bottom:4%;right:6%;--tilt:-4deg;animation-duration:9s;animation-delay:-3s}
-.drift img:nth-child(5){width:14vmin;top:44%;right:26%;--tilt:3deg;animation-duration:6s;animation-delay:-4s}
+.drift img:nth-child(1){width:15vmin;top:6%;left:4%;--tilt:-6deg;animation-duration:6.5s}
+.drift img:nth-child(2){width:12vmin;top:62%;left:8%;--tilt:5deg;animation-duration:8s;animation-delay:-2s}
+.drift img:nth-child(3){width:14vmin;top:12%;right:5%;--tilt:7deg;animation-duration:7.2s;animation-delay:-1s}
+.drift img:nth-child(4){width:16vmin;bottom:4%;right:6%;--tilt:-4deg;animation-duration:9s;animation-delay:-3s}
+.drift img:nth-child(5){width:10vmin;top:44%;right:26%;--tilt:3deg;animation-duration:6s;animation-delay:-4s}
 
 /* the host who stands with you through a round */
-.hostwrap{position:fixed;right:clamp(6px,1.6vw,26px);bottom:clamp(6px,1.6vh,24px);width:clamp(88px,13vw,180px);z-index:5;pointer-events:none}
+.hostwrap{position:fixed;right:clamp(6px,1.6vw,26px);bottom:clamp(6px,1.6vh,24px);width:clamp(64px,8.5vw,120px);z-index:5;pointer-events:none}
 .hostwrap.hide{display:none}
 .hostsay{
   background:var(--pale);color:#10222A;font-family:var(--display);font-weight:700;
-  font-size:clamp(12px,1.5vw,16px);border-radius:14px;padding:7px 13px;text-align:center;
+  font-size:clamp(10px,1.2vw,13px);border-radius:12px;padding:6px 10px;text-align:center;
   margin-bottom:9px;opacity:0;transition:opacity .25s;line-height:1.25;
 }
 .hostsay.on{opacity:1}
-@media (max-width:760px){.hostwrap{width:78px;right:4px;bottom:4px;opacity:.85}}
+@media (max-width:760px){.hostwrap{width:58px;right:4px;bottom:4px;opacity:.85}}
 
 @media (prefers-reduced-motion:reduce){.mascot,.drift img{animation:none!important}}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -213,10 +213,10 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 .art .fm{fill:var(--line);stroke:none}
 .gart,.hero-art{position:relative}
 .gart svg,.hero-art svg{opacity:.55}
-.gmascot{position:absolute;right:10px;bottom:-4px;width:46%;max-width:110px;animation-duration:6s}
+.gmascot{position:absolute;right:10px;bottom:-2px;width:34%;max-width:78px;animation-duration:6s}
 .gcard:nth-child(2n) .gmascot{animation-duration:7.4s;animation-delay:-1.5s}
 .gcard:nth-child(3n) .gmascot{animation-duration:8.2s;animation-delay:-3s}
-.heromascot{position:absolute;right:0;bottom:-8px;width:62%;animation-duration:6.6s}
+.heromascot{position:absolute;right:0;bottom:-4px;width:46%;animation-duration:6.6s}
 
 .gbody{padding:14px 18px 17px;display:flex;flex-direction:column;gap:7px}
 .gbody b{font-size:clamp(15px,1.9vw,19px);font-weight:600}
