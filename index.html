@@ -11,7 +11,7 @@
 :root{
   --deep:#0B2A35; --deep-2:#123A48; --panel:#17495A; --line:#2C6377;
   --pale:#EAF3F2; --mute:#9EC0C6; --amber:#F2A63B; --coral:#E2705F;
-  --radius:20px;
+  --seeker:#7FB5C4; --solver:#F2A63B; --innov:#B8E986; --radius:20px;
   --display:'Baloo 2','Trebuchet MS',system-ui,sans-serif;
 }
 h1,h2.title,.hero-name,.final,.q,.badge,.stat b,.tick em,.gbody b,.who{
@@ -113,6 +113,18 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 .pop{position:absolute;right:0;top:-6px;font-weight:700;font-size:clamp(18px,2.5vw,26px);opacity:0;pointer-events:none}
 .pop.go{animation:fly 1.1s ease-out forwards}
 @keyframes fly{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-46px)}}
+.clock{text-align:center;line-height:1;transition:color .3s}
+.clock.hide{visibility:hidden}
+.clock b{font-family:var(--display);font-size:clamp(26px,4.2vw,44px);font-weight:800;display:block}
+.clock span{color:var(--mute);font-size:clamp(10px,1.3vw,13px);display:block;margin-top:4px}
+.clock.warn{color:var(--amber)}
+.clock.warn span{color:var(--amber);opacity:.75}
+.clock.crit{color:var(--coral)}
+.clock.crit span{color:var(--coral);opacity:.75}
+.clock.crit b{animation:pulse .9s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+@media (prefers-reduced-motion:reduce){.clock.crit b{animation:none}}
+
 .track{height:6px;background:var(--deep-2);border-radius:99px;overflow:hidden}
 .fill{height:100%;background:var(--line);width:0;transition:width .4s ease}
 .q{font-size:clamp(21px,3.5vw,38px);font-weight:600;line-height:1.2;letter-spacing:-.02em;max-width:23ch}
@@ -140,6 +152,9 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
   font-size:clamp(17px,2.4vw,24px);border:2px solid currentColor;
 }
 .badge.citizen{color:var(--mute)}
+.badge.seeker{color:var(--seeker)}
+.badge.solver{color:var(--solver)}
+.badge.innovator{color:var(--innov)}
 .badge-why{text-align:center;color:var(--mute);font-size:clamp(13px,1.7vw,17px);max-width:50ch;margin:0 auto;line-height:1.5}
 .tally{display:flex;gap:26px;justify-content:center;color:var(--mute);font-size:clamp(13px,1.7vw,17px);flex-wrap:wrap}
 .btnrow{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
@@ -173,13 +188,15 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 /* stage spread */
 .spread{display:flex;height:14px;border-radius:99px;overflow:hidden;background:var(--deep-2)}
 .spread i{display:block;height:100%}
-.spread i.citizen{background:var(--mute)}
-.ticks{display:grid;grid-template-columns:1fr;gap:clamp(8px,1.3vw,13px);margin-top:11px}
+.spread i.citizen{background:var(--mute)} .spread i.seeker{background:var(--seeker)}
+.spread i.solver{background:var(--solver)} .spread i.innovator{background:var(--innov)}
+.ticks{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(8px,1.3vw,13px);margin-top:11px}
 .tick{background:var(--panel);border-radius:16px;padding:13px 10px;text-align:center;border:2px solid transparent}
 .tick b{display:block;font-size:clamp(24px,4vw,34px);line-height:1;font-weight:400}
 .tick em{display:block;font-style:normal;font-size:clamp(19px,2.8vw,26px);font-weight:700;margin-top:6px;line-height:1}
 .tick span{display:block;color:var(--mute);font-size:clamp(11px,1.4vw,14px);margin-top:3px}
-.tick.citizen{border-color:var(--mute)}
+.tick.citizen{border-color:var(--mute)} .tick.seeker{border-color:var(--seeker)}
+.tick.solver{border-color:var(--solver)} .tick.innovator{border-color:var(--innov)}
 @media (max-width:520px){.ticks{grid-template-columns:repeat(2,1fr)}}
 
 .legend{display:flex;gap:18px;flex-wrap:wrap;color:var(--mute);font-size:clamp(11px,1.4vw,14px)}
@@ -194,7 +211,7 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 .art .a{stroke:var(--amber)}
 .art .f{fill:var(--amber);stroke:none}
 .art .fm{fill:var(--line);stroke:none}
-.gart,.hero-art{position:relative;min-height:150px;display:flex;align-items:center;justify-content:center}
+.gart,.hero-art{position:relative}
 .gart svg,.hero-art svg{opacity:.55}
 .gmascot{position:absolute;right:10px;bottom:-4px;width:46%;max-width:110px;animation-duration:6s}
 .gcard:nth-child(2n) .gmascot{animation-duration:7.4s;animation-delay:-1.5s}
@@ -217,7 +234,8 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 .who{font-weight:600;font-size:clamp(15px,2vw,21px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .who small{display:block;font-weight:400;color:var(--mute);font-size:clamp(11px,1.3vw,13px)}
 .pill{font-size:clamp(11px,1.4vw,14px);font-weight:600;border:1.5px solid currentColor;border-radius:999px;padding:4px 12px;white-space:nowrap}
-.pill.citizen{color:var(--mute)}
+.pill.citizen{color:var(--mute)} .pill.seeker{color:var(--seeker)}
+.pill.solver{color:var(--solver)} .pill.innovator{color:var(--innov)}
 .pts{font-weight:700;font-size:clamp(16px,2.2vw,22px);text-align:right;min-width:70px}
 .pts.neg{color:var(--coral)}
 .empty{color:var(--mute);text-align:center;padding:40px 0;font-size:clamp(15px,1.9vw,19px)}
@@ -270,6 +288,7 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
   <section id="quiz" class="screen">
     <div class="topbar">
       <div class="count"><em id="zoneName">&nbsp;</em><span id="count">Question 1 of 10</span></div>
+      <div class="clock" id="clock" aria-live="off"><b id="clockNum">60</b><span>seconds left</span></div>
       <div class="scorebox">
         <div class="scorelabel" id="scoreWho">Score</div>
         <div class="score" id="score">0</div>
@@ -291,7 +310,7 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
   <section id="end" class="screen">
     <p class="sub" id="endWho">You brought back</p>
     <div class="final" id="final">0</div>
-    <div class="badge citizen" id="badge">Citizen</div>
+    <div class="badge" id="badge">Seeker</div>
     <p class="badge-why" id="badgeWhy"></p>
     <div class="tally" id="tally"></div>
     <div class="btnrow">
@@ -396,10 +415,16 @@ wind:`<svg viewBox="0 0 120 78" xmlns="http://www.w3.org/2000/svg" role="img" ar
    BADGE BANDS — share of the maximum score for this round.
    ===================================================================== */
 const BANDS = [
+  {min:0.85, key:"innovator", label:"Innovator", emoji:"\u{1F4A1}",
+   why:"You went past knowing the answers into seeing how they connect. Now go find something here that nobody has tried yet."},
+  {min:0.60, key:"solver", label:"Solver", emoji:"\u{1F527}",
+   why:"You worked things out rather than waiting to be told. Take that to an exhibit and change one thing at a time."},
+  {min:0.30, key:"seeker", label:"Seeker", emoji:"\u{1F50D}",
+   why:"You are asking the right questions. Pick the one you got wrong that annoyed you most and go chase it down."},
   {min:-99,  key:"citizen", label:"Citizen", emoji:"\u{1F440}",
    why:"Everyone starts here. Grab a Science Communicator and ask them the question that stumped you \u2014 that is the whole point."}
 ];
-const EMOJI = {citizen:"\u{1F440}"};
+const EMOJI = {citizen:"\u{1F440}", seeker:"\u{1F50D}", solver:"\u{1F527}", innovator:"\u{1F4A1}"};
 
 /* =====================================================================
    THE ZINIONS — embedded so the kiosk needs no image folder.
@@ -569,6 +594,11 @@ const POINTS_RIGHT     = 100;
 const POINTS_WRONG     = -50;
 const IDLE_RESET_SEC   = 180;  // kiosk returns to the start screen after this long with no activity
 const AUTO_ADVANCE_SEC = 4;
+/* Timer. TIMER_MODE: 'round' = one clock for the whole round,
+   'question' = a fresh clock on every question, 'off' = no timer.
+   The clock pauses while an explanation is on screen either way.   */
+const TIMER_MODE       = 'round';
+const TIMER_SECONDS    = 60;
 const KEY_PLAYERS = 'parsec_wf_quiz_players';
 const KEY_MISSES  = 'parsec_wf_quiz_misses';
 const KEY_DAY     = 'parsec_wf_quiz_day';
@@ -597,6 +627,7 @@ function clearTimers(){ clearTimeout(advanceTimer); advanceTimer=null; clearInte
 function show(n){
   ['start','pick','quiz','end','dash'].forEach(s => $(s).classList.toggle('on', s===n));
   $('hostwrap').classList.toggle('hide', n !== 'quiz' && n !== 'end');
+  $('clock').classList.toggle('hide', n !== 'quiz');
   $('drift').style.opacity = (n === 'start' || n === 'pick') ? '1' : '0';
 }
 function shuffle(a){ const b=a.slice(); for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];} return b; }
@@ -677,6 +708,7 @@ function startRound(zid){
   setHost(zid || (ZONES[Math.floor(Math.random()*ZONES.length)].id));
   paintScore();
   show('quiz');
+  if(TIMER_MODE === 'round') startClock();
   renderQuestion();
 }
 
@@ -701,6 +733,48 @@ function renderQuestion(){
     b.addEventListener('click', () => answer(i));
     box.appendChild(b);
   });
+
+  if(TIMER_MODE === 'question') startClock();
+  else if(TIMER_MODE === 'round') runClock();   // resume after the explanation pause
+}
+
+/* ---------- countdown clock ---------- */
+let timeLeft = 0, clockInt = null;
+
+function paintClock(){
+  const c = $('clock');
+  $('clockNum').textContent = Math.max(0, timeLeft);
+  c.classList.toggle('warn', timeLeft <= 20 && timeLeft > 10);
+  c.classList.toggle('crit', timeLeft <= 10);
+}
+function startClock(){
+  if(TIMER_MODE === 'off'){ $('clock').classList.add('hide'); return; }
+  $('clock').classList.remove('hide');
+  timeLeft = TIMER_SECONDS;
+  paintClock();
+  runClock();
+}
+function runClock(){
+  if(TIMER_MODE === 'off') return;
+  clearInterval(clockInt);
+  clockInt = setInterval(() => {
+    timeLeft--;
+    paintClock();
+    if(timeLeft <= 0) timeUp();
+  }, 1000);
+}
+function stopClock(){ clearInterval(clockInt); clockInt = null; }
+
+function timeUp(){
+  stopClock();
+  if(TIMER_MODE === 'question'){
+    if(!locked) answer(-1);          // no choice made: counts as wrong
+  }else{
+    locked = true;
+    $('opts').classList.add('locked');
+    say("Time's up!", 4000);
+    finish();
+  }
 }
 
 function popScore(delta, good){
@@ -713,6 +787,7 @@ function popScore(delta, good){
 function answer(choice){
   if(locked) return;
   locked = true;
+  stopClock();
   const item = round[idx];
   const isRight = choice === item.answer;
   $('opts').classList.add('locked');
@@ -756,7 +831,9 @@ function next(){ clearTimers(); idx++; if(idx >= round.length) finish(); else re
 
 function finish(){
   clearTimers();
-  const max = round.length * POINTS_RIGHT;
+  stopClock();
+  const attempted = right + wrong;
+  const max = (attempted || round.length) * POINTS_RIGHT;
   const pct = max ? score / max : 0;
   const band = bandFor(pct);
   const z = ZONES.find(z => z.id === zoneId);
@@ -770,7 +847,7 @@ function finish(){
   $('tally').innerHTML =
     `<span>${right} right &middot; +${right*POINTS_RIGHT}</span>` +
     `<span>${wrong} wrong &middot; &minus;${wrong*Math.abs(POINTS_WRONG)}</span>` +
-    '';
+    (attempted < round.length ? `<span>${round.length-attempted} unanswered</span>` : '');
 
   say(`${band.emoji} ${band.label}!`, 5000);
 
@@ -846,13 +923,13 @@ function renderDash(){
   /* stage spread */
   const spread = $('spreadSlot');
   if(rounds){
-    const counts = {citizen:0};
+    const counts = {citizen:0, seeker:0, solver:0, innovator:0};
     all.forEach(p => { if(counts[p.band] !== undefined) counts[p.band]++; });
-    const bars = ['citizen']
+    const bars = ['citizen','seeker','solver','innovator']
       .map(k => counts[k] ? `<i class="${k}" style="width:${counts[k]/rounds*100}%"></i>` : '')
       .join('');
-    const names = {citizen:'Citizen'};
-    const leg = ['citizen']
+    const names = {citizen:'Citizen', seeker:'Seeker', solver:'Solver', innovator:'Innovator'};
+    const leg = ['citizen','seeker','solver','innovator']
       .map(k => `<div class="tick ${k}"><b>${EMOJI[k]}</b><em>${counts[k]}</em><span>${names[k]}</span></div>`)
       .join('');
     spread.innerHTML =
