@@ -283,6 +283,50 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 .bulbsay.go{color:var(--amber)}
 .bulbsay.bad{color:var(--coral)}
 
+
+
+/* ---- Zinion Puzzle ---- */
+.puzwrap{display:flex;flex-direction:column;gap:clamp(10px,1.8vh,18px);align-items:center}
+.puzpick{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.puzchar{
+  width:clamp(52px,9vw,80px);border-radius:16px;background:var(--panel);padding:6px;
+  border:2px solid transparent;transition:transform .15s,border-color .2s;
+}
+.puzchar img{width:100%;height:auto;display:block}
+.puzchar.on{border-color:var(--amber);transform:translateY(-4px)}
+.puzsizes{display:flex;gap:8px}
+.puzsize{
+  border:2px solid var(--line);color:var(--mute);border-radius:999px;padding:8px 18px;
+  font-weight:600;font-size:clamp(12px,1.5vw,15px);transition:all .2s;
+}
+.puzsize.on{border-color:var(--amber);color:var(--amber);background:rgba(242,166,59,.1)}
+
+.puzboard{
+  display:grid;gap:4px;background:var(--deep-2);padding:6px;border-radius:20px;
+  width:min(84vw,clamp(240px,44vh,400px));aspect-ratio:1/1;
+  border:2px solid var(--line);position:relative;
+}
+.ptile{
+  border-radius:11px;background-repeat:no-repeat;position:relative;
+  transition:transform .13s;cursor:pointer;
+}
+.ptile:active{transform:scale(.96)}
+.ptile.blank{background:none;box-shadow:inset 0 0 0 2px rgba(255,255,255,.07);cursor:default}
+.ptile span{
+  position:absolute;left:5px;top:4px;font-size:11px;font-weight:700;
+  color:rgba(0,0,0,.5);background:rgba(255,255,255,.6);border-radius:6px;padding:0 5px;
+}
+.ptile.blank span{display:none}
+.puzboard.done .ptile{cursor:default}
+.puzboard.done .ptile span{opacity:0;transition:opacity .4s}
+.ptile.lastpiece{animation:dropin .45s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes dropin{0%{opacity:0;transform:scale(.7)}100%{opacity:1;transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.ptile.lastpiece{animation:none}}
+.puzstat{display:flex;gap:24px;color:var(--mute);font-size:clamp(12px,1.6vw,16px)}
+.puzstat b{color:var(--pale);font-family:var(--display);font-weight:700;font-size:clamp(17px,2.3vw,22px)}
+.puzsay{font-family:var(--display);font-weight:700;font-size:clamp(15px,2.2vw,21px);min-height:1.5em;text-align:center}
+.puzsay.win{color:var(--amber)}
+
 /* thank you */
 .thanksimg{width:clamp(120px,20vh,210px);margin:0 auto;animation:bob 4.5s ease-in-out infinite}
 #thanksTitle{font-size:clamp(40px,8vw,86px)}
@@ -395,6 +439,12 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
         <span>Ten questions about the exhibit in front of you. Points for right answers.</span>
         <img src="" alt="" id="modeQuizImg">
       </button>
+      <button class="mode" id="modePuzzle">
+        <span class="age">Take your time</span>
+        <b>Zinion Puzzle</b>
+        <span>A Zinion has come apart into sliding pieces. Put them back together.</span>
+        <img src="" alt="" id="modePuzzleImg">
+      </button>
       <button class="mode" id="modeBulbs">
         <span class="age">Quick play</span>
         <b>Zinion Bulbs</b>
@@ -436,6 +486,28 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
     <div class="btnrow">
       <button class="ghost" id="gBack" style="align-self:auto">Back</button>
       <button class="ghost" id="gBoard" style="align-self:auto">See the board</button>
+    </div>
+  </section>
+
+  <!-- ZINION PUZZLE -->
+  <section id="puzzle" class="screen scrollable">
+    <div class="puzwrap">
+      <div class="puzpick" id="puzPick"></div>
+      <div class="puzsizes">
+        <button class="puzsize" data-n="2">Tiny &middot; 2&times;2</button>
+        <button class="puzsize on" data-n="3">Easy &middot; 3&times;3</button>
+        <button class="puzsize" data-n="4">Tricky &middot; 4&times;4</button>
+      </div>
+      <div class="puzboard" id="puzBoard"></div>
+      <div class="puzstat">
+        <span>Moves <b id="puzMoves">0</b></span>
+        <span>Best today <b id="puzBest">&mdash;</b></span>
+      </div>
+      <p class="puzsay" id="puzSay">Slide the pieces until the Zinion is whole again.</p>
+    </div>
+    <div class="btnrow">
+      <button class="big-btn" id="puzShuffle">Shuffle</button>
+      <button class="ghost" id="puzBack" style="align-self:auto">Back</button>
     </div>
   </section>
 
@@ -814,6 +886,7 @@ function store(key, fallback){
       localStorage.removeItem(KEY_MISSES);
       localStorage.removeItem(KEY_GAME);
       localStorage.removeItem(KEY_BULB);
+      localStorage.removeItem(KEY_PUZ);
     }
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : fallback;
@@ -828,7 +901,7 @@ let player='', zoneId=null, advanceTimer=null, tickTimer=null;
 
 function clearTimers(){ clearTimeout(advanceTimer); advanceTimer=null; clearInterval(tickTimer); tickTimer=null; }
 function show(n){
-  ['start','mode','pick','quiz','game','bulbs','end','thanks','dash'].forEach(s => $(s).classList.toggle('on', s===n));
+  ['start','mode','pick','quiz','game','bulbs','puzzle','end','thanks','dash'].forEach(s => $(s).classList.toggle('on', s===n));
   $('hostwrap').classList.toggle('hide', n !== 'quiz' && n !== 'end');
   $('clock').classList.toggle('hide', n !== 'quiz');
   $('drift').style.opacity = (n === 'start' || n === 'mode' || n === 'pick' || n === 'thanks') ? '1' : '0';
@@ -901,6 +974,7 @@ function goPick(){
   $('modeQuizImg').src = MASCOT.stephen;
   $('modeGameImg').src = MASCOT.niki;
   $('modeBulbsImg').src = MASCOT.argon;
+  $('modePuzzleImg').src = MASCOT.tropido;
   show('mode');
 }
 
@@ -1666,6 +1740,156 @@ function bulbOver(i){
 function openBulbs(){ show('bulbs'); bulbReset(); }
 function bulbBegin(){ bulbReset(); bulbLater(bulbNextRound, 300); }
 
+
+
+/* =====================================================================
+   ZINION PUZZLE — a sliding tile puzzle made from the Zinion artwork.
+   Shuffled by legal moves only, so every board can always be solved.
+   ===================================================================== */
+const KEY_PUZ = 'parsec_wf_puzzle_best';
+const PUZ_KEYS = ['tropido','niki','stephen','argon','harsh'];
+let puzN = 3, puzChar = 'tropido', puzTiles = [], puzBlank = 0, puzMoves = 0, puzLive = false, puzTry = 0;
+const PUZ_SQUARE = {};   // square versions of each mascot, made once
+
+/* the artwork is tall and transparent, so square it off first
+   or the pieces come out stretched and unreadable */
+function squareUp(key){
+  return new Promise(res => {
+    if(PUZ_SQUARE[key]) return res(PUZ_SQUARE[key]);
+    const img = new Image();
+    img.onload = () => {
+      const S = 600;
+      const c = document.createElement('canvas');
+      c.width = S; c.height = S;
+      const x = c.getContext('2d');
+      x.fillStyle = '#17495A'; x.fillRect(0, 0, S, S);
+      const k = Math.min(S*0.94 / img.width, S*0.94 / img.height);
+      const w = img.width*k, h = img.height*k;
+      x.drawImage(img, (S-w)/2, (S-h)/2, w, h);
+      PUZ_SQUARE[key] = c.toDataURL('image/png');
+      res(PUZ_SQUARE[key]);
+    };
+    img.onerror = () => res(null);
+    img.src = MASCOT[key];
+  });
+}
+
+function puzBestKey(){ return `${puzChar}:${puzN}`; }
+function puzShowBest(){
+  const all = store(KEY_PUZ, {});
+  const b = all[puzBestKey()];
+  $('puzBest').textContent = b ? b + ' moves' : '\u2014';
+}
+
+async function puzBuild(shuffle){
+  const src = await squareUp(puzChar);
+  const n = puzN, total = n*n;
+  if(shuffle || !puzTiles.length){
+    puzTiles = Array.from({length: total}, (_, i) => i);
+    puzBlank = total - 1;
+    // Shuffle by legal moves only, so the board is always solvable.
+    // The step count must be random: a fixed count on a 2x2 walks the blank
+    // in a 4-move loop and lands right back on the solved board every time.
+    let last = -1;
+    const steps = total*40 + Math.floor(Math.random() * (total*8 + 7));
+    for(let i = 0; i < steps; i++){
+      const opts = puzNeighbours(puzBlank).filter(x => x !== last);
+      const pick = opts[Math.floor(Math.random()*opts.length)];
+      last = puzBlank;
+      puzTiles[puzBlank] = puzTiles[pick];
+      puzTiles[pick] = total - 1;
+      puzBlank = pick;
+    }
+    if(puzSolved() && (puzTry = (puzTry||0) + 1) < 12) return puzBuild(true);  // reshuffle if it landed solved
+    puzTry = 0;
+    puzMoves = 0;
+    $('puzMoves').textContent = '0';
+    $('puzSay').textContent = 'Slide the pieces until the Zinion is whole again.';
+    $('puzSay').className = 'puzsay';
+    puzLive = true;
+  }
+  const complete = !shuffle && puzSolved();
+  const board = $('puzBoard');
+  board.classList.toggle('done', complete);
+  board.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+  board.innerHTML = '';
+  puzTiles.forEach((tile, pos) => {
+    const d = document.createElement('div');
+    const isBlank = (tile === total - 1) && !complete;   // once solved, the gap fills in
+    d.className = 'ptile' + (isBlank ? ' blank' : '');
+    if(complete && tile === total - 1) d.classList.add('lastpiece');
+    if(!isBlank && src){
+      const r = Math.floor(tile / n), c = tile % n;
+      d.style.backgroundImage = `url(${src})`;
+      d.style.backgroundSize = `${n*100}% ${n*100}%`;
+      d.style.backgroundPosition = `${(c/(n-1))*100}% ${(r/(n-1))*100}%`;
+      d.innerHTML = `<span>${tile+1}</span>`;
+    }
+    d.addEventListener('click', () => puzTap(pos));
+    board.appendChild(d);
+  });
+  puzShowBest();
+}
+
+function puzNeighbours(i){
+  const n = puzN, r = Math.floor(i/n), c = i % n, out = [];
+  if(r > 0) out.push(i-n);
+  if(r < n-1) out.push(i+n);
+  if(c > 0) out.push(i-1);
+  if(c < n-1) out.push(i+1);
+  return out;
+}
+
+function puzSolved(){ return puzTiles.every((t, i) => t === i); }
+
+async function puzTap(pos){
+  if(!puzLive) return;
+  if(!puzNeighbours(puzBlank).includes(pos)) return;
+  puzTiles[puzBlank] = puzTiles[pos];
+  puzTiles[pos] = puzN*puzN - 1;
+  puzBlank = pos;
+  puzMoves++;
+  $('puzMoves').textContent = puzMoves;
+
+  const won = puzSolved();
+  if(won) puzLive = false;          // stop further taps before the redraw lands
+  await puzBuild(false);            // must finish before the win is drawn
+  if(won) puzWin();
+}
+
+function puzWin(){
+  puzLive = false;                  // the board is already drawn complete by puzBuild
+  const all = store(KEY_PUZ, {});
+  const k = puzBestKey();
+  const isBest = !all[k] || puzMoves < all[k];
+  if(isBest){ all[k] = puzMoves; save(KEY_PUZ, all); }
+  puzShowBest();
+  $('puzSay').textContent = isBest
+    ? `Back together in ${puzMoves} moves \u2014 best today!`
+    : `Back together in ${puzMoves} moves.`;
+  $('puzSay').className = 'puzsay win';
+  say(`${HOST_NAME[puzChar]} is whole again!`, 4000);
+}
+
+function puzOpen(){
+  show('puzzle');
+  const pick = $('puzPick');
+  pick.innerHTML = '';
+  PUZ_KEYS.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'puzchar' + (k === puzChar ? ' on' : '');
+    b.innerHTML = `<img src="${MASCOT[k]}" alt="${HOST_NAME[k]}">`;
+    b.addEventListener('click', () => {
+      puzChar = k;
+      [...pick.children].forEach(c => c.classList.remove('on'));
+      b.classList.add('on');
+      puzBuild(true);
+    });
+    pick.appendChild(b);
+  });
+  puzBuild(true);
+}
+
 /* ---------- idle reset ---------- */
 let idleTimer;
 function resetIdle(){
@@ -1689,6 +1913,16 @@ $('modeBack').addEventListener('click', () => { $('nameInput').value=''; show('s
 $('modeQuiz').addEventListener('click', () => show('pick'));
 $('modeGame').addEventListener('click', openGame);
 $('modeBulbs').addEventListener('click', openBulbs);
+$('modePuzzle').addEventListener('click', puzOpen);
+$('puzShuffle').addEventListener('click', () => puzBuild(true));
+$('puzBack').addEventListener('click', () => show('mode'));
+document.querySelectorAll('.puzsize').forEach(b =>
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.puzsize').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    puzN = Number(b.dataset.n);
+    puzBuild(true);
+  }));
 $('bulbStart').addEventListener('click', bulbBegin);
 $('bulbBack').addEventListener('click', () => show('mode'));
 document.querySelectorAll('#bulbRow .bulb').forEach(b =>
@@ -1708,7 +1942,7 @@ $('boardBtn2').addEventListener('click', renderDash);
 $('dashBack').addEventListener('click', () => { player=''; $('nameInput').value=''; show('start'); });
 $('clearBtn').addEventListener('click', () => {
   if(confirm('Clear every score on the board? This cannot be undone.')){
-    save(KEY_PLAYERS, []); save(KEY_MISSES, {}); save(KEY_GAME, 0); save(KEY_BULB, 0); renderDash();
+    save(KEY_PLAYERS, []); save(KEY_MISSES, {}); save(KEY_GAME, 0); save(KEY_BULB, 0); save(KEY_PUZ, {}); renderDash();
   }
 });
 </script>
