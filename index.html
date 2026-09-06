@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Signal from Zinia — PARSEC Whitefield</title>
+<title>Zinia Experimental Lab — PARSEC Whitefield</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
   --seeker:#7FB5C4; --solver:#F2A63B; --innov:#B8E986; --radius:20px;
   --display:'Baloo 2','Trebuchet MS',system-ui,sans-serif;
 }
-h1,h2.title,.hero-name,.final,.q,.badge,.stat b,.tick em,.gbody b,.who{
+h1,h2.title,.hero-name,.final,.q,.stat b,.gbody b,.who{
   font-family:var(--display);letter-spacing:-.01em;
 }
 h1,.hero-name,.final{font-weight:800}
@@ -147,15 +147,6 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 /* end */
 .final{font-size:clamp(50px,11vw,120px);font-weight:700;text-align:center;line-height:.9;letter-spacing:-.04em}
 .final.neg{color:var(--coral)}
-.badge{
-  align-self:center;border-radius:999px;padding:11px 30px;font-weight:700;
-  font-size:clamp(17px,2.4vw,24px);border:2px solid currentColor;
-}
-.badge.citizen{color:var(--mute)}
-.badge.seeker{color:var(--seeker)}
-.badge.solver{color:var(--solver)}
-.badge.innovator{color:var(--innov)}
-.badge-why{text-align:center;color:var(--mute);font-size:clamp(13px,1.7vw,17px);max-width:50ch;margin:0 auto;line-height:1.5}
 .tally{display:flex;gap:26px;justify-content:center;color:var(--mute);font-size:clamp(13px,1.7vw,17px);flex-wrap:wrap}
 .btnrow{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
 .footnote{text-align:center;color:var(--mute);font-size:clamp(11px,1.3vw,14px)}
@@ -186,20 +177,6 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 .stat span{color:var(--mute);font-size:clamp(11px,1.4vw,14px);line-height:1.3;display:block;margin-top:5px}
 
 /* stage spread */
-.spread{display:flex;height:14px;border-radius:99px;overflow:hidden;background:var(--deep-2)}
-.spread i{display:block;height:100%}
-.spread i.citizen{background:var(--mute)} .spread i.seeker{background:var(--seeker)}
-.spread i.solver{background:var(--solver)} .spread i.innovator{background:var(--innov)}
-.ticks{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(8px,1.3vw,13px);margin-top:11px}
-.tick{background:var(--panel);border-radius:16px;padding:13px 10px;text-align:center;border:2px solid transparent}
-.tick b{display:block;font-size:clamp(24px,4vw,34px);line-height:1;font-weight:400}
-.tick em{display:block;font-style:normal;font-size:clamp(19px,2.8vw,26px);font-weight:700;margin-top:6px;line-height:1}
-.tick span{display:block;color:var(--mute);font-size:clamp(11px,1.4vw,14px);margin-top:3px}
-.tick.citizen{border-color:var(--mute)} .tick.seeker{border-color:var(--seeker)}
-.tick.solver{border-color:var(--solver)} .tick.innovator{border-color:var(--innov)}
-@media (max-width:520px){.ticks{grid-template-columns:repeat(2,1fr)}}
-
-.legend{display:flex;gap:18px;flex-wrap:wrap;color:var(--mute);font-size:clamp(11px,1.4vw,14px)}
 .legend em{font-style:normal;display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
 
 /* gallery cards */
@@ -223,6 +200,98 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 .gbody p{color:var(--mute);font-size:clamp(12px,1.5vw,15px);line-height:1.45}
 .gplays{color:var(--amber);font-size:clamp(11px,1.4vw,14px);font-weight:600}
 
+
+/* ---- mode chooser ---- */
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:clamp(10px,1.8vw,20px)}
+.mode{
+  background:var(--panel);border-radius:26px;padding:clamp(18px,3vh,32px) clamp(16px,2.4vw,28px);
+  text-align:left;display:flex;flex-direction:column;gap:9px;position:relative;overflow:hidden;
+  border:2px solid transparent;transition:transform .12s ease,border-color .2s;min-height:clamp(150px,26vh,240px);
+}
+.mode:active{transform:scale(.985)}
+.mode.play{border-color:var(--amber)}
+.mode b{font-family:var(--display);font-size:clamp(20px,3vw,30px);font-weight:800;line-height:1.1}
+.mode span{color:var(--mute);font-size:clamp(12px,1.6vw,16px);line-height:1.45;max-width:26ch}
+.mode .age{color:var(--amber);font-size:clamp(11px,1.4vw,14px);font-weight:700}
+.mode img{position:absolute;right:-6px;bottom:-6px;width:34%;max-width:104px;opacity:.9;
+  filter:drop-shadow(0 10px 16px rgba(0,0,0,.4));animation:bob 5.5s ease-in-out infinite}
+@media (max-width:640px){.modes{grid-template-columns:1fr}.mode{min-height:120px}}
+
+/* ---- scream game ---- */
+.gamewrap{position:relative;border-radius:24px;overflow:hidden;background:#0E3341;border:2px solid var(--line)}
+#gameCanvas{display:block;width:100%;height:clamp(260px,52vh,520px)}
+.ghud{
+  position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;
+  gap:14px;padding:12px 16px;pointer-events:none;
+}
+.gscore{font-family:var(--display);font-weight:800;font-size:clamp(24px,4vw,40px);line-height:1;
+  text-shadow:0 2px 10px rgba(0,0,0,.5)}
+.gbest{color:var(--mute);font-size:clamp(11px,1.4vw,14px)}
+.meter{width:clamp(90px,22%,190px);height:12px;border-radius:99px;background:rgba(255,255,255,.16);overflow:hidden}
+.meter i{display:block;height:100%;width:0%;background:var(--amber);border-radius:99px;transition:width .06s linear}
+.gover{
+  position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;text-align:center;background:rgba(8,32,42,.9);padding:20px;
+}
+.gover.on{display:flex}
+.gover h3{font-family:var(--display);font-size:clamp(28px,5.4vw,52px);font-weight:800;line-height:1}
+.gover p{color:var(--mute);font-size:clamp(13px,1.8vw,18px);max-width:34ch;line-height:1.5}
+.styles{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
+.stylebtn{
+  border:2px solid var(--line);color:var(--mute);font-weight:600;border-radius:999px;
+  padding:10px 20px;font-size:clamp(12px,1.6vw,16px);transition:all .2s;
+}
+.stylebtn.on{border-color:var(--amber);color:var(--amber);background:rgba(242,166,59,.1)}
+.gnote{color:var(--mute);font-size:clamp(11px,1.4vw,14px);text-align:center}
+
+
+/* ---- Zinion Bulbs ---- */
+.bulbstage{
+  background:linear-gradient(180deg,#0A2530,#123A48);
+  border:2px solid var(--line);border-radius:24px;
+  padding:0 clamp(8px,2vw,26px) clamp(18px,3vh,30px);
+  position:relative;overflow:hidden;
+}
+.bulbrow{display:flex;justify-content:center;align-items:flex-start;gap:clamp(2px,1.4vw,20px)}
+.bulb{
+  flex:1;max-width:150px;background:none;padding:0;
+  transform-origin:50% 0;transition:transform .12s ease;
+}
+.bulb:active{transform:translateY(5px)}
+.bulb svg{width:100%;height:auto;display:block;overflow:visible}
+.b-cord{stroke:#2C6377;stroke-width:1.6;fill:none}
+.b-cap{fill:#2C6377}
+.b-cap-shine{fill:#4E8598}
+.b-glass{fill:#123A48;stroke:#2C6377;stroke-width:1.4;transition:fill .18s,stroke .18s}
+.b-wire{stroke:#2C6377;stroke-width:1.3;fill:none;stroke-linecap:round;transition:stroke .18s}
+.b-glow{fill:var(--amber);opacity:0;transition:opacity .25s}
+.bulb.lit .b-glass{fill:#F2A63B;stroke:#FFD79A}
+.bulb.lit .b-wire{stroke:#7A4A10}
+.bulb.lit .b-glow{opacity:.30}
+.bulb.wrong .b-glass{fill:var(--coral);stroke:#FFC2B8}
+.bulb.wrong .b-glow{opacity:.30;fill:var(--coral)}
+.bulb.dead{opacity:.45;pointer-events:none}
+.bulbs-lock .bulb{pointer-events:none}
+
+.bulbhead{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:14px 4px 0}
+.bulbround{font-family:var(--display);font-weight:800;font-size:clamp(20px,3.2vw,32px);line-height:1}
+.bulbbest{color:var(--mute);font-size:clamp(11px,1.4vw,14px)}
+.bulbsay{
+  text-align:center;font-family:var(--display);font-weight:700;
+  font-size:clamp(15px,2.2vw,22px);min-height:1.6em;margin-top:4px;
+}
+.bulbsay.go{color:var(--amber)}
+.bulbsay.bad{color:var(--coral)}
+
+/* thank you */
+.thanksimg{width:clamp(120px,20vh,210px);margin:0 auto;animation:bob 4.5s ease-in-out infinite}
+#thanksTitle{font-size:clamp(40px,8vw,86px)}
+
+/* scroll reveal */
+.rv{opacity:0;transform:translateY(20px);transition:opacity .55s ease,transform .55s cubic-bezier(.22,.68,.3,1)}
+.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1!important;transform:none!important;transition:none!important}}
+
 .board{display:flex;flex-direction:column;gap:8px}
 .row{
   display:grid;grid-template-columns:44px 1fr auto auto;align-items:center;gap:14px;
@@ -233,9 +302,6 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 .row.lead .rank{color:var(--amber)}
 .who{font-weight:600;font-size:clamp(15px,2vw,21px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .who small{display:block;font-weight:400;color:var(--mute);font-size:clamp(11px,1.3vw,13px)}
-.pill{font-size:clamp(11px,1.4vw,14px);font-weight:600;border:1.5px solid currentColor;border-radius:999px;padding:4px 12px;white-space:nowrap}
-.pill.citizen{color:var(--mute)} .pill.seeker{color:var(--seeker)}
-.pill.solver{color:var(--solver)} .pill.innovator{color:var(--innov)}
 .pts{font-weight:700;font-size:clamp(16px,2.2vw,22px);text-align:right;min-width:70px}
 .pts.neg{color:var(--coral)}
 .empty{color:var(--mute);text-align:center;padding:40px 0;font-size:clamp(15px,1.9vw,19px)}
@@ -246,8 +312,7 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 @media (max-width:640px){
   .opts{grid-template-columns:1fr}.opt{min-height:56px}
   .row{grid-template-columns:34px 1fr auto;gap:10px;padding:11px 14px}
-  .row .pill{grid-column:2;justify-self:start}
-}
+  .row }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -262,8 +327,8 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
   <!-- NAME -->
   <section id="start" class="screen on">
     <div class="orbit"></div>
-    <h1>Signal from Zinia</h1>
-    <p class="sub">The Zinions want to know who they are talking to. First name or a nickname is plenty.</p>
+    <h1>Zinia Experimental Lab</h1>
+    <p class="sub">The Zinions are running experiments on our planet and they need a hand. Tell them who you are — first name or a nickname is plenty.</p>
     <div class="namerow">
       <input id="nameInput" maxlength="18" autocomplete="off" placeholder="Your name">
       <button class="big-btn" id="nameGo" style="align-self:auto">Go</button>
@@ -279,7 +344,7 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
   <!-- ZONES -->
   <section id="pick" class="screen">
     <h2 class="title" id="hello">Pick a gallery</h2>
-    <p class="sub">Answer questions about the exhibit in front of you, or mix it up.</p>
+    <p class="sub">Every gallery has a Zinion running its experiment. Pick one to join, or take questions from all over the floor.</p>
     <div class="zones" id="zones"></div>
     <button class="ghost" id="backName">Not me &mdash; change name</button>
   </section>
@@ -310,14 +375,153 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
   <section id="end" class="screen">
     <p class="sub" id="endWho">You brought back</p>
     <div class="final" id="final">0</div>
-    <div class="badge" id="badge">Seeker</div>
-    <p class="badge-why" id="badgeWhy"></p>
+    <p class="verdict-line" id="endVerdict"></p>
     <div class="tally" id="tally"></div>
     <div class="btnrow">
-      <button class="big-btn" id="againBtn">Play again</button>
+      <button class="big-btn" id="doneBtn">Done</button>
+      <button class="ghost" id="againBtn" style="align-self:auto">Play again</button>
       <button class="ghost" id="boardBtn2" style="align-self:auto">See the board</button>
     </div>
-    <p class="footnote">This badge is for today's quiz only. The real test is what you do at the exhibit.</p>
+    <p class="footnote">The score is just the score. The real test is what you do at the exhibit.</p>
+  </section>
+
+  <!-- MODE -->
+  <section id="mode" class="screen">
+    <h2 class="title" id="modeHello">Pick what you fancy</h2>
+    <div class="modes">
+      <button class="mode play" id="modeQuiz">
+        <span class="age">Everyone</span>
+        <b>Gallery Questions</b>
+        <span>Ten questions about the exhibit in front of you. Points for right answers.</span>
+        <img src="" alt="" id="modeQuizImg">
+      </button>
+      <button class="mode" id="modeBulbs">
+        <span class="age">Quick play</span>
+        <b>Zinion Bulbs</b>
+        <span>The bulbs light up in an order. Watch, then tap them back in the same order.</span>
+        <img src="" alt="" id="modeBulbsImg">
+      </button>
+      <button class="mode" id="modeGame">
+        <span class="age">Best for younger visitors</span>
+        <b>Scream Lab</b>
+        <span>Shout to make Niki fly. The louder you are, the higher she goes. Dodge the rocks.</span>
+        <img src="" alt="" id="modeGameImg">
+      </button>
+    </div>
+    <button class="ghost" id="modeBack">Not me &mdash; change name</button>
+  </section>
+
+  <!-- SCREAM GAME -->
+  <section id="game" class="screen">
+    <div class="gamewrap">
+      <canvas id="gameCanvas"></canvas>
+      <div class="ghud">
+        <div>
+          <div class="gscore" id="gScore">0</div>
+          <div class="gbest" id="gBest"></div>
+        </div>
+        <div class="meter"><i id="gMeter"></i></div>
+      </div>
+      <div class="gover on" id="gOver">
+        <h3 id="gOverTitle">Scream Lab</h3>
+        <p id="gOverText">Make some noise and Niki lifts off. Stop and she drops. Get her through the gaps.</p>
+        <div class="styles">
+          <button class="stylebtn on" id="styleFly">Shout to fly</button>
+          <button class="stylebtn" id="styleJump">Shout to jump</button>
+        </div>
+        <button class="big-btn" id="gStart">Start</button>
+      </div>
+    </div>
+    <p class="gnote" id="gNote"></p>
+    <div class="btnrow">
+      <button class="ghost" id="gBack" style="align-self:auto">Back</button>
+      <button class="ghost" id="gBoard" style="align-self:auto">See the board</button>
+    </div>
+  </section>
+
+  <!-- ZINION BULBS -->
+  <section id="bulbs" class="screen">
+    <div class="bulbstage">
+      <div class="bulbhead">
+        <div class="bulbround" id="bulbRound">Round 1</div>
+        <div class="bulbbest" id="bulbBest"></div>
+      </div>
+      <div class="bulbrow" id="bulbRow">
+        <button class="bulb" data-b="0" aria-label="Bulb 1">
+          <svg viewBox="0 0 60 190" xmlns="http://www.w3.org/2000/svg">
+            <path class="b-cord" d="M30 0 v96"/>
+            <circle class="b-glow" cx="30" cy="140" r="34"/>
+            <rect class="b-cap" x="23" y="96" width="14" height="18" rx="3"/>
+            <rect class="b-cap-shine" x="32" y="98" width="3" height="14" rx="1.5"/>
+            <circle class="b-glass" cx="30" cy="134" r="21"/>
+            <path class="b-wire" d="M25 114 v11 M35 114 v11"/>
+            <path class="b-wire" d="M25 125 q5 12 10 0"/>
+          </svg>
+        </button>
+        <button class="bulb" data-b="1" aria-label="Bulb 2">
+          <svg viewBox="0 0 60 190" xmlns="http://www.w3.org/2000/svg">
+            <path class="b-cord" d="M30 0 v96"/>
+            <circle class="b-glow" cx="30" cy="140" r="34"/>
+            <rect class="b-cap" x="23" y="96" width="14" height="18" rx="3"/>
+            <rect class="b-cap-shine" x="32" y="98" width="3" height="14" rx="1.5"/>
+            <circle class="b-glass" cx="30" cy="134" r="21"/>
+            <path class="b-wire" d="M25 114 v11 M35 114 v11"/>
+            <path class="b-wire" d="M25 125 q5 12 10 0"/>
+          </svg>
+        </button>
+        <button class="bulb" data-b="2" aria-label="Bulb 3">
+          <svg viewBox="0 0 60 190" xmlns="http://www.w3.org/2000/svg">
+            <path class="b-cord" d="M30 0 v96"/>
+            <circle class="b-glow" cx="30" cy="140" r="34"/>
+            <rect class="b-cap" x="23" y="96" width="14" height="18" rx="3"/>
+            <rect class="b-cap-shine" x="32" y="98" width="3" height="14" rx="1.5"/>
+            <circle class="b-glass" cx="30" cy="134" r="21"/>
+            <path class="b-wire" d="M25 114 v11 M35 114 v11"/>
+            <path class="b-wire" d="M25 125 q5 12 10 0"/>
+          </svg>
+        </button>
+        <button class="bulb" data-b="3" aria-label="Bulb 4">
+          <svg viewBox="0 0 60 190" xmlns="http://www.w3.org/2000/svg">
+            <path class="b-cord" d="M30 0 v96"/>
+            <circle class="b-glow" cx="30" cy="140" r="34"/>
+            <rect class="b-cap" x="23" y="96" width="14" height="18" rx="3"/>
+            <rect class="b-cap-shine" x="32" y="98" width="3" height="14" rx="1.5"/>
+            <circle class="b-glass" cx="30" cy="134" r="21"/>
+            <path class="b-wire" d="M25 114 v11 M35 114 v11"/>
+            <path class="b-wire" d="M25 125 q5 12 10 0"/>
+          </svg>
+        </button>
+        <button class="bulb" data-b="4" aria-label="Bulb 5">
+          <svg viewBox="0 0 60 190" xmlns="http://www.w3.org/2000/svg">
+            <path class="b-cord" d="M30 0 v96"/>
+            <circle class="b-glow" cx="30" cy="140" r="34"/>
+            <rect class="b-cap" x="23" y="96" width="14" height="18" rx="3"/>
+            <rect class="b-cap-shine" x="32" y="98" width="3" height="14" rx="1.5"/>
+            <circle class="b-glass" cx="30" cy="134" r="21"/>
+            <path class="b-wire" d="M25 114 v11 M35 114 v11"/>
+            <path class="b-wire" d="M25 125 q5 12 10 0"/>
+          </svg>
+        </button>
+      </div>
+      <p class="bulbsay" id="bulbSay">Watch which bulbs light up.</p>
+    </div>
+    <div class="btnrow">
+      <button class="big-btn" id="bulbStart">Start</button>
+      <button class="ghost" id="bulbBack" style="align-self:auto">Back</button>
+    </div>
+    <p class="footnote">Each bulb belongs to a Zinion. Repeat the order they light in.</p>
+  </section>
+
+  <!-- THANK YOU -->
+  <section id="thanks" class="screen">
+    <img class="mascot thanksimg" id="thanksImg" alt="">
+    <h1 id="thanksTitle">Thank you!</h1>
+    <p class="sub" id="thanksLine"></p>
+    <div class="btnrow">
+      <button class="big-btn" id="thanksAgain">Play again</button>
+      <button class="ghost" id="thanksBoard" style="align-self:auto">See the board</button>
+    </div>
+    <p class="footnote">Now go and ask a Science Communicator the one you got wrong.</p>
   </section>
 
   <!-- DASHBOARD -->
@@ -328,7 +532,6 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
     </div>
     <div id="heroSlot"></div>
     <div class="stats" id="stats"></div>
-    <div id="spreadSlot"></div>
     <div class="sectitle">Across the galleries</div>
     <div class="gcards" id="gcards"></div>
     <div class="sectitle">Everyone who played</div>
@@ -412,19 +615,17 @@ wind:`<svg viewBox="0 0 120 78" xmlns="http://www.w3.org/2000/svg" role="img" ar
 };
 
 /* =====================================================================
-   BADGE BANDS — share of the maximum score for this round.
+   RESULT MESSAGES — share of the score attempted.
    ===================================================================== */
-const BANDS = [
-  {min:0.85, key:"innovator", label:"Innovator", emoji:"\u{1F4A1}",
-   why:"You went past knowing the answers into seeing how they connect. Now go find something here that nobody has tried yet."},
-  {min:0.60, key:"solver", label:"Solver", emoji:"\u{1F527}",
-   why:"You worked things out rather than waiting to be told. Take that to an exhibit and change one thing at a time."},
-  {min:0.30, key:"seeker", label:"Seeker", emoji:"\u{1F50D}",
-   why:"You are asking the right questions. Pick the one you got wrong that annoyed you most and go chase it down."},
-  {min:-99,  key:"citizen", label:"Citizen", emoji:"\u{1F440}",
-   why:"Everyone starts here. Grab a Science Communicator and ask them the question that stumped you \u2014 that is the whole point."}
+/* Closing line on the result screen, by share of the score attempted. */
+const MESSAGES = [
+  {min:0.85, line:"Barely put a foot wrong."},
+  {min:0.60, line:"Strong signal. Solid thinking."},
+  {min:0.30, line:"Good haul. A few gaps worth chasing."},
+  {min:0.00, line:"Plenty left to find out \u2014 which is the fun part."},
+  {min:-99,  line:"Below zero. Now you know exactly what to go and ask about."}
 ];
-const EMOJI = {citizen:"\u{1F440}", seeker:"\u{1F50D}", solver:"\u{1F527}", innovator:"\u{1F4A1}"};
+const lineFor = pct => MESSAGES.find(m => pct >= m.min).line;
 
 /* =====================================================================
    THE ZINIONS — embedded so the kiosk needs no image folder.
@@ -611,6 +812,8 @@ function store(key, fallback){
       localStorage.setItem(KEY_DAY, today());
       localStorage.removeItem(KEY_PLAYERS);
       localStorage.removeItem(KEY_MISSES);
+      localStorage.removeItem(KEY_GAME);
+      localStorage.removeItem(KEY_BULB);
     }
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : fallback;
@@ -625,13 +828,14 @@ let player='', zoneId=null, advanceTimer=null, tickTimer=null;
 
 function clearTimers(){ clearTimeout(advanceTimer); advanceTimer=null; clearInterval(tickTimer); tickTimer=null; }
 function show(n){
-  ['start','pick','quiz','end','dash'].forEach(s => $(s).classList.toggle('on', s===n));
+  ['start','mode','pick','quiz','game','bulbs','end','thanks','dash'].forEach(s => $(s).classList.toggle('on', s===n));
   $('hostwrap').classList.toggle('hide', n !== 'quiz' && n !== 'end');
   $('clock').classList.toggle('hide', n !== 'quiz');
-  $('drift').style.opacity = (n === 'start' || n === 'pick') ? '1' : '0';
+  $('drift').style.opacity = (n === 'start' || n === 'mode' || n === 'pick' || n === 'thanks') ? '1' : '0';
+  if(n !== 'bulbs' && typeof bulbClearTimers === 'function') bulbClearTimers();
+  if(n !== 'game' && typeof leaveGame === 'function') leaveGame();
 }
 function shuffle(a){ const b=a.slice(); for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];} return b; }
-function bandFor(pct){ return BANDS.find(b => pct >= b.min); }
 function clean(s){ return s.replace(/[<>]/g,'').trim().slice(0,18); }
 
 /* the drifting crowd behind the start screen */
@@ -693,7 +897,11 @@ function goPick(){
   if(!v){ $('nameInput').focus(); return; }
   player = v;
   $('hello').textContent = `Pick a gallery, ${player}`;
-  show('pick');
+  $('modeHello').textContent = `What shall it be, ${player}?`;
+  $('modeQuizImg').src = MASCOT.stephen;
+  $('modeGameImg').src = MASCOT.niki;
+  $('modeBulbsImg').src = MASCOT.argon;
+  show('mode');
 }
 
 function startRound(zid){
@@ -835,21 +1043,18 @@ function finish(){
   const attempted = right + wrong;
   const max = (attempted || round.length) * POINTS_RIGHT;
   const pct = max ? score / max : 0;
-  const band = bandFor(pct);
   const z = ZONES.find(z => z.id === zoneId);
 
   $('endWho').textContent = `${player}, you brought back`;
   $('final').textContent = score;
   $('final').classList.toggle('neg', score < 0);
-  $('badge').textContent = `${band.emoji} ${band.label}`;
-  $('badge').className = 'badge ' + band.key;
-  $('badgeWhy').textContent = band.why;
+  $('endVerdict').textContent = lineFor(pct);
   $('tally').innerHTML =
     `<span>${right} right &middot; +${right*POINTS_RIGHT}</span>` +
     `<span>${wrong} wrong &middot; &minus;${wrong*Math.abs(POINTS_WRONG)}</span>` +
     (attempted < round.length ? `<span>${round.length-attempted} unanswered</span>` : '');
 
-  say(`${band.emoji} ${band.label}!`, 5000);
+  say(score >= 0 ? 'Nice round!' : 'Come back for another go.', 5000);
 
   const players = store(KEY_PLAYERS, []);
   players.push({
@@ -857,14 +1062,49 @@ function finish(){
     score: score,
     right: right,
     wrong: wrong,
-    band: band.key,
-    label: band.label,
     zone: z ? z.name : 'Mixed',
     at: new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'})
   });
   save(KEY_PLAYERS, players);
 
   show('end');
+}
+
+/* ---------- thank you ---------- */
+function showThanks(){
+  clearTimers();
+  const k = hostKey || 'stephen';
+  $('thanksImg').src = MASCOT[k];
+  $('thanksImg').alt = HOST_NAME[k];
+  $('thanksTitle').textContent = player ? `Thank you, ${player}!` : 'Thank you!';
+  $('thanksLine').textContent =
+    `${HOST_NAME[k]} enjoyed that. You answered ${right + wrong} question${right+wrong===1?'':'s'} and scored ${score}.`;
+  show('thanks');
+}
+
+/* ---------- scroll reveal ---------- */
+let revealObserver = null;
+function armReveals(){
+  const targets = [
+    ...document.querySelectorAll('#heroSlot > *'),
+    ...document.querySelectorAll('#stats > *'),
+    ...document.querySelectorAll('#dash .sectitle'),
+    ...document.querySelectorAll('#gcards > *'),
+    ...document.querySelectorAll('#board > *'),
+    ...document.querySelectorAll('#scPanel > *')
+  ];
+  if(!revealObserver){
+    revealObserver = new IntersectionObserver(entries => {
+      entries.forEach(en => en.target.classList.toggle('in', en.isIntersecting));
+    }, {root: $('dash'), threshold: 0.15, rootMargin: '0px 0px -6% 0px'});
+  }else{
+    revealObserver.disconnect();
+  }
+  targets.forEach((el, i) => {
+    el.classList.add('rv');
+    el.style.transitionDelay = Math.min(i % 6, 5) * 55 + 'ms';
+    revealObserver.observe(el);
+  });
 }
 
 /* ---------- dashboard ---------- */
@@ -888,7 +1128,6 @@ function renderDash(){
            <div class="hero-name">${top.name}</div>
            <div class="hero-meta">
              <span class="hero-score">${top.score} points</span>
-             <span class="pill ${top.band}">${EMOJI[top.band]||''} ${top.label}</span>
              <span class="daystamp">${top.zone} &middot; ${top.at}</span>
            </div>
          </div>
@@ -920,26 +1159,6 @@ function renderDash(){
     `<div class="stat"><b>${best}</b><span>highest score</span></div>` +
     `<div class="stat"><b>${busiest ? busiest[0] : '\u2014'}</b><span>busiest gallery</span></div>`;
 
-  /* stage spread */
-  const spread = $('spreadSlot');
-  if(rounds){
-    const counts = {citizen:0, seeker:0, solver:0, innovator:0};
-    all.forEach(p => { if(counts[p.band] !== undefined) counts[p.band]++; });
-    const bars = ['citizen','seeker','solver','innovator']
-      .map(k => counts[k] ? `<i class="${k}" style="width:${counts[k]/rounds*100}%"></i>` : '')
-      .join('');
-    const names = {citizen:'Citizen', seeker:'Seeker', solver:'Solver', innovator:'Innovator'};
-    const leg = ['citizen','seeker','solver','innovator']
-      .map(k => `<div class="tick ${k}"><b>${EMOJI[k]}</b><em>${counts[k]}</em><span>${names[k]}</span></div>`)
-      .join('');
-    spread.innerHTML =
-      `<div class="sectitle">Badges earned today</div>
-       <div class="spread">${bars}</div>
-       <div class="ticks">${leg}</div>`;
-  }else{
-    spread.innerHTML = '';
-  }
-
   /* gallery cards */
   $('gcards').innerHTML = ZONES.map(z => {
     const n = zoneCounts[z.name] || 0;
@@ -964,7 +1183,6 @@ function renderDash(){
       row.innerHTML =
         `<div class="rank">${i+1}</div>` +
         `<div class="who">${p.name}<small>${p.zone} &middot; ${p.at}</small></div>` +
-        `<div class="pill ${p.band}">${EMOJI[p.band]||''} ${p.label}</div>` +
         `<div class="pts${p.score < 0 ? ' neg' : ''}">${p.score}</div>`;
       board.appendChild(row);
     });
@@ -987,7 +1205,466 @@ function renderDash(){
     });
   }
   show('dash');
+  $('dash').scrollTop = 0;
+  armReveals();
 }
+
+
+/* =====================================================================
+   SCREAM LAB — shout to fly. Mic if allowed, hold-to-fly if not.
+   No audio is recorded or stored; only the live loudness level is read.
+   ===================================================================== */
+const GAME = {
+  gravity:  430,      // pull downward, px per second squared
+  lift:     820,      // upward push at full volume
+  maxUp:   -250,      // fastest rise
+  maxDown:  320,      // fastest fall
+  speed:    112,      // how fast the world moves past, px/s
+  speedUp:  2,        // extra speed per rock passed
+  gap:      300,      // opening height
+  gapMin:   230,
+  gapShrink: 1.2,     // gap tightens per rock passed
+  every:    470,      // px between rocks
+  rockW:    46
+};
+const JUMP = {
+  gravity: 760,       // pull downward while airborne
+  jump:    550,       // push from one shout
+  hold:    0.35,      // keep shouting while rising and gravity softens to this
+  speed:   115,       // how fast the ground moves past
+  speedUp: 1.2,       // extra speed per rock cleared
+  every:   520,       // px between rocks
+  cooldown:0.10,      // shortest gap between two hops
+  trigger: 0.34       // how loud counts as a shout
+};
+const KEY_GAME = 'parsec_wf_scream_best';
+let gStyle = 'fly';   // 'fly' = shout to rise, 'jump' = shout to hop
+
+let gCv, gCtx, gRaf = null, gRunning = false;
+let gPlayer, gRocks, gDist, gScore, gSpeed, gGap, gSprite = null;
+let micStream = null, micCtx = null, micAn = null, micBuf = null, micBase = 0.02, micOn = false;
+let holding = false, gLast = 0;
+
+function fitCanvas(){
+  const r = gCv.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  gCv.width = Math.round(r.width * dpr);
+  gCv.height = Math.round(r.height * dpr);
+  gCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return {w: r.width, h: r.height};
+}
+
+async function initMic(){
+  try{
+    micStream = await navigator.mediaDevices.getUserMedia({audio:{
+      echoCancellation:false, noiseSuppression:false, autoGainControl:false
+    }});
+    micCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = micCtx.createMediaStreamSource(micStream);
+    micAn = micCtx.createAnalyser();
+    micAn.fftSize = 1024;
+    micBuf = new Uint8Array(micAn.fftSize);
+    src.connect(micAn);
+    micOn = true;
+    await calibrate();
+    $('gNote').textContent = 'Microphone on. Nothing is recorded \u2014 only how loud it is right now.';
+    return true;
+  }catch(e){
+    micOn = false;
+    $('gNote').textContent = 'No microphone here, so hold anywhere on the picture to fly instead.';
+    return false;
+  }
+}
+function stopMic(){
+  if(micStream){ micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  if(micCtx){ micCtx.close(); micCtx = null; }
+  micAn = null; micOn = false;
+}
+/* learn how noisy the gallery already is, so the floor's own din doesn't fly her */
+function calibrate(){
+  return new Promise(res => {
+    const samples = [];
+    const t = setInterval(() => samples.push(rawLevel()), 60);
+    setTimeout(() => {
+      clearInterval(t);
+      samples.sort((a,b) => a-b);
+      micBase = samples[Math.floor(samples.length*0.6)] || 0.02;
+      res();
+    }, 1200);
+  });
+}
+function rawLevel(){
+  if(!micAn) return 0;
+  micAn.getByteTimeDomainData(micBuf);
+  let sum = 0;
+  for(let i = 0; i < micBuf.length; i++){ const v = (micBuf[i]-128)/128; sum += v*v; }
+  return Math.sqrt(sum / micBuf.length);
+}
+/* 0 to 1, with the room's ambient noise subtracted */
+function level(){
+  if(micOn){
+    const over = rawLevel() - micBase * 1.9;
+    return Math.max(0, Math.min(1, over / 0.16));
+  }
+  return holding ? 1 : 0;
+}
+
+const GROUND = 46;   // height of the strip Niki runs along
+function resetGame(){
+  const {w, h} = fitCanvas();
+  gRocks = []; gDist = 0; gScore = 0;
+  $('gScore').textContent = '0';
+  const best = Number(store(KEY_GAME, 0)) || 0;
+  $('gBest').textContent = best ? `Best today: ${best}` : '';
+
+  if(gStyle === 'jump'){
+    gPlayer = {x: Math.max(60, w*0.17), y: h - GROUND, vy: 0, r: 18, onGround: true};
+    gSpeed = JUMP.speed;
+    addBump(w + 300); addBump(w + 300 + JUMP.every);
+  }else{
+    gPlayer = {x: Math.max(64, w*0.20), y: h*0.42, vy: 0, r: 19};  // hitbox is smaller than Niki looks, on purpose
+    gSpeed = GAME.speed; gGap = GAME.gap;
+    for(let i = 0; i < 3; i++) addRock(w + 260 + i*GAME.every, h);
+  }
+}
+function addBump(x){
+  gRocks.push({x, w: 22 + Math.random()*10, h: 28 + Math.random()*14, passed:false});
+}
+function addRock(x, h){
+  const margin = 38;
+  const top = margin + Math.random() * (h - gGap - margin*2);
+  gRocks.push({x, top, gap: gGap, passed: false});
+}
+
+function setStyle(st){
+  gStyle = st;
+  $('styleFly').classList.toggle('on', st === 'fly');
+  $('styleJump').classList.toggle('on', st === 'jump');
+  $('gOverText').textContent = st === 'jump'
+    ? 'Niki runs. Shout and she jumps. Wait until a rock is close before you shout \u2014 too early and she lands on it.'
+    : 'Shout and Niki lifts off. Go quiet and she drops. Steer her through the gaps.';
+  if(!gRunning){ resetGame(); gDraw2(); }
+}
+function gDraw2(){
+  const r = gCv.getBoundingClientRect();
+  if(gStyle === 'jump') jumpDraw(r.width, r.height, r.height - GROUND);
+  else gDraw(r.width, r.height);
+}
+
+function startGame(){
+  gRunning = true;
+  jumpCool = 0; wasLoud = false; jumpsLeft = 1;
+  $('gOver').classList.remove('on');
+  resetGame();
+  gLast = performance.now();
+  cancelAnimationFrame(gRaf);
+  gRaf = requestAnimationFrame(gLoop);
+}
+
+function gLoop(now){
+  if(!gRunning) return;
+  const dt = Math.min(0.034, (now - gLast)/1000);
+  gLast = now;
+  const {w, h} = {w: gCv.getBoundingClientRect().width, h: gCv.getBoundingClientRect().height};
+
+  const lv = level();
+  $('gMeter').style.width = Math.round(lv*100) + '%';
+
+  if(gStyle === 'jump'){ jumpStep(dt, w, h, lv); return; }
+
+  gPlayer.vy += GAME.gravity * dt;
+  gPlayer.vy -= GAME.lift * lv * dt;
+  gPlayer.vy = Math.max(GAME.maxUp, Math.min(GAME.maxDown, gPlayer.vy));
+  gPlayer.y += gPlayer.vy * dt;
+
+  if(gPlayer.y < gPlayer.r){ gPlayer.y = gPlayer.r; gPlayer.vy = 0; }
+  if(gPlayer.y > h - gPlayer.r){ return gameOver(); }
+
+  gRocks.forEach(r => { r.x -= gSpeed * dt; });
+  if(gRocks.length && gRocks[gRocks.length-1].x < w - GAME.every) addRock(w + 40, h);
+  gRocks = gRocks.filter(r => r.x > -GAME.rockW - 10);
+
+  gRocks.forEach(r => {
+    if(!r.passed && r.x + GAME.rockW < gPlayer.x - gPlayer.r){
+      r.passed = true;
+      gScore++;
+      $('gScore').textContent = gScore;
+      gSpeed += GAME.speedUp;
+      gGap = Math.max(GAME.gapMin, gGap - GAME.gapShrink);
+    }
+    const nearX = gPlayer.x + gPlayer.r > r.x && gPlayer.x - gPlayer.r < r.x + GAME.rockW;
+    if(nearX && (gPlayer.y - gPlayer.r < r.top || gPlayer.y + gPlayer.r > r.top + r.gap)) gameOver();
+  });
+
+  gDraw(w, h);
+  gRaf = requestAnimationFrame(gLoop);
+}
+
+let jumpCool = 0, wasLoud = false, jumpsLeft = 1;
+function jumpStep(dt, w, h, lv){
+  const ground = h - GROUND;
+  jumpCool -= dt;
+
+  const loud = lv > JUMP.trigger;
+  // On the ground, any shout hops — so a child who screams non-stop keeps bouncing.
+  // In the air, only a fresh shout gives the extra push, and holding the shout
+  // while she is still rising softens gravity, so a longer scream jumps higher.
+  if(loud && jumpCool <= 0 && (gPlayer.onGround || (!wasLoud && jumpsLeft > 0))){
+    gPlayer.vy = -JUMP.jump * (gPlayer.onGround ? 1 : 0.8);
+    if(!gPlayer.onGround) jumpsLeft--;
+    gPlayer.onGround = false;
+    jumpCool = JUMP.cooldown;
+  }
+  wasLoud = loud;
+
+  if(!gPlayer.onGround){
+    const g = (loud && gPlayer.vy < 0) ? JUMP.gravity * JUMP.hold : JUMP.gravity;
+    gPlayer.vy += g * dt;
+    gPlayer.y  += gPlayer.vy * dt;
+    if(gPlayer.y < gPlayer.r*2){ gPlayer.y = gPlayer.r*2; gPlayer.vy = 0; }   // ceiling
+    if(gPlayer.y >= ground){ gPlayer.y = ground; gPlayer.vy = 0; gPlayer.onGround = true; jumpsLeft = 1; }
+  }
+
+  gRocks.forEach(r => { r.x -= gSpeed * dt; });
+  if(gRocks.length && gRocks[gRocks.length-1].x < w - JUMP.every) addBump(w + 30);
+  gRocks = gRocks.filter(r => r.x > -90);
+
+  for(const r of gRocks){
+    if(!r.passed && r.x + r.w < gPlayer.x - gPlayer.r){
+      r.passed = true; gScore++;
+      $('gScore').textContent = gScore;
+      gSpeed += JUMP.speedUp;
+    }
+    const nearX = gPlayer.x + gPlayer.r > r.x && gPlayer.x - gPlayer.r < r.x + r.w;
+    if(nearX && gPlayer.y > ground - r.h + 5) return gameOver();   // +5 forgives a graze
+  }
+
+  jumpDraw(w, h, ground);
+  gRaf = requestAnimationFrame(gLoop);
+}
+
+function jumpDraw(w, h, ground){
+  const c = gCtx;
+  c.clearRect(0, 0, w, h);
+  const sky = c.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, '#124454'); sky.addColorStop(1, '#0A2530');
+  c.fillStyle = sky; c.fillRect(0, 0, w, h);
+
+  c.fillStyle = '#0E3341'; c.fillRect(0, ground, w, h - ground);
+  c.strokeStyle = '#2C6377'; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(0, ground); c.lineTo(w, ground); c.stroke();
+
+  gRocks.forEach(r => {
+    c.fillStyle = '#17495A'; c.strokeStyle = '#2C6377'; c.lineWidth = 2;
+    roundRect(c, r.x, ground - r.h, r.w, r.h, 7); c.fill(); c.stroke();
+    c.fillStyle = 'rgba(242,166,59,.55)';
+    c.fillRect(r.x + 4, ground - r.h + 4, r.w - 8, 3);
+  });
+
+  const airborne = !gPlayer.onGround;
+  c.save();
+  c.translate(gPlayer.x, gPlayer.y - gPlayer.r);
+  c.rotate(airborne ? Math.max(-0.3, Math.min(0.3, gPlayer.vy/1400)) : 0);
+  if(gSprite && gSprite.complete){
+    const size = gPlayer.r * 3.4;
+    c.drawImage(gSprite, -size/2, -size + gPlayer.r, size, size);
+  }else{
+    c.fillStyle = '#EAF3F2';
+    c.beginPath(); c.arc(0, -gPlayer.r/2, gPlayer.r, 0, Math.PI*2); c.fill();
+  }
+  c.restore();
+}
+
+function gDraw(w, h){
+  const c = gCtx;
+  c.clearRect(0, 0, w, h);
+
+  // sky
+  const sky = c.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, '#124454'); sky.addColorStop(1, '#0A2530');
+  c.fillStyle = sky; c.fillRect(0, 0, w, h);
+
+  // drifting ground line
+  c.strokeStyle = 'rgba(44,99,119,.6)'; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(0, h-3); c.lineTo(w, h-3); c.stroke();
+
+  // rocks
+  gRocks.forEach(r => {
+    c.fillStyle = '#17495A';
+    c.strokeStyle = '#2C6377'; c.lineWidth = 2;
+    roundRect(c, r.x, -14, GAME.rockW, r.top + 14, 14); c.fill(); c.stroke();
+    roundRect(c, r.x, r.top + r.gap, GAME.rockW, h - (r.top + r.gap) + 14, 14); c.fill(); c.stroke();
+    c.fillStyle = 'rgba(242,166,59,.5)';
+    c.fillRect(r.x + 6, r.top - 5, GAME.rockW - 12, 4);
+    c.fillRect(r.x + 6, r.top + r.gap + 1, GAME.rockW - 12, 4);
+  });
+
+  // player
+  const tilt = Math.max(-0.45, Math.min(0.6, gPlayer.vy / 520));
+  c.save();
+  c.translate(gPlayer.x, gPlayer.y);
+  c.rotate(tilt);
+  if(gSprite && gSprite.complete){
+    const size = gPlayer.r * 3.6;
+    c.drawImage(gSprite, -size/2, -size/2, size, size);
+  }else{
+    c.fillStyle = '#EAF3F2';
+    c.beginPath(); c.arc(0, 0, gPlayer.r, 0, Math.PI*2); c.fill();
+  }
+  c.restore();
+}
+function roundRect(c, x, y, w, h, r){
+  c.beginPath();
+  c.moveTo(x+r, y); c.lineTo(x+w-r, y); c.quadraticCurveTo(x+w, y, x+w, y+r);
+  c.lineTo(x+w, y+h-r); c.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  c.lineTo(x+r, y+h); c.quadraticCurveTo(x, y+h, x, y+h-r);
+  c.lineTo(x, y+r); c.quadraticCurveTo(x, y, x+r, y); c.closePath();
+}
+
+function gameOver(){
+  if(!gRunning) return;
+  gRunning = false;
+  cancelAnimationFrame(gRaf);
+  const best = Number(store(KEY_GAME, 0)) || 0;
+  const isBest = gScore > best;
+  if(isBest) save(KEY_GAME, gScore);
+  $('gBest').textContent = `Best today: ${Math.max(best, gScore)}`;
+  $('gOverTitle').textContent = gScore === 0 ? 'Straight into a rock' : `${gScore} cleared!`;
+  $('gOverText').textContent = isBest && gScore > 0
+    ? 'Best run of the day so far.'
+    : (gStyle === 'jump'
+        ? 'Let the rock get close, then one good shout. Try again.'
+        : 'Short bursts work better than one long shout. Try again.');
+  $('gStart').textContent = 'Go again';
+  $('gOver').classList.add('on');
+}
+
+async function openGame(){
+  show('game');
+  gCv = $('gameCanvas'); gCtx = gCv.getContext('2d');
+  if(!gSprite){ gSprite = new Image(); gSprite.src = MASCOT.niki; }
+  $('gOverTitle').textContent = 'Scream Lab';
+  $('gStart').textContent = 'Start';
+  $('gOver').classList.add('on');
+  $('gNote').textContent = 'Asking for the microphone\u2026';
+  fitCanvas();
+  setStyle(gStyle);
+  await initMic();
+}
+function leaveGame(){
+  gRunning = false;
+  cancelAnimationFrame(gRaf);
+  stopMic();
+}
+
+/* hold-to-fly fallback, and a nudge for anyone who prefers tapping */
+['pointerdown','touchstart'].forEach(e =>
+  $('game') && $('game').addEventListener(e, () => { holding = true; }, {passive:true}));
+['pointerup','pointercancel','touchend','touchcancel'].forEach(e =>
+  document.addEventListener(e, () => { holding = false; }, {passive:true}));
+window.addEventListener('resize', () => { if($('game').classList.contains('on')) fitCanvas(); });
+
+
+/* =====================================================================
+   ZINION BULBS — the bulbs light in an order, you repeat it.
+   Every bulb belongs to a Zinion, who cheers when you get the round right.
+   ===================================================================== */
+const KEY_BULB = 'parsec_wf_bulb_best';
+const BULB_ZIN = ['tropido','niki','stephen','argon','harsh'];
+let bulbSeq = [], bulbStep = 0, bulbRound = 0, bulbBusy = false, bulbTimers = [];
+
+function bulbEls(){ return [...document.querySelectorAll('#bulbRow .bulb')]; }
+function bulbClearTimers(){ bulbTimers.forEach(clearTimeout); bulbTimers = []; }
+function bulbLater(fn, ms){ bulbTimers.push(setTimeout(fn, ms)); }
+
+function bulbFlash(i, cls, on, off){
+  const el = bulbEls()[i];
+  if(!el) return;
+  bulbLater(() => el.classList.add(cls || 'lit'), on);
+  bulbLater(() => el.classList.remove(cls || 'lit'), off);
+}
+
+function bulbSay(text, tone){
+  const el = $('bulbSay');
+  el.textContent = text;
+  el.className = 'bulbsay' + (tone ? ' ' + tone : '');
+}
+
+function bulbReset(){
+  bulbClearTimers();
+  bulbEls().forEach(el => el.classList.remove('lit','wrong','dead'));
+  $('bulbRow').classList.remove('bulbs-lock');
+  bulbSeq = []; bulbStep = 0; bulbRound = 0; bulbBusy = false;
+  $('bulbRound').textContent = 'Round 1';
+  const best = Number(store(KEY_BULB, 0)) || 0;
+  $('bulbBest').textContent = best ? `Best today: round ${best}` : '';
+  bulbSay('Watch which bulbs light up.');
+  $('bulbStart').textContent = 'Start';
+}
+
+function bulbNextRound(){
+  bulbRound++;
+  bulbStep = 0;
+  bulbSeq.push(Math.floor(Math.random() * bulbEls().length));
+  $('bulbRound').textContent = `Round ${bulbRound}`;
+  bulbPlay();
+}
+
+function bulbPlay(){
+  bulbBusy = true;
+  $('bulbRow').classList.add('bulbs-lock');
+  bulbSay('Watch\u2026');
+  const gap = Math.max(360, 620 - bulbRound * 22);   // speeds up as rounds go on
+  bulbSeq.forEach((b, i) => bulbFlash(b, 'lit', 500 + i*gap, 500 + i*gap + gap*0.62));
+  bulbLater(() => {
+    bulbBusy = false;
+    $('bulbRow').classList.remove('bulbs-lock');
+    bulbSay('Your turn.', 'go');
+  }, 500 + bulbSeq.length*gap + 120);
+}
+
+function bulbTap(i){
+  if(bulbBusy || !bulbSeq.length) return;
+  const el = bulbEls()[i];
+  el.classList.add('lit');
+  setTimeout(() => el.classList.remove('lit'), 220);
+
+  if(i === bulbSeq[bulbStep]){
+    bulbStep++;
+    if(bulbStep === bulbSeq.length){
+      bulbBusy = true;
+      $('bulbRow').classList.add('bulbs-lock');
+      const z = BULB_ZIN[i] || 'stephen';
+      bulbSay(`${HOST_NAME[z]} says yes!`, 'go');
+      bulbLater(bulbNextRound, 900);
+    }
+  }else{
+    bulbOver(i);
+  }
+}
+
+function bulbOver(i){
+  bulbBusy = true;
+  bulbClearTimers();
+  $('bulbRow').classList.add('bulbs-lock');
+  const el = bulbEls()[i];
+  el.classList.add('wrong');
+  setTimeout(() => el.classList.remove('wrong'), 700);
+  bulbEls().forEach((b, n) => { if(n !== bulbSeq[bulbStep]) b.classList.add('dead'); });
+  bulbLater(() => bulbEls().forEach(b => b.classList.remove('dead')), 900);
+
+  const reached = bulbRound - 1;
+  const best = Number(store(KEY_BULB, 0)) || 0;
+  if(reached > best) save(KEY_BULB, reached);
+  $('bulbBest').textContent = `Best today: round ${Math.max(best, reached)}`;
+  bulbSay(reached < 1 ? 'That was the wrong one. Try again.'
+                      : `You held ${reached} round${reached === 1 ? '' : 's'}. Go again?`, 'bad');
+  $('bulbStart').textContent = 'Go again';
+  bulbLater(() => { bulbBusy = false; }, 900);
+}
+
+function openBulbs(){ show('bulbs'); bulbReset(); }
+function bulbBegin(){ bulbReset(); bulbLater(bulbNextRound, 300); }
 
 /* ---------- idle reset ---------- */
 let idleTimer;
@@ -1007,15 +1684,31 @@ resetIdle();
 /* ---------- wiring ---------- */
 $('nameGo').addEventListener('click', goPick);
 $('nameInput').addEventListener('keydown', e => { if(e.key === 'Enter') goPick(); });
-$('backName').addEventListener('click', () => { $('nameInput').value=''; show('start'); });
+$('backName').addEventListener('click', () => show('mode'));
+$('modeBack').addEventListener('click', () => { $('nameInput').value=''; show('start'); });
+$('modeQuiz').addEventListener('click', () => show('pick'));
+$('modeGame').addEventListener('click', openGame);
+$('modeBulbs').addEventListener('click', openBulbs);
+$('bulbStart').addEventListener('click', bulbBegin);
+$('bulbBack').addEventListener('click', () => show('mode'));
+document.querySelectorAll('#bulbRow .bulb').forEach(b =>
+  b.addEventListener('click', () => bulbTap(Number(b.dataset.b))));
+$('gStart').addEventListener('click', startGame);
+$('styleFly').addEventListener('click', () => setStyle('fly'));
+$('styleJump').addEventListener('click', () => setStyle('jump'));
+$('gBack').addEventListener('click', () => show('mode'));
+$('gBoard').addEventListener('click', renderDash);
 $('nextBtn').addEventListener('click', next);
-$('againBtn').addEventListener('click', () => show('pick'));
+$('doneBtn').addEventListener('click', showThanks);
+$('thanksAgain').addEventListener('click', () => show('mode'));
+$('thanksBoard').addEventListener('click', renderDash);
+$('againBtn').addEventListener('click', () => show('mode'));
 $('boardBtn1').addEventListener('click', renderDash);
 $('boardBtn2').addEventListener('click', renderDash);
 $('dashBack').addEventListener('click', () => { player=''; $('nameInput').value=''; show('start'); });
 $('clearBtn').addEventListener('click', () => {
   if(confirm('Clear every score on the board? This cannot be undone.')){
-    save(KEY_PLAYERS, []); save(KEY_MISSES, {}); renderDash();
+    save(KEY_PLAYERS, []); save(KEY_MISSES, {}); save(KEY_GAME, 0); save(KEY_BULB, 0); renderDash();
   }
 });
 </script>
