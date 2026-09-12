@@ -236,6 +236,11 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 .gover.on{display:flex}
 .gover h3{font-family:var(--display);font-size:clamp(28px,5.4vw,52px);font-weight:800;line-height:1}
 .gover p{color:var(--mute);font-size:clamp(13px,1.8vw,18px);max-width:34ch;line-height:1.5}
+.microw{display:flex;align-items:center;gap:11px;justify-content:center;flex-wrap:wrap;
+  color:var(--mute);font-size:clamp(10px,1.3vw,13px)}
+.microw .slider{width:min(230px,42vw);accent-color:var(--amber)}
+.meter{position:relative}
+.meter .mark{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--pale);opacity:.85}
 .gnote{color:var(--mute);font-size:clamp(11px,1.4vw,14px);text-align:center}
 
 
@@ -503,15 +508,23 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
           <div class="gscore" id="gScore">0</div>
           <div class="gbest" id="gBest"></div>
         </div>
-        <div class="meter"><i id="gMeter"></i></div>
+        <div class="meter"><i id="gMeter"></i><span class="mark" id="gMark" style="left:60%"></span></div>
       </div>
       <div class="gover on" id="gOver">
         <h3 id="gOverTitle">Scream Lab</h3>
         <p id="gOverText">Make some noise and Niki lifts off. Stop and she drops. Get her through the gaps.</p>
         <button class="big-btn" id="gStart">Start</button>
+        <button class="ghost" id="gMicBtn" style="align-self:auto">Turn on the microphone</button>
+        <p class="gnote" id="gMicState" style="margin-top:2px"></p>
       </div>
     </div>
     <p class="gnote" id="gNote"></p>
+    <div class="microw">
+      <span>Less sensitive</span>
+      <input type="range" id="gSens" class="slider" min="120" max="320" value="190" aria-label="Microphone sensitivity">
+      <span>More</span>
+      <button class="ghost" id="gRecal" style="align-self:auto;padding:9px 18px">Re-listen to the room</button>
+    </div>
     <div class="btnrow">
       <button class="ghost" id="gBack" style="align-self:auto">Back</button>
       <button class="ghost" id="gBoard" style="align-self:auto">See the board</button>
@@ -1471,8 +1484,7 @@ const JUMP = {
   gravity: 760,       // pull downward while airborne
   jump:    550,       // push from one shout
   hold:    0.35,      // keep shouting while rising and gravity softens to this
-  cooldown:0.10,      // shortest gap between two hops
-  trigger: 0.34       // how loud counts as a shout
+  cooldown:0.10       // shortest gap between two hops
 };
 /* Each level: faster ground, rocks closer together, taller, and from
    level 4 some are wide enough that one hop only just clears them. */
@@ -1490,7 +1502,7 @@ const GROUND = 46;
 
 let gCv, gCtx, gRaf = null, gRunning = false, gLast = 0;
 let gPlayer, gRocks, gCleared, gLevel, gL, gSpeed, gSprite = null;
-let micStream = null, micCtx = null, micAn = null, micBuf = null, micBase = 0.02, micOn = false;
+let micStream = null, micCtx = null, micAn = null, micBuf = null, micOn = false;
 let holding = false, jumpCool = 0, wasLoud = false, jumpsLeft = 1;
 
 function fitCanvas(){
@@ -1502,24 +1514,77 @@ function fitCanvas(){
 }
 
 async function initMic(){
+  const state = msg => { const el = $('gMicState'); if(el) el.textContent = msg; };
+
+  // Reasons the browser will refuse before we even ask
+  if(!window.isSecureContext){
+    micOn = false;
+    $('gNote').textContent = 'Tap to jump. The microphone needs the page opened over https:// or from localhost \u2014 browsers block it for files opened straight from a folder.';
+    state('Microphone blocked: this page is not on https or localhost.');
+    return false;
+  }
+  if(window.self !== window.top){
+    micOn = false;
+    $('gNote').textContent = 'Tap to jump. A preview window cannot use the microphone \u2014 open the file in its own browser tab.';
+    state('Microphone blocked: the page is inside a preview frame.');
+    return false;
+  }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    micOn = false;
+    $('gNote').textContent = 'Tap to jump. This browser has no microphone support.';
+    state('Microphone not available in this browser.');
+    return false;
+  }
+
   try{
     micStream = await navigator.mediaDevices.getUserMedia({audio:{
       echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
     micCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Browsers start the audio engine suspended until a real tap. Without this
+    // the analyser returns pure silence and nothing ever jumps.
+    if(micCtx.state === 'suspended') await micCtx.resume();
     const src = micCtx.createMediaStreamSource(micStream);
     micAn = micCtx.createAnalyser(); micAn.fftSize = 1024;
     micBuf = new Uint8Array(micAn.fftSize);
-    src.connect(micAn); micOn = true;
+    src.connect(micAn);
+    micOn = true;
+    state('Listening to the room\u2026');
     await calibrate();
     $('gNote').textContent = 'Microphone on. Nothing is recorded \u2014 only how loud it is right now.';
+    state('Microphone ready. Shout and the bar should fill.');
+    micWatch();
     return true;
   }catch(e){
     micOn = false;
-    $('gNote').textContent = 'No microphone here, so tap the picture to jump instead.';
+    const denied = e && (e.name === 'NotAllowedError' || e.name === 'SecurityError');
+    $('gNote').textContent = denied
+      ? 'Microphone permission was refused, so tap the picture to jump instead.'
+      : 'No microphone found, so tap the picture to jump instead.';
+    state(denied ? 'Permission refused. Tap "Turn on the microphone" to ask again.'
+                 : 'No microphone detected (' + (e && e.name ? e.name : 'unknown') + ').');
     return false;
   }
 }
+
+/* keep showing the live level even before a game starts, so anyone can
+   see at a glance whether the kiosk is hearing them at all */
+let micWatchTimer = null;
+function micWatch(){
+  clearInterval(micWatchTimer);
+  micWatchTimer = setInterval(() => {
+    if(!micOn){ clearInterval(micWatchTimer); return; }
+    if(gRunning) return;                       // the game drives the meter itself
+    const lv = level();
+    const bar = $('gMeter'); if(bar) bar.style.width = Math.round(lv*100) + '%';
+    const el = $('gMicState');
+    if(el && !gRunning) el.textContent = loudNow()
+      ? 'Hearing you \u2014 that would jump.'
+      : 'Microphone ready. Say anything and the bar should pass the white line.';
+  }, 100);
+}
+
 function stopMic(){
+  clearInterval(micWatchTimer); micWatchTimer = null;
   if(micStream){ micStream.getTracks().forEach(t => t.stop()); micStream = null; }
   if(micCtx){ micCtx.close(); micCtx = null; }
   micAn = null; micOn = false;
@@ -1532,7 +1597,8 @@ function calibrate(){
     setTimeout(() => {
       clearInterval(t);
       samples.sort((a,b) => a-b);
-      micBase = samples[Math.floor(samples.length*0.6)] || 0.02;
+      micFloor = samples[Math.floor(samples.length*0.5)] || 0.02;
+      markMeter();
       res();
     }, 1200);
   });
@@ -1544,12 +1610,47 @@ function rawLevel(){
   for(let i=0;i<micBuf.length;i++){ const v=(micBuf[i]-128)/128; sum += v*v; }
   return Math.sqrt(sum/micBuf.length);
 }
+
+/* How loud counts as a shout has to be relative, not a fixed number.
+   A quiet gallery and a gallery with forty children in it differ by more
+   than a child's voice does, so the floor is tracked continuously and the
+   trigger sits a multiple above whatever the room is doing right now. */
+let micFloor = 0.02;
+let micSens = 1.9;          // the slider moves this
+const MIC_MIN = 0.012;      // absolute floor, so silence never triggers
+
+function micUpdate(raw){
+  // falls quickly toward quiet, rises very slowly, so one shout cannot
+  // drag the baseline up and lock you out of your own next shout
+  if(raw < micFloor*1.5) micFloor = micFloor*0.97  + raw*0.03;   // settles quickly toward quiet
+  else                   micFloor = micFloor*0.993 + raw*0.007;  // climbs when the hall fills up
+  micFloor = Math.max(0.004, micFloor);
+}
+/* A single noisy frame is not a shout. In a hall full of children the
+   background alone spikes past any threshold now and then, so the level
+   has to hold for two frames running before it counts. */
+let micHold = 0;
+function isLoud(raw){
+  const over = raw > Math.max(MIC_MIN, micFloor*micSens);
+  micHold = over ? micHold + 1 : 0;
+  return micHold >= 2;
+}
+
+/* 0 to 1 for the meter, where 1 is comfortably past the trigger */
 function level(){
-  if(micOn){
-    const over = rawLevel() - micBase*1.9;
-    return Math.max(0, Math.min(1, over/0.16));
-  }
-  return holding ? 1 : 0;
+  if(!micOn) return holding ? 1 : 0;
+  const raw = rawLevel();
+  micUpdate(raw);
+  const trig = Math.max(MIC_MIN, micFloor*micSens);
+  return Math.max(0, Math.min(1, raw / (trig*1.6)));
+}
+function loudNow(){
+  if(!micOn) return holding;
+  return isLoud(rawLevel());
+}
+function markMeter(){
+  const el = $('gMark');
+  if(el) el.style.left = Math.round(100/1.6) + '%';   // where the trigger sits on the bar
 }
 
 function addBump(x){
@@ -1591,7 +1692,7 @@ function gLoop(now){
   const lv = level();
   $('gMeter').style.width = Math.round(lv*100) + '%';
 
-  const loud = lv > JUMP.trigger;
+  const loud = loudNow();
   // On the ground any shout hops, so a child who screams non-stop keeps bouncing.
   // In the air only a fresh shout gives the second push, and holding the shout
   // while still rising softens gravity, so a longer scream jumps higher.
@@ -1733,7 +1834,10 @@ function leaveGame(){
 
 /* tap to jump when there is no microphone */
 ['pointerdown','touchstart'].forEach(e =>
-  $('game') && $('game').addEventListener(e, () => { holding = true; }, {passive:true}));
+  $('game') && $('game').addEventListener(e, () => {
+    holding = true;
+    if(micCtx && micCtx.state === 'suspended') micCtx.resume();
+  }, {passive:true}));
 ['pointerup','pointercancel','touchend','touchcancel'].forEach(e =>
   document.addEventListener(e, () => { holding = false; }, {passive:true}));
 window.addEventListener('resize', () => { if($('game').classList.contains('on')) fitCanvas(); });
@@ -2116,6 +2220,21 @@ $('backName').addEventListener('click', () => show('mode'));
 $('modeBack').addEventListener('click', () => { $('nameInput').value=''; show('start'); });
 $('modeQuiz').addEventListener('click', () => show('pick'));
 $('modeGame').addEventListener('click', openGame);
+$('gSens').addEventListener('input', e => {
+  micSens = Number(e.target.value)/100;
+  $('gMicState').textContent = `Sensitivity ${micSens.toFixed(2)}\u00d7 the room's own noise.`;
+});
+$('gRecal').addEventListener('click', async () => {
+  if(!micOn){ $('gMicState').textContent = 'Microphone is not on yet.'; return; }
+  $('gMicState').textContent = 'Listening to the room, stay quiet for a second\u2026';
+  await calibrate();
+  $('gMicState').textContent = 'Done. Say anything and the bar should pass the white line.';
+});
+$('gMicBtn').addEventListener('click', async () => {
+  $('gMicState').textContent = 'Asking the browser\u2026';
+  stopMic();
+  await initMic();
+});
 $('modeBulbs').addEventListener('click', openBulbs);
 $('modePuzzle').addEventListener('click', puzOpen);
 $('modeClock').addEventListener('click', clockOpen);
