@@ -328,28 +328,6 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 
 
 
-/* ---- Clock tower ---- */
-.clocks{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:clamp(9px,1.4vw,15px)}
-.clockcard{background:var(--panel);border-radius:22px;padding:16px 18px;display:flex;flex-direction:column;gap:9px}
-.clockcard h4{font-family:var(--display);font-weight:700;font-size:clamp(15px,2vw,19px)}
-.clockcard .face{min-height:clamp(96px,15vh,140px);display:flex;align-items:center;justify-content:center;
-  border-radius:16px;background:var(--deep-2);padding:11px;overflow:hidden}
-.clockcard .face svg{width:100%;height:auto;max-height:clamp(96px,15vh,140px)}
-.clockcard p{color:var(--mute);font-size:clamp(11px,1.4vw,14px);line-height:1.45}
-.digits{font-family:var(--display);font-weight:800;font-size:clamp(26px,4.4vw,42px);line-height:1;letter-spacing:.02em}
-.mono2{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:clamp(13px,1.8vw,18px);
-  line-height:1.6;text-align:center;word-break:break-all}
-.swatches{display:flex;gap:9px;width:100%;height:100%;align-items:stretch}
-.swatch{flex:1;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
-  padding-bottom:6px;font-size:10px;font-weight:700;color:rgba(0,0,0,.55);min-height:70px}
-.blinker{animation:tick 1s steps(1,end) infinite}
-@keyframes tick{0%,50%{opacity:1}50.01%,100%{opacity:.35}}
-@media (prefers-reduced-motion:reduce){.blinker{animation:none}}
-.elrow{display:flex;gap:9px;justify-content:center;align-items:center;flex-wrap:wrap}
-.elbox{border:2px solid var(--line);border-radius:11px;padding:7px 11px;text-align:center;min-width:54px}
-.elbox b{display:block;font-family:var(--display);font-weight:800;font-size:clamp(18px,2.6vw,26px);color:var(--amber)}
-.elbox i{font-style:normal;font-size:9px;color:var(--mute);display:block}
-
 /* thank you */
 .thanksimg{width:clamp(120px,20vh,210px);margin:0 auto;animation:bob 4.5s ease-in-out infinite}
 #thanksTitle{font-size:clamp(40px,8vw,86px)}
@@ -462,12 +440,6 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
         <span>Ten questions about the exhibit in front of you. Points for right answers.</span>
         <img src="" alt="" id="modeQuizImg">
       </button>
-      <button class="mode" id="modeClock">
-        <span class="age">Everyone</span>
-        <b>The Clock Tower</b>
-        <span>Six clocks showing this exact moment &mdash; in colour, in elements, in Morse, backwards, and in kilometres travelled.</span>
-        <img src="" alt="" id="modeClockImg">
-      </button>
       <button class="mode" id="modePuzzle">
         <span class="age">Take your time</span>
         <b>Zinion Puzzle</b>
@@ -488,14 +460,6 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
       </button>
     </div>
     <button class="ghost" id="modeBack">Not me &mdash; change name</button>
-  </section>
-
-  <!-- CLOCK TOWER -->
-  <section id="clocktower" class="screen scrollable">
-    <h2 class="title">The Clock Tower</h2>
-    <p class="sub">Six clocks, all telling you exactly the same time right now. Only one of them is easy to read.</p>
-    <div class="clocks" id="clockGrid"></div>
-    <div class="btnrow"><button class="ghost" id="clockBack" style="align-self:auto">Back</button></div>
   </section>
 
   <!-- SCREAM GAME -->
@@ -680,7 +644,9 @@ const ZONES = [
   {id:"youq",     name:"All About You",       tag:"Your body, your planet, your name",
    about:"Your own body, the ground under it, and the codes a name can be written in \u2014 all measured in numbers."},
   {id:"road",     name:"Traffic",         tag:"Helmets, reactions and stopping",
-   about:"What actually protects you on a road, and what happens to a person's reactions when they are tired, distracted or drunk."}
+   about:"What actually protects you on a road, and what happens to a person's reactions when they are tired, distracted or drunk."},
+  {id:"clock",    name:"The Clock Tower",  tag:"Time, and the odd ways we count it",
+   about:"Why an hour has sixty minutes, why clocks turn the way they do, and what a second is actually measured against."}
 ];
 
 /* Drawn artwork \u2014 no image files, works offline. */
@@ -740,7 +706,12 @@ road:`<svg viewBox="0 0 120 78" xmlns="http://www.w3.org/2000/svg" role="img" ar
 <path class="s a" d="M36 40h32"/>
 <path class="s a" d="M34 52h36a4 4 0 0 1 0 8H38a4 4 0 0 1-4-4z"/>
 <path class="s" d="M96 8v12M96 30v12M96 52v12"/>
-<path class="s" d="M84 70h24"/></svg>`
+<path class="s" d="M84 70h24"/></svg>`,
+clock:`<svg viewBox="0 0 120 78" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A clock face">
+<circle class="s" cx="60" cy="39" r="30"/>
+<path class="s" d="M60 39V20M60 39l14 9"/>
+<circle class="f" cx="60" cy="39" r="3"/>
+<path class="s a" d="M60 5v5M60 68v5M91 39h5M24 39h5"/></svg>`
 };
 
 /* =====================================================================
@@ -770,7 +741,7 @@ harsh:"data:image/webp;base64,UklGRmhDAABXRUJQVlA4WAoAAAAwAAAABQEAfgEASUNDUMgBAA
 /* Which Zinion hosts which gallery. Swap any name to reassign. */
 const HOST = {
   cymatics:"argon", rain:"niki", yoga:"tropido",
-  raga:"stephen",  scale:"harsh", wind:"harsh", youq:"stephen", road:"harsh"
+  raga:"stephen",  scale:"harsh", wind:"harsh", youq:"stephen", road:"harsh", clock:"argon"
 };
 const HOST_NAME = {tropido:"Tropido", niki:"Niki", stephen:"Stephen", argon:"Argon", harsh:"Harsh"};
 
@@ -1047,7 +1018,47 @@ const QUESTIONS = [
 {zone:"road",q:"Which of these makes the biggest difference to whether you walk away from a crash?",
  options:["Riding a newer bike","Wearing a certified helmet, fastened","Knowing the road well","Riding in daylight"],answer:1,
  explain:"Familiar roads and good light help, but the helmet is the one that is doing something at the moment it matters. It is also the only one entirely within your control every single time.",
- wonder:"What else about your journey is fully within your control?"}
+ wonder:"What else about your journey is fully within your control?"},
+{zone:"clock",q:"Why does an hour have 60 minutes rather than 100?",
+ options:["It divides neatly by many numbers","Because of the Moon","A French decision","Nobody knows"],answer:0,
+ explain:"The Babylonians counted in sixties, and 60 splits evenly into halves, thirds, quarters, fifths, sixths, tenths and more. Hard to improve on before calculators.",
+ wonder:"What would a hundred-minute hour do to the way you split up a day?"},
+{zone:"clock",q:"Why do clock hands go the way they do?",
+ options:["A rule made by clockmakers","A sundial's shadow moves that way north of the equator","To match the stars","It was chosen at random"],answer:1,
+ explain:"Mechanical clocks copied the sundial, and in the northern hemisphere the shadow sweeps that way. Built first in the southern hemisphere, clocks would very likely run the other way.",
+ wonder:"So which way does a sundial's shadow move in Australia?"},
+{zone:"clock",q:"What is one second actually measured against today?",
+ options:["The Earth's spin","A swinging pendulum","The vibration of a caesium atom","The Sun crossing the sky"],answer:2,
+ explain:"A fixed number of oscillations of a caesium atom. The Earth's spin turned out to be slightly irregular, so it was retired as the reference.",
+ wonder:"What does it mean that our most reliable clock is a single atom?"},
+{zone:"clock",q:"How long does Earth take to spin once relative to the distant stars?",
+ options:["Exactly 24 hours","About 23 hours 56 minutes","About 25 hours","About 12 hours"],answer:1,
+ explain:"About 23 hours 56 minutes. The extra four minutes to reach 24 hours is Earth catching up with its own movement around the Sun.",
+ wonder:"So which of the two is the day your clock is actually keeping?"},
+{zone:"clock",q:"In 12 hours, how many times do the hour and minute hands sit exactly on top of each other?",
+ options:["12 times","11 times","24 times","10 times"],answer:1,
+ explain:"Eleven. They meet just after 1:05, 2:10 and so on, but never at 11 o'clock \u2014 the next meeting is 12 itself.",
+ wonder:"Why does one meeting go missing?"},
+{zone:"clock",q:"India runs on one time zone for the whole country. What is its offset?",
+ options:["Five hours ahead of UTC","Five and a half hours ahead","Six hours ahead","It varies by state"],answer:1,
+ explain:"IST is five and a half hours ahead of UTC \u2014 one of a handful of half-hour zones in the world, set on a line near Mirzapur.",
+ wonder:"What would change in Kohima and in Dwarka if India had two zones?"},
+{zone:"clock",q:"Which of these years is NOT a leap year?",
+ options:["2000","2020","1900","2024"],answer:2,
+ explain:"1900 is not. A century year is only a leap year if it divides by 400, which is why 2000 was and 1900 was not.",
+ wonder:"Why does the calendar need a rule this fiddly at all?"},
+{zone:"clock",q:"The Caf\u00e9 Wall illusion makes rows of tiles appear to slope. What is actually true of them?",
+ options:["They really do slope","They are perfectly parallel","They curve slightly","They move very slowly"],answer:1,
+ explain:"Perfectly parallel. The staggered tiles and the mortar line between them fool the edge-detecting parts of your visual system. Knowing this does not stop you seeing it.",
+ wonder:"What else might your eyes be inventing right now?"},
+{zone:"clock",q:"If a clock showed the time as element symbols by atomic number, what would 26 be?",
+ options:["Iron","Copper","Silver","Neon"],answer:0,
+ explain:"Iron, atomic number 26. Every element has a number telling you how many protons sit in its nucleus, so any number can be written as a symbol.",
+ wonder:"What would your age look like written as an element?"},
+{zone:"clock",q:"Earth moves around the Sun at roughly what speed?",
+ options:["About 3 km per second","About 30 km per second","About 300 km per second","About 3,000 km per second"],answer:1,
+ explain:"About 30 kilometres every second \u2014 near enough 1,800 km in the time it takes to read this question.",
+ wonder:"Why has nobody ever felt it?"}
 ];
 
 /* ================== SETTINGS ================== */
@@ -1090,13 +1101,12 @@ let player='', zoneId=null, advanceTimer=null, tickTimer=null;
 
 function clearTimers(){ clearTimeout(advanceTimer); advanceTimer=null; clearInterval(tickTimer); tickTimer=null; }
 function show(n){
-  ['start','mode','pick','quiz','game','bulbs','puzzle','clocktower','end','thanks','dash'].forEach(s => $(s).classList.toggle('on', s===n));
+  ['start','mode','pick','quiz','game','bulbs','puzzle','end','thanks','dash'].forEach(s => $(s).classList.toggle('on', s===n));
   $('hostwrap').classList.toggle('hide', n !== 'quiz' && n !== 'end');
   $('clock').classList.toggle('hide', n !== 'quiz');
   $('drift').style.opacity = (n === 'start' || n === 'mode' || n === 'pick' || n === 'thanks') ? '1' : '0';
   if(n !== 'bulbs' && typeof bulbClearTimers === 'function') bulbClearTimers();
   if(n !== 'game' && typeof leaveGame === 'function') leaveGame();
-  if(n !== 'clocktower' && typeof clockLeave === 'function') clockLeave();
 }
 function shuffle(a){ const b=a.slice(); for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];} return b; }
 function clean(s){ return s.replace(/[<>]/g,'').trim().slice(0,18); }
@@ -1165,7 +1175,6 @@ function goPick(){
   $('modeGameImg').src = MASCOT.niki;
   $('modeBulbsImg').src = MASCOT.argon;
   $('modePuzzleImg').src = MASCOT.tropido;
-  $('modeClockImg').src = MASCOT.argon;
   show('mode');
 }
 
@@ -2095,109 +2104,6 @@ function puzOpen(){
 
 
 
-/* =====================================================================
-   THE CLOCK TOWER
-   Six ways of showing the same instant. Every one reads the real
-   system clock, so they always agree with each other.
-   ===================================================================== */
-const EL_SYM = ['n','H','He','Li','Be','B','C','N','O','F','Ne','Na','Mg','Al','Si','P','S','Cl','Ar','K',
- 'Ca','Sc','Ti','V','Cr','Mn','Fe','Co','Ni','Cu','Zn','Ga','Ge','As','Se','Br','Kr','Rb','Sr','Y','Zr',
- 'Nb','Mo','Tc','Ru','Rh','Pd','Ag','Cd','In','Sn','Sb','Te','I','Xe','Cs','Ba','La','Ce','Pr','Nd'];
-const MORSE_D = {'0':'-----','1':'.----','2':'..---','3':'...--','4':'....-',
- '5':'.....','6':'-....','7':'--...','8':'---..','9':'----.'};
-let clockTimer = null;
-
-const pad = n => String(n).padStart(2,'0');
-
-function clockTower(){
-  const d = new Date();
-  const h = d.getHours(), m = d.getMinutes(), sec = d.getSeconds();
-  const g = $('clockGrid');
-  if(!g) return;
-
-  /* 1. colour blink — hour, minute and second each as a colour, blinking once a second */
-  const hue = x => `hsl(${Math.round(x*360)} 70% 58%)`;
-  const colour = `<div class="swatches">
-     <div class="swatch blinker" style="background:${hue(h/24)}">HOUR ${pad(h)}</div>
-     <div class="swatch blinker" style="background:${hue(m/60)}">MIN ${pad(m)}</div>
-     <div class="swatch blinker" style="background:${hue(sec/60)}">SEC ${pad(sec)}</div></div>`;
-
-  /* 2. illusion — a Café Wall pattern behind ordinary hands. The grey rows are parallel. */
-  let rows = '';
-  for(let r=0;r<8;r++){
-    const off = (r%2 ? 7 : 0) + (r%4 < 2 ? 3 : 0);
-    for(let c=-1;c<9;c++){
-      rows += `<rect x="${c*14+off}" y="${r*14}" width="7" height="14" fill="#EAF3F2"/>`;
-    }
-  }
-  const illusion = `<svg viewBox="0 0 112 112">
-    <g opacity=".55">${rows}</g>
-    <circle cx="56" cy="56" r="40" fill="#123A48" stroke="#2C6377" stroke-width="2"/>
-    ${hand(56,56,30,(m*6+sec*0.1),'#EAF3F2',3)}
-    ${hand(56,56,20,((h%12)*30+m*0.5),'#F2A63B',4)}
-    ${hand(56,56,34,sec*6,'#E2705F',1.5)}
-    <circle cx="56" cy="56" r="3" fill="#F2A63B"/></svg>`;
-
-  /* 3. chemistry — each number replaced by the element with that atomic number */
-  const el = n => EL_SYM[n] ? `<div class="elbox"><b>${EL_SYM[n]}</b><i>${n}</i></div>` :
-                              `<div class="elbox"><b>${n}</b><i>&mdash;</i></div>`;
-  const chem = `<div class="elrow">${el(h)}${el(m)}${el(sec)}</div>`;
-
-  /* 4. reverse — hands run anticlockwise and the dial is mirrored */
-  let marks = '';
-  for(let i=0;i<12;i++){
-    const a = (i*30) * Math.PI/180;
-    marks += `<text x="${56 + Math.sin(-a)*31}" y="${56 - Math.cos(a)*31 + 4}" fill="#9EC0C6"
-      font-size="9" text-anchor="middle">${i===0?12:i}</text>`;
-  }
-  const reverse = `<svg viewBox="0 0 112 112">
-    <circle cx="56" cy="56" r="42" fill="#123A48" stroke="#2C6377" stroke-width="2"/>${marks}
-    ${hand(56,56,28,-(m*6+sec*0.1),'#EAF3F2',3)}
-    ${hand(56,56,19,-((h%12)*30+m*0.5),'#F2A63B',4)}
-    ${hand(56,56,32,-sec*6,'#E2705F',1.5)}
-    <circle cx="56" cy="56" r="3" fill="#F2A63B"/></svg>`;
-
-  /* 5. space — how far we have moved since midnight, at real orbital speeds */
-  const sinceMid = h*3600 + m*60 + sec;
-  const orbitKm = sinceMid * 29.78;      // Earth around the Sun
-  const galKm   = sinceMid * 230;        // the Sun around the galaxy
-  const space = `<div style="text-align:center">
-      <div class="digits" style="color:var(--amber)">${Math.round(orbitKm).toLocaleString('en-IN')} km</div>
-      <div style="color:var(--mute);font-size:12px;margin-top:5px">around the Sun since midnight</div>
-      <div class="digits" style="font-size:clamp(18px,2.6vw,24px);margin-top:9px">${Math.round(galKm).toLocaleString('en-IN')} km</div>
-      <div style="color:var(--mute);font-size:12px;margin-top:3px">through the galaxy since midnight</div></div>`;
-
-  /* 6. morse */
-  const morseOf = str => [...str].map(c => MORSE_D[c] || '/').join(' ');
-  const morse = `<div class="mono2">
-      ${morseOf(pad(h))}<br><span style="color:var(--amber)">${morseOf(pad(m))}</span><br>${morseOf(pad(sec))}</div>`;
-
-  const cards = [
-    ['Colour clock', colour, 'Hour, minute and second each become a colour on the same scale, and blink once a second. Learn the scale and you can read the time without a single number.'],
-    ['Illusion clock', illusion, 'The grey rows behind the dial are perfectly parallel and perfectly straight. Your eye insists they slope. It is called the Caf\u00e9 Wall illusion.'],
-    ['Chemistry clock', chem, 'Every number is swapped for the element with that atomic number. Right now it is reading ' + (EL_SYM[h]||h) + ', ' + (EL_SYM[m]||m) + ', ' + (EL_SYM[sec]||sec) + '.'],
-    ['Reverse clock', reverse, 'The same time, with the dial mirrored and the hands running anticlockwise. Watch how hard it is to read something you have read every day of your life.'],
-    ['Space clock', space, 'Earth moves round the Sun at about 29.8 km every second, and the Sun carries us through the galaxy at about 230 km a second. This is how far you have gone since midnight.'],
-    ['Morse clock', morse, 'Hours, minutes and seconds in Morse code, one line each. The minutes are picked out in amber.']
-  ];
-  g.innerHTML = cards.map(c =>
-    `<div class="clockcard"><h4>${c[0]}</h4><div class="face">${c[1]}</div><p>${c[2]}</p></div>`).join('');
-}
-
-function hand(cx, cy, len, deg, colour, width){
-  const a = (deg - 90) * Math.PI/180;
-  return `<line x1="${cx}" y1="${cy}" x2="${cx + Math.cos(a)*len}" y2="${cy + Math.sin(a)*len}"
-    stroke="${colour}" stroke-width="${width}" stroke-linecap="round"/>`;
-}
-
-function clockOpen(){
-  show('clocktower');
-  clockTower();
-  clearInterval(clockTimer);
-  clockTimer = setInterval(clockTower, 1000);
-}
-function clockLeave(){ clearInterval(clockTimer); clockTimer = null; }
-
 /* ---------- idle reset ---------- */
 let idleTimer;
 function resetIdle(){
@@ -2237,8 +2143,6 @@ $('gMicBtn').addEventListener('click', async () => {
 });
 $('modeBulbs').addEventListener('click', openBulbs);
 $('modePuzzle').addEventListener('click', puzOpen);
-$('modeClock').addEventListener('click', clockOpen);
-$('clockBack').addEventListener('click', () => { clockLeave(); show('mode'); });
 $('puzShuffle').addEventListener('click', () => puzBuild(true));
 $('puzBack').addEventListener('click', () => show('mode'));
 document.querySelectorAll('.puzsize').forEach(b =>
