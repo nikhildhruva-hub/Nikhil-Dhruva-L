@@ -328,6 +328,27 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 
 
 
+
+/* ---- Wind Tunnel ---- */
+.windwrap{position:relative;border-radius:22px;overflow:hidden;border:2px solid var(--line);background:#0E2B36}
+#windCanvas{display:block;width:100%;height:clamp(280px,52vh,500px)}
+.whud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;
+  gap:14px;padding:12px 16px;pointer-events:none}
+.whud .lab{color:var(--mute);font-size:clamp(10px,1.3vw,13px)}
+.whud b{font-family:var(--display);font-weight:800;font-size:clamp(19px,3vw,30px);display:block;line-height:1}
+.fanbar{width:clamp(100px,26%,210px);height:13px;border-radius:99px;background:rgba(255,255,255,.16);overflow:hidden}
+.fanbar i{display:block;height:100%;width:100%;background:var(--amber);border-radius:99px;transition:width .08s linear}
+.fanbar.low i{background:var(--coral)}
+.wover{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;text-align:center;padding:20px;background:rgba(8,32,42,.92);z-index:5}
+.wover.on{display:flex}
+.wover h3{font-family:var(--display);font-weight:800;font-size:clamp(24px,4.6vw,44px);line-height:1.05}
+.wover p{color:var(--mute);font-size:clamp(13px,1.8vw,18px);max-width:36ch;line-height:1.5}
+.fanstr{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.fanbtn{border:2px solid var(--line);color:var(--mute);border-radius:999px;padding:9px 18px;
+  font-weight:600;font-size:clamp(12px,1.5vw,15px);transition:all .2s}
+.fanbtn.on{border-color:var(--amber);color:var(--amber);background:rgba(242,166,59,.1)}
+
 /* thank you */
 .thanksimg{width:clamp(120px,20vh,210px);margin:0 auto;animation:bob 4.5s ease-in-out infinite}
 #thanksTitle{font-size:clamp(40px,8vw,86px)}
@@ -440,6 +461,12 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
         <span>Ten questions about the exhibit in front of you. Points for right answers.</span>
         <img src="" alt="" id="modeQuizImg">
       </button>
+      <button class="mode" id="modeWind">
+        <span class="age">Everyone</span>
+        <b>Wind Tunnel</b>
+        <span>Hold to run the fan and float a balloon through the gaps. The fan runs out, so use it in bursts.</span>
+        <img src="" alt="" id="modeWindImg">
+      </button>
       <button class="mode" id="modePuzzle">
         <span class="age">Take your time</span>
         <b>Zinion Puzzle</b>
@@ -460,6 +487,35 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
       </button>
     </div>
     <button class="ghost" id="modeBack">Not me &mdash; change name</button>
+  </section>
+
+  <!-- WIND TUNNEL -->
+  <section id="wind" class="screen">
+    <div class="fanstr">
+      <button class="fanbtn on" data-f="gentle">Gentle fan</button>
+      <button class="fanbtn" data-f="strong">Strong fan</button>
+    </div>
+    <div class="windwrap">
+      <canvas id="windCanvas"></canvas>
+      <div class="whud">
+        <div>
+          <span class="lab" id="wLevel">Level 1</span>
+          <b id="wGates">0 / 5</b>
+          <span class="lab" id="wBest"></span>
+        </div>
+        <div style="text-align:right">
+          <span class="lab">Fan</span>
+          <div class="fanbar" id="wFanBar"><i id="wFan"></i></div>
+        </div>
+      </div>
+      <div class="wover on" id="wOver">
+        <h3 id="wOverTitle">Wind Tunnel</h3>
+        <p id="wOverText">Hold anywhere to run the fan. Air pushes the balloon up and pushes it along faster. Let go and it sinks, and slows down &mdash; which is how you line up a gap.</p>
+        <button class="big-btn" id="wStart">Start level 1</button>
+      </div>
+    </div>
+    <p class="footnote">The fan runs out if you hold it too long. Let it build back up.</p>
+    <div class="btnrow"><button class="ghost" id="windBack" style="align-self:auto">Back</button></div>
   </section>
 
   <!-- SCREAM GAME -->
@@ -1087,6 +1143,7 @@ function store(key, fallback){
       localStorage.removeItem(KEY_GAME);
       localStorage.removeItem(KEY_BULB);
       localStorage.removeItem(KEY_PUZ);
+      localStorage.removeItem(KEY_WIND);
     }
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : fallback;
@@ -1101,12 +1158,13 @@ let player='', zoneId=null, advanceTimer=null, tickTimer=null;
 
 function clearTimers(){ clearTimeout(advanceTimer); advanceTimer=null; clearInterval(tickTimer); tickTimer=null; }
 function show(n){
-  ['start','mode','pick','quiz','game','bulbs','puzzle','end','thanks','dash'].forEach(s => $(s).classList.toggle('on', s===n));
+  ['start','mode','pick','quiz','game','bulbs','puzzle','wind','end','thanks','dash'].forEach(s => $(s).classList.toggle('on', s===n));
   $('hostwrap').classList.toggle('hide', n !== 'quiz' && n !== 'end');
   $('clock').classList.toggle('hide', n !== 'quiz');
   $('drift').style.opacity = (n === 'start' || n === 'mode' || n === 'pick' || n === 'thanks') ? '1' : '0';
   if(n !== 'bulbs' && typeof bulbClearTimers === 'function') bulbClearTimers();
   if(n !== 'game' && typeof leaveGame === 'function') leaveGame();
+  if(n !== 'wind' && typeof windLeave === 'function') windLeave();
 }
 function shuffle(a){ const b=a.slice(); for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];} return b; }
 function clean(s){ return s.replace(/[<>]/g,'').trim().slice(0,18); }
@@ -1175,6 +1233,7 @@ function goPick(){
   $('modeGameImg').src = MASCOT.niki;
   $('modeBulbsImg').src = MASCOT.argon;
   $('modePuzzleImg').src = MASCOT.tropido;
+  $('modeWindImg').src = MASCOT.harsh;
   show('mode');
 }
 
@@ -2104,6 +2163,215 @@ function puzOpen(){
 
 
 
+
+/* =====================================================================
+   WIND TUNNEL — hold to run the fan. Moving air lifts the balloon and
+   pushes it along; let go and it sinks and slows. The fan has a limit,
+   so it has to be used in bursts rather than held down.
+   ===================================================================== */
+const KEY_WIND = 'parsec_wf_wind_best';
+
+/* Two fan strengths. Lift stays a fixed multiple of gravity and the
+   recharge always sustains the duty cycle hovering needs \u2014 otherwise
+   staying up becomes impossible however skilled the player is. */
+const FANS = {
+  gentle: {mult:2.1, drain:22, recharge:24},
+  strong: {mult:2.6, drain:26, recharge:22}
+};
+let fanKind = 'gentle';
+
+function windLevel(n){
+  const f = FANS[fanKind];
+  const gravity = 250 + 10*(n-1);
+  return {
+    gravity, lift: gravity*f.mult, vyMax:150,
+    vxMin: 40 + 3*(n-1), vxMax: 100 + 7*(n-1), accel:40, drag:50,
+    drain: f.drain, recharge: f.recharge,
+    gap: Math.max(145, 220 - 9*(n-1)),
+    every: Math.max(300, 420 - 16*(n-1)),
+    target: 4 + n
+  };
+}
+
+let wCv, wCtx, wRaf = null, wRunning = false, wLast = 0;
+let wBall, wGates, wPower, wLevel, wL, wPassed, wHold = false;
+
+function windFit(){
+  const r = wCv.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  wCv.width = Math.round(r.width*dpr); wCv.height = Math.round(r.height*dpr);
+  wCtx.setTransform(dpr,0,0,dpr,0,0);
+  return {w:r.width, h:r.height};
+}
+function addGate(x, h){
+  wGates.push({x, gap:wL.gap, top: 40 + Math.random()*(h - wL.gap - 80), done:false});
+}
+function windSet(n){
+  wLevel = n; wL = windLevel(n);
+  const {w,h} = windFit();
+  wBall = {x: Math.max(56, w*0.16), y: h/2, vy:0, vx: wL.vxMin, r:16};
+  wGates = []; wPower = 100; wPassed = 0;
+  addGate(w + 120, h); addGate(w + 120 + wL.every, h);
+  $('wLevel').textContent = `Level ${n}`;
+  $('wGates').textContent = `0 / ${wL.target}`;
+  const best = Number(store(KEY_WIND, 0)) || 0;
+  $('wBest').textContent = best ? `Best today: level ${best}` : '';
+}
+function windStart(){
+  wRunning = true;
+  $('wOver').classList.remove('on');
+  windSet(1);
+  wLast = performance.now();
+  cancelAnimationFrame(wRaf);
+  wRaf = requestAnimationFrame(windLoop);
+}
+
+function windLoop(now){
+  if(!wRunning) return;
+  const dt = Math.min(0.034, (now - wLast)/1000);
+  wLast = now;
+  const r = wCv.getBoundingClientRect();
+  const w = r.width, h = r.height;
+
+  const fanning = wHold && wPower > 0.5;
+  if(fanning){
+    wPower = Math.max(0, wPower - wL.drain*dt);
+    wBall.vy -= wL.lift*dt;
+    wBall.vx = Math.min(wL.vxMax, wBall.vx + wL.accel*dt);
+  }else{
+    wPower = Math.min(100, wPower + wL.recharge*dt);
+    wBall.vx = Math.max(wL.vxMin, wBall.vx - wL.drag*dt);
+  }
+  $('wFan').style.width = wPower + '%';
+  $('wFanBar').classList.toggle('low', wPower < 25);
+
+  wBall.vy += wL.gravity*dt;
+  wBall.vy = Math.max(-wL.vyMax, Math.min(wL.vyMax, wBall.vy));
+  wBall.y += wBall.vy*dt;
+  if(wBall.y < wBall.r){ wBall.y = wBall.r; wBall.vy = 0; }
+  if(wBall.y > h - wBall.r) return windOver('It touched the ground.');
+
+  wGates.forEach(g => { g.x -= wBall.vx*dt; });
+  if(wGates.length && wGates[wGates.length-1].x < w - wL.every) addGate(w + 20, h);
+  wGates = wGates.filter(g => g.x > -50);
+
+  for(const g of wGates){
+    if(!g.done && g.x + 22 < wBall.x - wBall.r){
+      g.done = true; wPassed++;
+      $('wGates').textContent = `${wPassed} / ${wL.target}`;
+      if(wPassed >= wL.target) return windUp();
+    }
+    const nearX = wBall.x + wBall.r > g.x && wBall.x - wBall.r < g.x + 22;
+    if(nearX && (wBall.y - wBall.r < g.top || wBall.y + wBall.r > g.top + g.gap))
+      return windOver('Clipped the edge.');
+  }
+
+  windDraw(w, h, fanning);
+  wRaf = requestAnimationFrame(windLoop);
+}
+
+function windDraw(w, h, fanning){
+  const c = wCtx;
+  c.clearRect(0,0,w,h);
+  const sky = c.createLinearGradient(0,0,0,h);
+  sky.addColorStop(0,'#124454'); sky.addColorStop(1,'#0A2530');
+  c.fillStyle = sky; c.fillRect(0,0,w,h);
+
+  // the fan at the bottom left, and its airflow when running
+  const fx = 26, fy = h - 26;
+  c.strokeStyle = fanning ? '#F2A63B' : '#2C6377';
+  c.lineWidth = 3;
+  c.beginPath(); c.arc(fx, fy, 15, 0, Math.PI*2); c.stroke();
+  c.beginPath(); c.moveTo(fx, fy); c.lineTo(fx, fy-15);
+  c.moveTo(fx, fy); c.lineTo(fx+13, fy+7);
+  c.moveTo(fx, fy); c.lineTo(fx-13, fy+7); c.stroke();
+
+  if(fanning){
+    c.strokeStyle = 'rgba(242,166,59,.4)'; c.lineWidth = 2;
+    for(let i=0;i<4;i++){
+      const yy = wBall.y + 40 + i*22 + ((performance.now()/9 + i*30) % 22);
+      if(yy > h) continue;
+      c.beginPath(); c.moveTo(wBall.x - 16, yy); c.lineTo(wBall.x + 16, yy - 7); c.stroke();
+    }
+  }
+
+  wGates.forEach(g => {
+    c.fillStyle = '#17495A'; c.strokeStyle = '#2C6377'; c.lineWidth = 2;
+    roundRect(c, g.x, -12, 22, g.top + 12, 8); c.fill(); c.stroke();
+    roundRect(c, g.x, g.top + g.gap, 22, h - (g.top+g.gap) + 12, 8); c.fill(); c.stroke();
+    c.fillStyle = 'rgba(242,166,59,.5)';
+    c.fillRect(g.x+3, g.top-4, 16, 3);
+    c.fillRect(g.x+3, g.top+g.gap+1, 16, 3);
+  });
+
+  // the balloon
+  c.fillStyle = '#F2A63B';
+  c.beginPath(); c.ellipse(wBall.x, wBall.y, wBall.r, wBall.r*1.15, 0, 0, Math.PI*2); c.fill();
+  c.fillStyle = '#10222A';
+  c.beginPath(); c.moveTo(wBall.x-4, wBall.y+wBall.r*1.1);
+  c.lineTo(wBall.x+4, wBall.y+wBall.r*1.1); c.lineTo(wBall.x, wBall.y+wBall.r*1.5); c.closePath(); c.fill();
+}
+
+function windUp(){
+  wRunning = false;
+  cancelAnimationFrame(wRaf);
+  const best = Number(store(KEY_WIND, 0)) || 0;
+  if(wLevel > best) save(KEY_WIND, wLevel);
+  const next = wLevel + 1;
+  $('wOverTitle').textContent = `Level ${wLevel} cleared!`;
+  $('wOverText').textContent = next === 5
+    ? 'The gaps get narrow from here. Short bursts of fan, and let it sink between them.'
+    : 'Narrower gaps and faster air from here.';
+  $('wStart').textContent = `Start level ${next}`;
+  $('wStart').onclick = () => {
+    wRunning = true;
+    $('wOver').classList.remove('on');
+    windSet(next);
+    wLast = performance.now();
+    wRaf = requestAnimationFrame(windLoop);
+  };
+  $('wOver').classList.add('on');
+  say(`Level ${wLevel} cleared!`, 3000);
+}
+
+function windOver(why){
+  if(!wRunning) return;
+  wRunning = false;
+  cancelAnimationFrame(wRaf);
+  const best = Number(store(KEY_WIND, 0)) || 0;
+  if(wLevel > best) save(KEY_WIND, wLevel);
+  $('wBest').textContent = `Best today: level ${Math.max(best, wLevel)}`;
+  $('wOverTitle').textContent = why;
+  $('wOverText').textContent = wPassed === 0
+    ? 'Hold to lift, let go to sink. Letting go also slows you down, which gives you time to aim.'
+    : `Level ${wLevel}: ${wPassed} of ${wL.target} gaps. Short bursts beat holding it down \u2014 the fan runs out.`;
+  $('wStart').textContent = 'Try level 1 again';
+  $('wStart').onclick = windStart;
+  $('wOver').classList.add('on');
+}
+
+function windOpen(){
+  show('wind');
+  wCv = $('windCanvas'); wCtx = wCv.getContext('2d');
+  $('wOverTitle').textContent = 'Wind Tunnel';
+  $('wOverText').textContent = 'Hold anywhere to run the fan. Air pushes the balloon up and pushes it along faster. Let go and it sinks, and slows down \u2014 which is how you line up a gap.';
+  $('wStart').textContent = 'Start level 1';
+  $('wStart').onclick = windStart;
+  $('wOver').classList.add('on');
+  windFit(); windSet(1);
+  const r = wCv.getBoundingClientRect();
+  windDraw(r.width, r.height, false);
+}
+function windLeave(){ wRunning = false; cancelAnimationFrame(wRaf); wHold = false; }
+
+['pointerdown','touchstart'].forEach(e =>
+  $('wind') && $('wind').addEventListener(e, () => { wHold = true; }, {passive:true}));
+['pointerup','pointercancel','touchend','touchcancel'].forEach(e =>
+  document.addEventListener(e, () => { wHold = false; }, {passive:true}));
+document.addEventListener('keydown', e => { if(e.key === ' ' && $('wind').classList.contains('on')) wHold = true; });
+document.addEventListener('keyup',   e => { if(e.key === ' ') wHold = false; });
+window.addEventListener('resize', () => { if($('wind').classList.contains('on')) windFit(); });
+
 /* ---------- idle reset ---------- */
 let idleTimer;
 function resetIdle(){
@@ -2143,6 +2411,13 @@ $('gMicBtn').addEventListener('click', async () => {
 });
 $('modeBulbs').addEventListener('click', openBulbs);
 $('modePuzzle').addEventListener('click', puzOpen);
+$('modeWind').addEventListener('click', windOpen);
+$('windBack').addEventListener('click', () => { windLeave(); show('mode'); });
+document.querySelectorAll('.fanbtn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.fanbtn').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); fanKind = b.dataset.f;
+  if(!wRunning) windSet(1);
+}));
 $('puzShuffle').addEventListener('click', () => puzBuild(true));
 $('puzBack').addEventListener('click', () => show('mode'));
 document.querySelectorAll('.puzsize').forEach(b =>
@@ -2168,7 +2443,7 @@ $('boardBtn2').addEventListener('click', renderDash);
 $('dashBack').addEventListener('click', () => { player=''; $('nameInput').value=''; show('start'); });
 $('clearBtn').addEventListener('click', () => {
   if(confirm('Clear every score on the board? This cannot be undone.')){
-    save(KEY_PLAYERS, []); save(KEY_MISSES, {}); save(KEY_GAME, 0); save(KEY_BULB, 0); save(KEY_PUZ, {}); renderDash();
+    save(KEY_PLAYERS, []); save(KEY_MISSES, {}); save(KEY_GAME, 0); save(KEY_BULB, 0); save(KEY_PUZ, {}); save(KEY_WIND, 0); renderDash();
   }
 });
 </script>
