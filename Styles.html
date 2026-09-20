@@ -296,9 +296,9 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
   display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;
   gap:clamp(14px,2.4vw,28px);width:min(100%,860px);align-self:center;
 }
-.puzpick{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;flex:0 0 auto}
+.puzpick{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex:0 0 auto}
 .puzchar{
-  width:clamp(48px,8vw,96px);border-radius:16px;background:var(--panel);padding:6px;
+  width:clamp(40px,6.5vw,72px);border-radius:16px;background:var(--panel);padding:6px;
   border:2px solid transparent;transition:transform .15s,border-color .2s;
 }
 .puzchar img{width:100%;height:auto;display:block}
@@ -355,7 +355,7 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 @media (max-width:640px){
   .puzwrap{gap:10px}
   .puzpick{gap:6px}
-  .puzchar{width:clamp(36px,13vw,56px);border-radius:12px;padding:4px}
+  .puzchar{width:clamp(32px,10vw,44px);border-radius:12px;padding:4px}
   .puzstat{gap:14px}
   .puzdash{width:100%;order:3}
 }
