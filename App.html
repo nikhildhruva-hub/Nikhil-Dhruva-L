@@ -431,15 +431,26 @@ const QUESTIONS = [
  wonder:"Why has nobody ever felt it?"}
 ];
 
+/* Cymatics runs a cascade, hardest question first: Innovator → Solver → Seeker → Citizen.
+   Skipping a question drops to the next one down; answering any of them ends the round
+   and records the stage reached. Citizen has no skip — everyone lands somewhere. */
 const C2I_ROUNDS = {
   cymatics: [
-    { stage:"Citizen", type:"text", q:"What do you think is happening here.", minWords:8, allowSkip:true },
-    { stage:"Seeker", type:"text", q:"Why do you think the water is moving or what is making the water move.", minWords:12, allowSkip:true },
+    { stage:"Innovator", type:"text", q:"Where else could this be applied? Or how could this be made more efficient?", minWords:20, allowSkip:true },
     { stage:"Solver", type:"text", q:"Why does low frequency make the water more active.", minWords:15, allowSkip:true, keywords:["frequency","vibration","energy","low","water","active"] },
-    { stage:"Transition", type:"text", q:"What changed in the system when the frequency was reduced?", minWords:10, allowSkip:true },
-    { stage:"Transition", type:"text", q:"How do you know the movement is linked to vibration and not just to the water itself?", minWords:12, allowSkip:true },
-    { stage:"Innovator", type:"text", q:"Where else could this be applied? Or how could this be made more efficient?", minWords:20, allowSkip:true }
+    { stage:"Seeker", type:"mcq", q:"Why do you think the water is moving, or what is making the water move?",
+      options:["Vibration from sound passing through it","The water is slowly evaporating","Someone is stirring it by hand","It is reacting to light from above"],
+      answer:0, allowSkip:true,
+      explain:"Sound is a vibration. As it passes through the water, it keeps pushing and pulling the surface — and that constant push and pull is the movement you see.",
+      wonder:"If the sound stopped completely, how quickly do you think the water would settle?" },
+    { stage:"Citizen", type:"mcq", q:"What do you think is happening here?",
+      options:["The water is heating up from below","Sound vibration is making the water move in a pattern","A hidden magnet is pulling the water","The dish is shaking on its own"],
+      answer:1, allowSkip:false,
+      explain:"A speaker under the dish is vibrating the water at a set frequency. Where the water moves a lot and where it barely moves at all is what forms the pattern.",
+      wonder:"What do you think would happen if the frequency was changed?" }
   ],
+  /* The zones below are not currently offered in the gallery picker (only Cymatics is,
+     see ACTIVE_ZONES). Left in place, unconverted, for when they get the same treatment. */
   rain: [
     { stage:"Citizen", type:"text", q:"What do you think is happening here.", minWords:8, allowSkip:true },
     { stage:"Seeker", type:"text", q:"Why do you think the rain sound is being created inside the instrument?", minWords:12, allowSkip:true },
@@ -506,7 +517,9 @@ const C2I_ROUNDS = {
   ]
 };
 
-let c2iState = { unlocked:false, solved:false, transitionDone:false };
+/* Which Citizen/Seeker/Solver/Innovator stage the current player reached in the
+   cascade this round — recorded onto their entry in finish() for the dashboard. */
+let c2iReached = null;
 
 function isTextQuestion(item){ return item && item.type === 'text'; }
 
@@ -523,7 +536,7 @@ function evaluateC2IAnswer(item, value){
     const keys = item.keywords || [];
     const hitCount = keys.filter(k => text.toLowerCase().includes(k.toLowerCase())).length;
     if(hitCount >= 2 || text.toLowerCase().includes('low frequency') || text.toLowerCase().includes('vibration')){
-      return { pass:true, message:'Good explanation. The transition questions are now unlocked.' };
+      return { pass:true, message:'Good explanation.' };
     }
     return { pass:false, message:'Try linking the movement to frequency, vibration, and the energy being transferred through the water.' };
   }
@@ -535,6 +548,9 @@ function evaluateC2IAnswer(item, value){
   return { pass:true, message:'Thank you for sharing your observation.' };
 }
 
+/* Ends the cascade round right away, the way answering any stage should. */
+function endC2IRound(){ clearTimers(); finish(); }
+
 function submitTextAnswer(item){
   const answerBox = $('textAnswer');
   if(!answerBox) return;
@@ -545,36 +561,27 @@ function submitTextAnswer(item){
     return;
   }
 
-  if(item.stage === 'Solver'){
-    c2iState.solved = true;
-    c2iState.unlocked = true;
-    c2iState.transitionDone = true;
-  }
-
-  if(item.stage === 'Transition'){
-    c2iState.transitionDone = true;
-  }
-
-  if(item.stage === 'Innovator' && c2iState.transitionDone){
-    c2iState.unlocked = true;
-  }
+  c2iReached = item.stage;
+  right++;
+  score += POINTS_RIGHT;
+  paintScore();
 
   $('verdict').textContent = 'Response recorded.';
   $('verdict').className = 'verdict good';
   $('feedback').classList.add('on');
   $('explain').textContent = item.stage === 'Solver'
     ? 'Lower frequency means the water is being driven more strongly over time, so the movement becomes easier to see and more energetic.'
-    : item.stage === 'Transition'
-      ? 'The pattern changes because the vibration is changing, which alters how energy is transferred through the water.'
-      : 'Your idea is valuable. Keep building on the pattern you noticed.';
-  $('wonder').textContent = 'What would you test next?';
+    : 'Nice idea — ideas like this are exactly how a simple demonstration turns into a real application.';
+  $('wonder').textContent = item.stage === 'Solver'
+    ? 'What would happen if you kept lowering the frequency even further?'
+    : 'Which part of your idea would be hardest to actually build?';
 
   $('nextBtn').style.visibility = 'visible';
-  $('nextBtn').textContent = (idx === round.length - 1) ? 'See your score' : 'Next question';
+  $('nextBtn').textContent = 'See your score';
   $('nextBtn').focus({preventScroll:true});
   clearTimeout(advanceTimer);
   clearInterval(tickTimer);
-  advanceTimer = setTimeout(next, AUTO_ADVANCE_SEC * 1000);
+  advanceTimer = setTimeout(endC2IRound, AUTO_ADVANCE_SEC * 1000);
 }
 
 /* ================== SETTINGS ================== */
@@ -666,22 +673,28 @@ function react(good){
   say(pick[Math.floor(Math.random()*pick.length)], 2200);
 }
 
-/* zone picker */
+/* zone picker — only these galleries are offered for now. Add a zone id back in
+   here once its Citizen→Innovator cascade has been written, the way Cymatics's was. */
+const ACTIVE_ZONES = ['cymatics'];
+
 (function(){
   const wrap = $('zones');
   ZONES.forEach(z => {
-    if(!QUESTIONS.some(q => q.zone === z.id)) return;
+    if(!ACTIVE_ZONES.includes(z.id)) return;
+    if(!QUESTIONS.some(q => q.zone === z.id) && !C2I_ROUNDS[z.id]) return;
     const b = document.createElement('button');
     b.className = 'zone';
     b.innerHTML = `<b>${z.name}</b><i>${z.tag}</i>`;
     b.addEventListener('click', () => startRound(z.id));
     wrap.appendChild(b);
   });
-  const all = document.createElement('button');
-  all.className = 'zone all';
-  all.innerHTML = `<b>Mix of everything</b><i>Questions from across the floor</i>`;
-  all.addEventListener('click', () => startRound(null));
-  wrap.appendChild(all);
+  if(ACTIVE_ZONES.length > 1){
+    const all = document.createElement('button');
+    all.className = 'zone all';
+    all.innerHTML = `<b>Mix of everything</b><i>Questions from across the floor</i>`;
+    all.addEventListener('click', () => startRound(null));
+    wrap.appendChild(all);
+  }
 })();
 
 function goPick(){
@@ -697,7 +710,7 @@ function goPick(){
 function startRound(zid){
   clearTimers();
   zoneId = zid;
-  c2iState = { unlocked:false, solved:false, transitionDone:false };
+  c2iReached = null;
 
   if(C2I_ROUNDS[zid]){
     round = C2I_ROUNDS[zid].map(q => ({...q}));
@@ -737,39 +750,21 @@ function renderQuestion(){
   const stageKey = (item.stage || 'Citizen').toLowerCase();
   $('count').textContent = `Question ${idx+1} of ${round.length}`;
   $('fill').style.width = (idx / round.length * 100) + '%';
-  stageBadge.textContent = '';
-  stageBadge.className = 'stage-badge hidden';
   $('question').textContent = item.q;
   $('feedback').classList.remove('on');
   $('nextBtn').style.visibility = 'hidden';
   const box = $('opts');
   box.className = 'opts'; box.innerHTML = '';
 
+  if(item.stage){
+    stageBadge.textContent = item.stage;
+    stageBadge.className = 'stage-badge ' + stageKey;
+  }else{
+    stageBadge.textContent = '';
+    stageBadge.className = 'stage-badge hidden';
+  }
+
   if(isTextQuestion(item)){
-    const isLockedTransition = item.stage === 'Transition' && !c2iState.solved;
-    const isLockedInnovator = item.stage === 'Innovator' && !c2iState.transitionDone;
-
-    if(isLockedTransition || isLockedInnovator){
-      const notice = document.createElement('div');
-      notice.className = 'c2i-note';
-      notice.textContent = isLockedTransition
-        ? 'This question unlocks after a previous answer is completed.'
-        : 'This question can be skipped for now and revisited later.';
-      box.appendChild(notice);
-
-      const actions = document.createElement('div');
-      actions.className = 'c2i-actions';
-      const skip = document.createElement('button');
-      skip.className = 'opt alt';
-      skip.textContent = 'Skip';
-      skip.addEventListener('click', () => next());
-      actions.appendChild(skip);
-      box.appendChild(actions);
-      $('verdict').textContent = '';
-      $('verdict').className = 'verdict';
-      return;
-    }
-
     const notice = document.createElement('div');
     notice.className = 'c2i-note';
     notice.textContent = 'Type your response in the box below.';
@@ -813,6 +808,14 @@ function renderQuestion(){
     b.addEventListener('click', () => answer(i));
     box.appendChild(b);
   });
+
+  if(item.allowSkip){
+    const skip = document.createElement('button');
+    skip.className = 'opt alt';
+    skip.textContent = 'Skip';
+    skip.addEventListener('click', () => next());
+    box.appendChild(skip);
+  }
 
   if(TIMER_MODE === 'question') startClock();
   else if(TIMER_MODE === 'round') runClock();   // resume after the explanation pause
@@ -892,6 +895,8 @@ function answer(choice){
     save(KEY_MISSES, m);
   }
 
+  if(item.stage) c2iReached = item.stage;   // Citizen/Seeker in the cymatics cascade
+
   popScore(delta, isRight);
   react(isRight);
 
@@ -901,14 +906,14 @@ function answer(choice){
   $('wonder').textContent = item.wonder;
   $('feedback').classList.add('on');
 
-  const label = (idx === round.length-1) ? 'See your score' : 'Next question';
+  const label = (item.stage || idx === round.length-1) ? 'See your score' : 'Next question';
   const btn = $('nextBtn');
   btn.style.visibility = 'visible';
   btn.focus({preventScroll:true});
   let left = AUTO_ADVANCE_SEC;
   btn.textContent = `${label} (${left})`;
   tickTimer = setInterval(() => { left--; btn.textContent = left>0 ? `${label} (${left})` : label; }, 1000);
-  advanceTimer = setTimeout(next, AUTO_ADVANCE_SEC*1000);
+  advanceTimer = setTimeout(item.stage ? endC2IRound : next, AUTO_ADVANCE_SEC*1000);
 }
 
 function next(){ clearTimers(); idx++; if(idx >= round.length) finish(); else renderQuestion(); }
@@ -928,7 +933,8 @@ function finish(){
   $('tally').innerHTML =
     `<span>${right} right &middot; +${right*POINTS_RIGHT}</span>` +
     `<span>${wrong} wrong &middot; &minus;${wrong*Math.abs(POINTS_WRONG)}</span>` +
-    (attempted < round.length ? `<span>${round.length-attempted} unanswered</span>` : '');
+    (attempted < round.length ? `<span>${round.length-attempted} unanswered</span>` : '') +
+    (c2iReached ? `<span>Level reached: ${c2iReached}</span>` : '');
 
   say(score >= 0 ? 'Nice round!' : 'Come back for another go.', 5000);
 
@@ -939,7 +945,8 @@ function finish(){
     right: right,
     wrong: wrong,
     zone: z ? z.name : 'Mixed',
-    at: new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'})
+    at: new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'}),
+    c2iStage: c2iReached
   });
   save(KEY_PLAYERS, players);
 
@@ -966,6 +973,7 @@ function armReveals(){
     ...document.querySelectorAll('#stats > *'),
     ...document.querySelectorAll('#dash .sectitle'),
     ...document.querySelectorAll('#gcards > *'),
+    ...document.querySelectorAll('#c2iStats > *'),
     ...document.querySelectorAll('#board > *'),
     ...document.querySelectorAll('#scPanel > *')
   ];
@@ -1035,8 +1043,8 @@ function renderDash(){
     `<div class="stat"><b>${best}</b><span>highest score</span></div>` +
     `<div class="stat"><b>${busiest ? busiest[0] : '\u2014'}</b><span>busiest gallery</span></div>`;
 
-  /* gallery cards */
-  $('gcards').innerHTML = ZONES.map(z => {
+  /* gallery cards — only the galleries currently offered in the picker */
+  $('gcards').innerHTML = ZONES.filter(z => ACTIVE_ZONES.includes(z.id)).map(z => {
     const n = zoneCounts[z.name] || 0;
     const hk = HOST[z.id];
     return `<div class="gcard">
@@ -1047,6 +1055,13 @@ function renderDash(){
         <span class="gplays">${HOST_NAME[hk]} hosts &middot; ${n ? n + (n === 1 ? ' round today' : ' rounds today') : 'no rounds yet'}</span>
       </div></div>`;
   }).join('');
+
+  /* Citizen / Seeker / Solver / Innovator — how far each visitor got in the cascade */
+  const c2iCounts = { Citizen:0, Seeker:0, Solver:0, Innovator:0 };
+  all.forEach(p => { if(c2iCounts.hasOwnProperty(p.c2iStage)) c2iCounts[p.c2iStage]++; });
+  $('c2iStats').innerHTML = ['Citizen','Seeker','Solver','Innovator'].map(s =>
+    `<div class="stat"><b>${c2iCounts[s]}</b><span>${s}</span></div>`
+  ).join('');
 
   /* full list */
   board.innerHTML = '';
