@@ -292,10 +292,13 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 
 
 /* ---- Zinion Puzzle ---- */
-.puzwrap{display:flex;flex-direction:row;align-items:flex-start;gap:clamp(8px,2vw,20px)}
-.puzpick{display:flex;flex-direction:column;gap:8px;flex:0 0 auto}
+.puzwrap{
+  display:flex;flex-direction:row;align-items:center;justify-content:center;
+  gap:clamp(14px,2.4vw,28px);width:min(100%,620px);align-self:center;
+}
+.puzpick{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;flex:0 0 auto}
 .puzchar{
-  width:clamp(40px,7.5vw,72px);border-radius:16px;background:var(--panel);padding:6px;
+  width:clamp(48px,8vw,96px);border-radius:16px;background:var(--panel);padding:6px;
   border:2px solid transparent;transition:transform .15s,border-color .2s;
 }
 .puzchar img{width:100%;height:auto;display:block}
@@ -339,10 +342,10 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 .puzstat b{color:var(--pale);font-family:var(--display);font-weight:700;font-size:clamp(17px,2.3vw,22px)}
 .puzsay{font-family:var(--display);font-weight:700;font-size:clamp(15px,2.2vw,21px);min-height:1.5em;text-align:center}
 .puzsay.win{color:var(--amber)}
-#puzzle > .btnrow{justify-content:flex-start}
 @media (max-width:640px){
-  .puzwrap{gap:8px}
-  .puzchar{width:clamp(36px,13vw,52px);border-radius:12px;padding:4px}
+  .puzwrap{gap:10px}
+  .puzpick{gap:6px}
+  .puzchar{width:clamp(36px,13vw,56px);border-radius:12px;padding:4px}
   .puzstat{gap:14px}
 }
 
