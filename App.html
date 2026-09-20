@@ -440,12 +440,12 @@ const C2I_ROUNDS = {
     { stage:"Solver", type:"text", q:"Why does low frequency make the water more active.", minWords:15, allowSkip:true, keywords:["frequency","vibration","energy","low","water","active"] },
     { stage:"Seeker", type:"mcq", q:"Why do you think the water is moving, or what is making the water move?",
       options:["Vibration from sound passing through it","The water is slowly evaporating","Someone is stirring it by hand","It is reacting to light from above"],
-      answer:0, allowSkip:true,
+      allowSkip:true,
       explain:"Sound is a vibration. As it passes through the water, it keeps pushing and pulling the surface — and that constant push and pull is the movement you see.",
       wonder:"If the sound stopped completely, how quickly do you think the water would settle?" },
     { stage:"Citizen", type:"mcq", q:"What do you think is happening here?",
       options:["The water is heating up from below","Sound vibration is making the water move in a pattern","A hidden magnet is pulling the water","The dish is shaking on its own"],
-      answer:1, allowSkip:false,
+      allowSkip:false,
       explain:"A speaker under the dish is vibrating the water at a set frequency. Where the water moves a lot and where it barely moves at all is what forms the pattern.",
       wonder:"What do you think would happen if the frequency was changed?" }
   ],
@@ -594,7 +594,7 @@ const AUTO_ADVANCE_SEC = 4;
 /* Timer. TIMER_MODE: 'round' = one clock for the whole round,
    'question' = a fresh clock on every question, 'off' = no timer.
    The clock pauses while an explanation is on screen either way.   */
-const TIMER_MODE       = 'question';
+const TIMER_MODE       = 'off';
 const TIMER_SECONDS    = 60;
 const KEY_PLAYERS = 'parsec_wf_quiz_players';
 const KEY_MISSES  = 'parsec_wf_quiz_misses';
@@ -629,7 +629,7 @@ function clearTimers(){ clearTimeout(advanceTimer); advanceTimer=null; clearInte
 function show(n){
   ['start','mode','pick','quiz','game','bulbs','puzzle','wind','end','thanks','dash'].forEach(s => $(s).classList.toggle('on', s===n));
   $('hostwrap').classList.toggle('hide', n !== 'quiz' && n !== 'end');
-  $('clock').classList.toggle('hide', n !== 'quiz');
+  $('clock').classList.toggle('hide', n !== 'quiz' || TIMER_MODE === 'off');
   $('drift').style.opacity = (n === 'start' || n === 'mode' || n === 'pick' || n === 'thanks') ? '1' : '0';
   if(n !== 'bulbs' && typeof bulbClearTimers === 'function') bulbClearTimers();
   if(n !== 'game' && typeof leaveGame === 'function') leaveGame();
@@ -880,8 +880,34 @@ function answer(choice){
 
   locked = true;
   stopClock();
-  const isRight = choice === item.answer;
   $('opts').classList.add('locked');
+
+  if(item.stage){
+    // Citizen/Seeker in the cymatics cascade: there is no wrong answer here,
+    // every perspective is valid \u2014 just acknowledge it and explain what's really going on.
+    [...$('opts').children].forEach((b,i) => b.classList.add(i === choice ? 'correct' : 'dim'));
+    c2iReached = item.stage;
+    right++;
+    score += POINTS_RIGHT;
+    paintScore();
+    popScore(POINTS_RIGHT, true);
+    react(true);
+
+    $('verdict').textContent = 'Thanks for sharing your thinking \u2014 here is what is actually going on.';
+    $('verdict').className = 'verdict good';
+    $('explain').textContent = item.explain;
+    $('wonder').textContent = item.wonder;
+    $('feedback').classList.add('on');
+
+    const btn = $('nextBtn');
+    btn.style.visibility = 'visible';
+    btn.textContent = 'See your score';
+    btn.focus({preventScroll:true});
+    advanceTimer = setTimeout(endC2IRound, AUTO_ADVANCE_SEC*1000);
+    return;
+  }
+
+  const isRight = choice === item.answer;
   [...$('opts').children].forEach((b,i) => {
     if(i === item.answer) b.classList.add('correct');
     else if(i === choice) b.classList.add('wrong');
@@ -899,8 +925,6 @@ function answer(choice){
     save(KEY_MISSES, m);
   }
 
-  if(item.stage) c2iReached = item.stage;   // Citizen/Seeker in the cymatics cascade
-
   popScore(delta, isRight);
   react(isRight);
 
@@ -910,37 +934,54 @@ function answer(choice){
   $('wonder').textContent = item.wonder;
   $('feedback').classList.add('on');
 
-  const label = (item.stage || idx === round.length-1) ? 'See your score' : 'Next question';
+  const label = (idx === round.length-1) ? 'See your score' : 'Next question';
   const btn = $('nextBtn');
   btn.style.visibility = 'visible';
   btn.focus({preventScroll:true});
   let left = AUTO_ADVANCE_SEC;
   btn.textContent = `${label} (${left})`;
   tickTimer = setInterval(() => { left--; btn.textContent = left>0 ? `${label} (${left})` : label; }, 1000);
-  advanceTimer = setTimeout(item.stage ? endC2IRound : next, AUTO_ADVANCE_SEC*1000);
+  advanceTimer = setTimeout(next, AUTO_ADVANCE_SEC*1000);
 }
 
 function next(){ clearTimers(); idx++; if(idx >= round.length) finish(); else renderQuestion(); }
 
+/* What to tell the player once they've landed on a stage — there's no
+   right or wrong answer here, so the takeaway is the stage itself, not a score. */
+const C2I_END_LINES = {
+  Innovator: "You're already thinking like an Innovator — ready to build on what you saw.",
+  Solver:    "You worked it out like a Solver — you found the reason behind it.",
+  Seeker:    "You're a Seeker — curious about what's really going on.",
+  Citizen:   "You're a Citizen scientist — you noticed something worth asking about."
+};
+
 function finish(){
   clearTimers();
   stopClock();
-  const attempted = right + wrong;
-  const max = (attempted || round.length) * POINTS_RIGHT;
-  const pct = max ? score / max : 0;
   const z = ZONES.find(z => z.id === zoneId);
 
-  $('endWho').textContent = `${player}, you brought back`;
-  $('final').textContent = score;
-  $('final').classList.toggle('neg', score < 0);
-  $('endVerdict').textContent = lineFor(pct);
-  $('tally').innerHTML =
-    `<span>${right} right &middot; +${right*POINTS_RIGHT}</span>` +
-    `<span>${wrong} wrong &middot; &minus;${wrong*Math.abs(POINTS_WRONG)}</span>` +
-    (attempted < round.length ? `<span>${round.length-attempted} unanswered</span>` : '') +
-    (c2iReached ? `<span>Level reached: ${c2iReached}</span>` : '');
-
-  say(score >= 0 ? 'Nice round!' : 'Come back for another go.', 5000);
+  if(c2iReached){
+    $('endWho').textContent = `${player}, you reached`;
+    $('final').textContent = c2iReached;
+    $('final').className = 'final word';
+    $('endVerdict').textContent = C2I_END_LINES[c2iReached] || '';
+    $('tally').innerHTML = '';
+    say('Nice thinking!', 5000);
+  }else{
+    $('final').className = 'final';
+    const attempted = right + wrong;
+    const max = (attempted || round.length) * POINTS_RIGHT;
+    const pct = max ? score / max : 0;
+    $('endWho').textContent = `${player}, you brought back`;
+    $('final').textContent = score;
+    $('final').classList.toggle('neg', score < 0);
+    $('endVerdict').textContent = lineFor(pct);
+    $('tally').innerHTML =
+      `<span>${right} right &middot; +${right*POINTS_RIGHT}</span>` +
+      `<span>${wrong} wrong &middot; &minus;${wrong*Math.abs(POINTS_WRONG)}</span>` +
+      (attempted < round.length ? `<span>${round.length-attempted} unanswered</span>` : '');
+    say(score >= 0 ? 'Nice round!' : 'Come back for another go.', 5000);
+  }
 
   const players = store(KEY_PLAYERS, []);
   players.push({
