@@ -603,6 +603,7 @@ function store(key, fallback){
       localStorage.removeItem(KEY_GAME);
       localStorage.removeItem(KEY_BULB);
       localStorage.removeItem(KEY_PUZ);
+      localStorage.removeItem(KEY_PUZ_LB);
       localStorage.removeItem(KEY_WIND);
     }
     const raw = localStorage.getItem(key);
@@ -1559,6 +1560,8 @@ function bulbBegin(){ bulbReset(); bulbLater(bulbNextRound, 300); }
    Shuffled by legal moves only, so every board can always be solved.
    ===================================================================== */
 const KEY_PUZ = 'parsec_wf_puzzle_best';
+const KEY_PUZ_LB = 'parsec_wf_puzzle_leaderboard';
+const PUZ_LB_SIZE = 8;
 const PUZ_KEYS = ['tropido','niki','stephen','argon','harsh'];
 let puzN = 3, puzLevel = 2, puzChar = 'tropido', puzTiles = [], puzBlank = 0, puzMoves = 0, puzLive = false, puzTry = 0, puzAdvanceTimer = null;
 const PUZ_SQUARE = {};   // square versions of each mascot, made once
@@ -1592,6 +1595,34 @@ function puzShowBest(){
   const all = store(KEY_PUZ, {});
   const b = all[puzBestKey()];
   $('puzBest').textContent = b ? b + ' moves' : '\u2014';
+  puzRenderDash();
+}
+
+/* Leaderboard for the currently selected character/size/level, fewest moves first. */
+function puzRenderDash(){
+  const el = $('puzDashList');
+  if(!el) return;
+  const all = store(KEY_PUZ_LB, {});
+  const list = all[puzBestKey()] || [];
+  if(!list.length){
+    el.innerHTML = '<p class="puzdashempty">No finishes yet on this puzzle \u2014 be the first!</p>';
+    return;
+  }
+  el.innerHTML = list.slice(0, PUZ_LB_SIZE).map((r, i) => `
+    <div class="puzdashrow${r.name === player ? ' me' : ''}">
+      <span>${i+1}. ${r.name}</span><b>${r.moves}</b>
+    </div>`).join('');
+}
+
+/* Records a finish against the current character/size/level and keeps the best few. */
+function puzRecordScore(){
+  const all = store(KEY_PUZ_LB, {});
+  const k = puzBestKey();
+  const list = all[k] || [];
+  list.push({ name: player || 'Guest', moves: puzMoves });
+  list.sort((a, b) => a.moves - b.moves);
+  all[k] = list.slice(0, PUZ_LB_SIZE);
+  save(KEY_PUZ_LB, all);
 }
 
 async function puzBuild(shuffle){
@@ -1676,6 +1707,7 @@ function puzWin(){
   const k = puzBestKey();
   const isBest = !all[k] || puzMoves < all[k];
   if(isBest){ all[k] = puzMoves; save(KEY_PUZ, all); }
+  puzRecordScore();
   puzShowBest();
   $('puzSay').textContent = isBest
     ? `Back together in ${puzMoves} moves \u2014 best today!`
