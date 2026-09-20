@@ -688,6 +688,7 @@ function goPick(){
   const v = clean($('nameInput').value);
   if(!v){ $('nameInput').focus(); return; }
   player = v;
+  puzStage = 1;
   $('hello').textContent = `Pick a gallery, ${player}`;
   $('modeHello').textContent = `What shall it be, ${player}?`;
   show('mode');
@@ -1563,9 +1564,14 @@ const KEY_PUZ = 'parsec_wf_puzzle_best';
 const KEY_PUZ_LB = 'parsec_wf_puzzle_leaderboard';
 const PUZ_LB_SIZE = 8;
 const PUZ_KEYS = ['tropido','niki','stephen','argon','harsh'];
-let puzN = 3, puzLevel = 2, puzChar = 'tropido', puzTiles = [], puzBlank = 0, puzMoves = 0, puzLive = false, puzTry = 0, puzAdvanceTimer = null;
+let puzStage = 1, puzChar = 'tropido', puzTiles = [], puzBlank = 0, puzMoves = 0, puzLive = false, puzTry = 0, puzAdvanceTimer = null;
 const PUZ_SQUARE = {};   // square versions of each mascot, made once
-const PUZ_LEVEL_STEPS = [12, 40, 90];
+/* Size and shuffle strength grow together as one automatic sequence —
+   no manual size or difficulty picking, solving one stage opens the next. */
+const PUZ_STAGE_N     = [2, 3, 4, 5];
+const PUZ_STAGE_STEPS = [12, 40, 90, 150];
+const PUZ_MAX_STAGE   = PUZ_STAGE_N.length;
+function puzGridN(){ return PUZ_STAGE_N[puzStage - 1]; }
 
 /* the artwork is tall and transparent, so square it off first
    or the pieces come out stretched and unreadable */
@@ -1590,15 +1596,17 @@ function squareUp(key){
   });
 }
 
-function puzBestKey(){ return `${puzChar}:${puzN}:${puzLevel}`; }
+function puzBestKey(){ return `${puzChar}:${puzStage}`; }
 function puzShowBest(){
   const all = store(KEY_PUZ, {});
   const b = all[puzBestKey()];
   $('puzBest').textContent = b ? b + ' moves' : '\u2014';
+  const n = puzGridN();
+  $('puzStage').textContent = `Level ${puzStage} of ${PUZ_MAX_STAGE} \u00b7 ${n}\u00d7${n}`;
   puzRenderDash();
 }
 
-/* Leaderboard for the currently selected character/size/level, fewest moves first. */
+/* Leaderboard for the currently selected character/stage, fewest moves first. */
 function puzRenderDash(){
   const el = $('puzDashList');
   if(!el) return;
@@ -1627,7 +1635,7 @@ function puzRecordScore(){
 
 async function puzBuild(shuffle){
   const src = await squareUp(puzChar);
-  const n = puzN, total = n*n;
+  const n = puzGridN(), total = n*n;
   if(shuffle || !puzTiles.length){
     puzTiles = Array.from({length: total}, (_, i) => i);
     puzBlank = total - 1;
@@ -1635,7 +1643,7 @@ async function puzBuild(shuffle){
     // The step count must be random: a fixed count on a 2x2 walks the blank
     // in a 4-move loop and lands right back on the solved board every time.
     let last = -1;
-    const steps = total*PUZ_LEVEL_STEPS[puzLevel - 1] + Math.floor(Math.random() * (total*8 + 7));
+    const steps = total*PUZ_STAGE_STEPS[puzStage - 1] + Math.floor(Math.random() * (total*8 + 7));
     for(let i = 0; i < steps; i++){
       const opts = puzNeighbours(puzBlank).filter(x => x !== last);
       const pick = opts[Math.floor(Math.random()*opts.length)];
@@ -1676,7 +1684,7 @@ async function puzBuild(shuffle){
 }
 
 function puzNeighbours(i){
-  const n = puzN, r = Math.floor(i/n), c = i % n, out = [];
+  const n = puzGridN(), r = Math.floor(i/n), c = i % n, out = [];
   if(r > 0) out.push(i-n);
   if(r < n-1) out.push(i+n);
   if(c > 0) out.push(i-1);
@@ -1690,7 +1698,7 @@ async function puzTap(pos){
   if(!puzLive) return;
   if(!puzNeighbours(puzBlank).includes(pos)) return;
   puzTiles[puzBlank] = puzTiles[pos];
-  puzTiles[pos] = puzN*puzN - 1;
+  puzTiles[pos] = puzGridN()*puzGridN() - 1;
   puzBlank = pos;
   puzMoves++;
   $('puzMoves').textContent = puzMoves;
@@ -1714,15 +1722,21 @@ function puzWin(){
     : `Back together in ${puzMoves} moves.`;
   $('puzSay').className = 'puzsay win';
   say(`${HOST_NAME[puzChar]} is whole again!`, 4000);
-  if(puzLevel < 3){
-    // Give the solved board a brief moment, then move to the next difficulty.
+  if(puzStage < PUZ_MAX_STAGE){
+    // Give the solved board a brief moment, then move to the next, larger stage.
     puzAdvanceTimer = setTimeout(() => {
       if(!$('puzzle').classList.contains('on')) return;
-      puzLevel++;
-      document.querySelectorAll('.puzlevel').forEach(b =>
-        b.classList.toggle('on', Number(b.dataset.level) === puzLevel));
+      puzStage++;
       puzBuild(true);
     }, 1100);
+  } else {
+    // Finished the hardest stage — loop back to the start for continuous play.
+    $('puzSay').textContent += ' You finished every level!';
+    puzAdvanceTimer = setTimeout(() => {
+      if(!$('puzzle').classList.contains('on')) return;
+      puzStage = 1;
+      puzBuild(true);
+    }, 1800);
   }
 }
 
@@ -2011,20 +2025,6 @@ document.querySelectorAll('.fanbtn').forEach(b => b.addEventListener('click', ()
 }));
 $('puzShuffle').addEventListener('click', () => puzBuild(true));
 $('puzBack').addEventListener('click', () => show('mode'));
-document.querySelectorAll('.puzsize').forEach(b =>
-  b.addEventListener('click', () => {
-    document.querySelectorAll('.puzsize').forEach(x => x.classList.remove('on'));
-    b.classList.add('on');
-    puzN = Number(b.dataset.n);
-    puzBuild(true);
-  }));
-document.querySelectorAll('.puzlevel').forEach(b =>
-  b.addEventListener('click', () => {
-    document.querySelectorAll('.puzlevel').forEach(x => x.classList.remove('on'));
-    b.classList.add('on');
-    puzLevel = Number(b.dataset.level);
-    puzBuild(true);
-  }));
 $('bulbStart').addEventListener('click', bulbBegin);
 $('bulbBack').addEventListener('click', () => show('mode'));
 document.querySelectorAll('#bulbRow .bulb').forEach(b =>
