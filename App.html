@@ -561,6 +561,7 @@ function submitTextAnswer(item){
     return;
   }
 
+  stopClock();
   c2iReached = item.stage;
   right++;
   score += POINTS_RIGHT;
@@ -593,7 +594,7 @@ const AUTO_ADVANCE_SEC = 4;
 /* Timer. TIMER_MODE: 'round' = one clock for the whole round,
    'question' = a fresh clock on every question, 'off' = no timer.
    The clock pauses while an explanation is on screen either way.   */
-const TIMER_MODE       = 'round';
+const TIMER_MODE       = 'question';
 const TIMER_SECONDS    = 60;
 const KEY_PLAYERS = 'parsec_wf_quiz_players';
 const KEY_MISSES  = 'parsec_wf_quiz_misses';
@@ -799,22 +800,21 @@ function renderQuestion(){
     $('verdict').className = 'verdict';
     $('explain').textContent = '';
     $('wonder').textContent = '';
-    return;
-  }
+  }else{
+    item.options.forEach((text,i) => {
+      const b = document.createElement('button');
+      b.className = 'opt'; b.textContent = text;
+      b.addEventListener('click', () => answer(i));
+      box.appendChild(b);
+    });
 
-  item.options.forEach((text,i) => {
-    const b = document.createElement('button');
-    b.className = 'opt'; b.textContent = text;
-    b.addEventListener('click', () => answer(i));
-    box.appendChild(b);
-  });
-
-  if(item.allowSkip){
-    const skip = document.createElement('button');
-    skip.className = 'opt alt';
-    skip.textContent = 'Skip';
-    skip.addEventListener('click', () => next());
-    box.appendChild(skip);
+    if(item.allowSkip){
+      const skip = document.createElement('button');
+      skip.className = 'opt alt full';
+      skip.textContent = 'Skip';
+      skip.addEventListener('click', () => next());
+      box.appendChild(skip);
+    }
   }
 
   if(TIMER_MODE === 'question') startClock();
@@ -851,7 +851,11 @@ function stopClock(){ clearInterval(clockInt); clockInt = null; }
 function timeUp(){
   stopClock();
   if(TIMER_MODE === 'question'){
-    if(!locked) answer(-1);          // no choice made: counts as wrong
+    if(locked) return;
+    const item = round[idx];
+    if(item.allowSkip) next();              // skippable: time's up just moves the cascade down
+    else if(isTextQuestion(item)) next();    // shouldn't occur today (Citizen is the only non-skip stage, and it's MCQ), but don't try to auto-submit an empty text answer
+    else answer(-1);                        // non-skippable MCQ (Citizen): no choice made counts as wrong, ends the round
   }else{
     locked = true;
     $('opts').classList.add('locked');
