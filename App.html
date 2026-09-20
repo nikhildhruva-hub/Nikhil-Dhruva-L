@@ -436,8 +436,8 @@ const QUESTIONS = [
    and records the stage reached. Citizen has no skip — everyone lands somewhere. */
 const C2I_ROUNDS = {
   cymatics: [
-    { stage:"Innovator", type:"text", q:"Where else could this be applied? Or how could this be made more efficient?", minWords:20, allowSkip:true },
-    { stage:"Solver", type:"text", q:"Why does low frequency make the water more active.", minWords:15, allowSkip:true, keywords:["frequency","vibration","energy","low","water","active"] },
+    { stage:"Innovator", type:"text", q:"Where else could this be applied? Or how could this be made more efficient?", allowSkip:true },
+    { stage:"Solver", type:"text", q:"Why does low frequency make the water more active.", allowSkip:true },
     { stage:"Seeker", type:"mcq", q:"Why do you think the water is moving, or what is making the water move?",
       options:["Vibration from sound passing through it","The water is slowly evaporating","Someone is stirring it by hand","It is reacting to light from above"],
       allowSkip:true,
@@ -523,29 +523,12 @@ let c2iReached = null;
 
 function isTextQuestion(item){ return item && item.type === 'text'; }
 
+/* No wrong answers and no minimum length — any typed response is accepted,
+   it just can't be empty. */
 function evaluateC2IAnswer(item, value){
   const text = (value || '').trim();
   if(!text){ return { pass:false, message:'Please type an answer before submitting.' }; }
-
-  const words = text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
-  if(words.length < (item.minWords || 8)){
-    return { pass:false, message:`Please write at least ${item.minWords} words.` };
-  }
-
-  if(item.stage === 'Solver'){
-    const keys = item.keywords || [];
-    const hitCount = keys.filter(k => text.toLowerCase().includes(k.toLowerCase())).length;
-    if(hitCount >= 2 || text.toLowerCase().includes('low frequency') || text.toLowerCase().includes('vibration')){
-      return { pass:true, message:'Good explanation.' };
-    }
-    return { pass:false, message:'Try linking the movement to frequency, vibration, and the energy being transferred through the water.' };
-  }
-
-  if(item.stage === 'Innovator'){
-    return { pass:true, message:'Nice idea. You have completed the innovation stage.' };
-  }
-
-  return { pass:true, message:'Thank you for sharing your observation.' };
+  return { pass:true, message:'Thanks for sharing your thinking.' };
 }
 
 /* Ends the cascade round right away, the way answering any stage should. */
