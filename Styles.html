@@ -292,16 +292,17 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 
 
 /* ---- Zinion Puzzle ---- */
-.puzwrap{display:flex;flex-direction:column;gap:clamp(6px,1.2vh,12px);align-items:flex-start}
-.puzpick{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start}
+.puzwrap{display:flex;flex-direction:row;align-items:flex-start;gap:clamp(8px,2vw,20px)}
+.puzpick{display:flex;flex-direction:column;gap:8px;flex:0 0 auto}
 .puzchar{
-  width:clamp(52px,9vw,80px);border-radius:16px;background:var(--panel);padding:6px;
+  width:clamp(40px,7.5vw,72px);border-radius:16px;background:var(--panel);padding:6px;
   border:2px solid transparent;transition:transform .15s,border-color .2s;
 }
 .puzchar img{width:100%;height:auto;display:block}
 .puzchar.on{border-color:var(--amber);transform:translateY(-4px)}
-.puzsizes{display:flex;gap:8px}
-.puzlevels{display:flex;gap:8px}
+.puzmain{display:flex;flex-direction:column;gap:clamp(6px,1.2vh,12px);align-items:center;flex:1;min-width:0}
+.puzsizes{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.puzlevels{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .puzsize{
   border:2px solid var(--line);color:var(--mute);border-radius:999px;padding:8px 18px;
   font-weight:600;font-size:clamp(12px,1.5vw,15px);transition:all .2s;
@@ -315,7 +316,7 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 
 .puzboard{
   display:grid;gap:4px;background:var(--deep-2);padding:6px;border-radius:20px;
-  width:min(84vw,clamp(220px,36vh,360px));aspect-ratio:1/1;
+  width:min(100%,clamp(200px,36vh,360px));aspect-ratio:1/1;
   border:2px solid var(--line);position:relative;
 }
 .ptile{
@@ -339,6 +340,11 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 .puzsay{font-family:var(--display);font-weight:700;font-size:clamp(15px,2.2vw,21px);min-height:1.5em;text-align:center}
 .puzsay.win{color:var(--amber)}
 #puzzle > .btnrow{justify-content:flex-start}
+@media (max-width:640px){
+  .puzwrap{gap:8px}
+  .puzchar{width:clamp(36px,13vw,52px);border-radius:12px;padding:4px}
+  .puzstat{gap:14px}
+}
 
 
 
