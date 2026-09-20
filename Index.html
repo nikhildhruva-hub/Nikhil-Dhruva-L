@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Zinia Experimental Lab — PARSEC Whitefield</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<?!= include('Styles'); ?>
+</head>
+<body>
+
+<div class="drift" id="drift" aria-hidden="true"></div>
+<div class="hostwrap hide" id="hostwrap" aria-hidden="true">
+  <div class="hostsay" id="hostsay"></div>
+  <img class="mascot" id="hostimg" alt="">
+</div>
+<div class="stage">
+
+  <!-- NAME -->
+  <section id="start" class="screen on">
+    <div class="orbit"></div>
+    <h1>Zinia Experimental Lab</h1>
+    <p class="sub">The Zinions are running experiments on our planet and they need a hand. Tell them who you are — first name or a nickname is plenty.</p>
+    <div class="namerow">
+      <input id="nameInput" maxlength="18" autocomplete="off" placeholder="Your name">
+      <button class="big-btn" id="nameGo" style="align-self:auto">Go</button>
+    </div>
+    <div class="rules">
+      <div class="rule good"><b>+100</b><span>right answer</span></div>
+      <div class="rule bad"><b>&minus;50</b><span>wrong answer</span></div>
+    </div>
+    <button class="ghost" id="boardBtn1">See today's board</button>
+    <p class="tiny">Only the name you type is saved, and only on this device. Please don't enter a phone number, address or anything else personal.</p>
+  </section>
+
+  <!-- ZONES -->
+  <section id="pick" class="screen">
+    <h2 class="title" id="hello">Pick a gallery</h2>
+    <p class="sub">Every gallery has a Zinion running its experiment. Pick one to join, or take questions from all over the floor.</p>
+    <div class="zones" id="zones"></div>
+    <button class="ghost" id="backName">Not me &mdash; change name</button>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz" class="screen">
+    <div class="topbar">
+      <div class="count"><em id="zoneName">&nbsp;</em><span id="count">Question 1 of 10</span></div>
+      <div class="clock" id="clock" aria-live="off"><b id="clockNum">60</b><span>seconds left</span></div>
+      <div class="scorebox">
+        <div class="scorelabel" id="scoreWho">Score</div>
+        <div class="score" id="score">0</div>
+        <div class="pop" id="pop"></div>
+      </div>
+    </div>
+    <div class="track"><div class="fill" id="fill"></div></div>
+    <div class="stage-badge hidden" id="stageBadge" aria-hidden="true"></div>
+    <h2 class="q" id="question">&mdash;</h2>
+    <div class="opts" id="opts"></div>
+    <div class="feedback" id="feedback">
+      <div class="verdict" id="verdict"></div>
+      <p class="explain" id="explain"></p>
+      <p class="wonder" id="wonder"></p>
+    </div>
+    <div class="nextrow">
+      <button class="next" id="nextBtn">Next question</button>
+      <button class="ghost" id="quizBack" style="align-self:auto">Back</button>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="end" class="screen">
+    <p class="sub" id="endWho">You brought back</p>
+    <div class="final" id="final">0</div>
+    <p class="verdict-line" id="endVerdict"></p>
+    <div class="tally" id="tally"></div>
+    <div class="btnrow">
+      <button class="big-btn" id="doneBtn">Done</button>
+      <button class="ghost" id="againBtn" style="align-self:auto">Play again</button>
+      <button class="ghost" id="boardBtn2" style="align-self:auto">See the board</button>
+    </div>
+    <p class="footnote">The score is just the score. The real test is what you do at the exhibit.</p>
+  </section>
+
+  <!-- MODE -->
+  <section id="mode" class="screen">
+    <h2 class="title" id="modeHello">Pick what you fancy</h2>
+    <div class="modes">
+      <button class="mode play" id="modeQuiz">
+        <span class="age">Everyone</span>
+        <b>Gallery Questions</b>
+        <span>Ten questions about the exhibit in front of you. Points for right answers.</span>
+        <!-- <img src="" alt="" id="modeQuizImg"> -->
+      </button>
+      <!-- Temporarily hidden while the Wind Tunnel experience is paused. -->
+      <button class="mode" id="modeWind" hidden>
+        <span class="age">Everyone</span>
+        <b>Wind Tunnel</b>
+        <span>Hold to run the fan and float a balloon through the gaps. The fan runs out, so use it in bursts.</span>
+        <!-- <img src="" alt="" id="modeWindImg"> -->
+      </button>
+      <button class="mode" id="modePuzzle">
+        <span class="age">Take your time</span>
+        <b>Zinion Puzzle</b>
+        <span>A Zinion has come apart into sliding pieces. Put them back together.</span>
+        <!-- <img src="" alt="" id="modePuzzleImg"> -->
+      </button>
+      <button class="mode" id="modeBulbs">
+        <span class="age">Quick play</span>
+        <b>Zinion Bulbs</b>
+        <span>The bulbs light up in an order. Watch, then tap them back in the same order.</span>
+        <img src="" alt="" id="modeBulbsImg">
+      </button>
+      <!-- Temporarily hidden while the Scream Lab experience is paused. -->
+      <button class="mode" id="modeGame" hidden>
+        <span class="age">Best for younger visitors</span>
+        <b>Scream Lab</b>
+        <span>Shout to make Niki fly. The louder you are, the higher she goes. Dodge the rocks.</span>
+        <img src="" alt="" id="modeGameImg">
+      </button>
+    </div>
+    <button class="ghost" id="modeBack">Not me &mdash; change name</button>
+  </section>
+
+  <!-- WIND TUNNEL -->
+  <section id="wind" class="screen" hidden>
+    <div class="fanstr">
+      <button class="fanbtn on" data-f="gentle">Gentle fan</button>
+      <button class="fanbtn" data-f="strong">Strong fan</button>
+    </div>
+    <div class="windwrap">
+      <canvas id="windCanvas"></canvas>
+      <div class="whud">
+        <div>
+          <span class="lab" id="wLevel">Level 1</span>
+          <b id="wGates">0 / 5</b>
+          <span class="lab" id="wBest"></span>
+        </div>
+        <div style="text-align:right">
+          <span class="lab">Fan</span>
+          <div class="fanbar" id="wFanBar"><i id="wFan"></i></div>
+        </div>
+      </div>
+      <div class="wover on" id="wOver">
+        <h3 id="wOverTitle">Wind Tunnel</h3>
+        <p id="wOverText">Hold anywhere to run the fan. Air pushes the balloon up and pushes it along faster. Let go and it sinks, and slows down &mdash; which is how you line up a gap.</p>
+        <button class="big-btn" id="wStart">Start level 1</button>
+      </div>
+    </div>
+    <p class="footnote">The fan runs out if you hold it too long. Let it build back up.</p>
+    <div class="btnrow"><button class="ghost" id="windBack" style="align-self:auto">Back</button></div>
+  </section>
+
+  <!-- SCREAM GAME -->
+  <section id="game" class="screen" hidden>
+    <div class="gamewrap">
+      <canvas id="gameCanvas"></canvas>
+      <div class="ghud">
+        <div>
+          <div class="gbest" id="gLevel">Level 1</div>
+          <div class="gscore" id="gScore">0</div>
+          <div class="gbest" id="gBest"></div>
+        </div>
+        <div class="meter"><i id="gMeter"></i><span class="mark" id="gMark" style="left:60%"></span></div>
+      </div>
+      <div class="gover on" id="gOver">
+        <h3 id="gOverTitle">Scream Lab</h3>
+        <p id="gOverText">Make some noise and Niki lifts off. Stop and she drops. Get her through the gaps.</p>
+        <button class="big-btn" id="gStart">Start</button>
+        <button class="ghost" id="gMicBtn" style="align-self:auto">Turn on the microphone</button>
+        <p class="gnote" id="gMicState" style="margin-top:2px"></p>
+      </div>
+    </div>
+    <p class="gnote" id="gNote"></p>
+    <div class="microw">
+      <span>Less sensitive</span>
+      <input type="range" id="gSens" class="slider" min="120" max="320" value="190" aria-label="Microphone sensitivity">
+      <span>More</span>
+      <button class="ghost" id="gRecal" style="align-self:auto;padding:9px 18px">Re-listen to the room</button>
+    </div>
+    <div class="btnrow">
+      <button class="ghost" id="gBack" style="align-self:auto">Back</button>
+      <button class="ghost" id="gBoard" style="align-self:auto">See the board</button>
+    </div>
+  </section>
+
+  <!-- ZINION PUZZLE -->
+  <section id="puzzle" class="screen">
+    <div class="puzwrap">
+      <div class="puzpick" id="puzPick"></div>
+      <div class="puzsizes">
+        <button class="puzsize" data-n="2">Tiny &middot; 2&times;2</button>
+        <button class="puzsize on" data-n="3">Easy &middot; 3&times;3</button>
+        <button class="puzsize" data-n="4">Tricky &middot; 4&times;4</button>
+      </div>
+      <div class="puzlevels" aria-label="Puzzle level">
+        <button class="puzlevel" data-level="1">Level 1</button>
+        <button class="puzlevel on" data-level="2">Level 2</button>
+        <button class="puzlevel" data-level="3">Level 3</button>
+      </div>
+      <div class="puzboard" id="puzBoard"></div>
+      <div class="puzstat">
+        <span>Moves <b id="puzMoves">0</b></span>
+        <span>Best today <b id="puzBest">&mdash;</b></span>
+      </div>
+      <p class="puzsay" id="puzSay">Slide the pieces until the Zinion is whole again.</p>
+    </div>
+    <div class="btnrow">
+      <button class="big-btn" id="puzShuffle">Shuffle</button>
+      <button class="ghost" id="puzBack" style="align-self:auto">Back</button>
+    </div>
+  </section>
+
+  <!-- ZINION BULBS -->
+  <section id="bulbs" class="screen">
+    <div class="bulbstage">
+      <div class="bulbhead">
+        <div class="bulbround" id="bulbRound">Round 1</div>
+        <div class="bulbbest" id="bulbBest"></div>
+      </div>
+      <div class="bulbrow" id="bulbRow">
+        <button class="bulb" data-b="0" aria-label="Bulb 1">
+          <svg viewBox="0 0 60 190" xmlns="http://www.w3.org/2000/svg">
+            <path class="b-cord" d="M30 0 v96"/>
+            <circle class="b-glow" cx="30" cy="140" r="34"/>
+            <rect class="b-cap" x="23" y="96" width="14" height="18" rx="3"/>
+            <rect class="b-cap-shine" x="32" y="98" width="3" height="14" rx="1.5"/>
+            <circle class="b-glass" cx="30" cy="134" r="21"/>
+            <path class="b-wire" d="M25 114 v11 M35 114 v11"/>
+            <path class="b-wire" d="M25 125 q5 12 10 0"/>
+          </svg>
+        </button>
+        <button class="bulb" data-b="1" aria-label="Bulb 2">
+          <svg viewBox="0 0 60 190" xmlns="http://www.w3.org/2000/svg">
+            <path class="b-cord" d="M30 0 v96"/>
+            <circle class="b-glow" cx="30" cy="140" r="34"/>
+            <rect class="b-cap" x="23" y="96" width="14" height="18" rx="3"/>
+            <rect class="b-cap-shine" x="32" y="98" width="3" height="14" rx="1.5"/>
+            <circle class="b-glass" cx="30" cy="134" r="21"/>
+            <path class="b-wire" d="M25 114 v11 M35 114 v11"/>
+            <path class="b-wire" d="M25 125 q5 12 10 0"/>
+          </svg>
+        </button>
+        <button class="bulb" data-b="2" aria-label="Bulb 3">
+          <svg viewBox="0 0 60 190" xmlns="http://www.w3.org/2000/svg">
+            <path class="b-cord" d="M30 0 v96"/>
+            <circle class="b-glow" cx="30" cy="140" r="34"/>
+            <rect class="b-cap" x="23" y="96" width="14" height="18" rx="3"/>
+            <rect class="b-cap-shine" x="32" y="98" width="3" height="14" rx="1.5"/>
+            <circle class="b-glass" cx="30" cy="134" r="21"/>
+            <path class="b-wire" d="M25 114 v11 M35 114 v11"/>
+            <path class="b-wire" d="M25 125 q5 12 10 0"/>
+          </svg>
+        </button>
+        <button class="bulb" data-b="3" aria-label="Bulb 4">
+          <svg viewBox="0 0 60 190" xmlns="http://www.w3.org/2000/svg">
+            <path class="b-cord" d="M30 0 v96"/>
+            <circle class="b-glow" cx="30" cy="140" r="34"/>
+            <rect class="b-cap" x="23" y="96" width="14" height="18" rx="3"/>
+            <rect class="b-cap-shine" x="32" y="98" width="3" height="14" rx="1.5"/>
+            <circle class="b-glass" cx="30" cy="134" r="21"/>
+            <path class="b-wire" d="M25 114 v11 M35 114 v11"/>
+            <path class="b-wire" d="M25 125 q5 12 10 0"/>
+          </svg>
+        </button>
+        <button class="bulb" data-b="4" aria-label="Bulb 5">
+          <svg viewBox="0 0 60 190" xmlns="http://www.w3.org/2000/svg">
+            <path class="b-cord" d="M30 0 v96"/>
+            <circle class="b-glow" cx="30" cy="140" r="34"/>
+            <rect class="b-cap" x="23" y="96" width="14" height="18" rx="3"/>
+            <rect class="b-cap-shine" x="32" y="98" width="3" height="14" rx="1.5"/>
+            <circle class="b-glass" cx="30" cy="134" r="21"/>
+            <path class="b-wire" d="M25 114 v11 M35 114 v11"/>
+            <path class="b-wire" d="M25 125 q5 12 10 0"/>
+          </svg>
+        </button>
+      </div>
+      <p class="bulbsay" id="bulbSay">Watch which bulbs light up.</p>
+    </div>
+    <div class="btnrow">
+      <button class="big-btn" id="bulbStart">Start</button>
+      <button class="ghost" id="bulbBack" style="align-self:auto">Back</button>
+    </div>
+    <p class="footnote">Each bulb belongs to a Zinion. Repeat the order they light in.</p>
+  </section>
+
+  <!-- THANK YOU -->
+  <section id="thanks" class="screen">
+    <img class="mascot thanksimg" id="thanksImg" alt="">
+    <h1 id="thanksTitle">Thank you!</h1>
+    <p class="sub" id="thanksLine"></p>
+    <div class="btnrow">
+      <button class="big-btn" id="thanksAgain">Play again</button>
+      <button class="ghost" id="thanksBoard" style="align-self:auto">See the board</button>
+      <button class="ghost" id="thanksBack" style="align-self:auto">Back</button>
+    </div>
+    <p class="footnote">Now go and ask a Science Communicator the one you got wrong.</p>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dash" class="screen scrollable">
+    <div class="dashhead">
+      <h2 class="title">Today's board</h2>
+      <div class="daystamp" id="daystamp"></div>
+    </div>
+    <div id="heroSlot"></div>
+    <div class="stats" id="stats"></div>
+    <div class="sectitle">Across the galleries</div>
+    <div class="gcards" id="gcards"></div>
+    <div class="sectitle">Everyone who played</div>
+    <div class="board" id="board"></div>
+    <div id="scPanel"></div>
+    <div class="btnrow">
+      <button class="big-btn" id="dashBack">Back to start</button>
+    </div>
+    <p class="footnote">The board clears itself at the end of each day.</p>
+  </section>
+
+</div>
+
+
+<!-- artwork first: the app needs window.ZIN to already exist -->
+<?!= include('Zin1'); ?>
+<?!= include('Zin2'); ?>
+<?!= include('Zin3'); ?>
+<?!= include('Zin4'); ?>
+<?!= include('Zin5'); ?>
+<?!= include('App'); ?>
+</body>
+</html>

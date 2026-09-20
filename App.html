@@ -1,0 +1,2013 @@
+<script>
+
+/* =====================================================================
+   ZONES
+   ===================================================================== */
+const ZONES = [
+  {id:"cymatics", name:"Water Cymatics",  tag:"Sound you can see",
+   about:"Vibration turns still water into standing patterns. Change the frequency and the shape changes with it."},
+  {id:"rain",     name:"Rain Instrument", tag:"Making weather with sound",
+   about:"Hundreds of tiny collisions, one after another, until your ear stops hearing clicks and starts hearing rain."},
+  {id:"yoga",     name:"Yoga Gallery",    tag:"Balance, breath and the body",
+   about:"Centre of gravity, base of support, and the one automatic system you can take manual control of \u2014 your breath."},
+  {id:"raga",     name:"Ragasrusti",      tag:"Pitch, strings and raga",
+   about:"Why a string sounds the way it does, and how a set of rules can make more music possible rather than less."},
+  {id:"scale",    name:"Micro & Macro",   tag:"From atoms to galaxies",
+   about:"Step down to the atom, then out to the galaxy, and find that both directions run further than they feel."},
+  {id:"wind",     name:"Wind Exhibit",    tag:"Moving air, lift and power",
+   about:"Air you cannot see, doing work you can. Uneven heating becomes wind, and wind becomes lift and electricity."},
+  {id:"youq",     name:"All About You",       tag:"Your body, your planet, your name",
+   about:"Your own body, the ground under it, and the codes a name can be written in \u2014 all measured in numbers."},
+  {id:"road",     name:"Traffic",         tag:"Helmets, reactions and stopping",
+   about:"What actually protects you on a road, and what happens to a person's reactions when they are tired, distracted or drunk."},
+  {id:"clock",    name:"The Clock Tower",  tag:"Time, and the odd ways we count it",
+   about:"Why an hour has sixty minutes, why clocks turn the way they do, and what a second is actually measured against."}
+];
+
+/* Drawn artwork \u2014 no image files, works offline. */
+const ART = {
+cymatics:`<svg viewBox="0 0 120 78" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Concentric ripple patterns in a dish">
+<path class="s a" d="M60 6v11M53 12l7 7 7-7"/>
+<ellipse class="s" cx="60" cy="48" rx="50" ry="26"/>
+<ellipse class="s" cx="60" cy="48" rx="38" ry="19"/>
+<ellipse class="s a" cx="60" cy="48" rx="26" ry="13"/>
+<ellipse class="s" cx="60" cy="48" rx="14" ry="7"/>
+<circle class="f" cx="60" cy="48" r="3"/></svg>`,
+
+rain:`<svg viewBox="0 0 120 78" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A tilted rain tube with falling grains">
+<rect class="s" x="44" y="4" width="32" height="70" rx="16"/>
+<path class="s" d="M44 22h32M44 40h32M44 58h32"/>
+<circle class="f" cx="54" cy="14" r="2.5"/><circle class="f" cx="66" cy="31" r="2.5"/>
+<circle class="f" cx="55" cy="49" r="2.5"/><circle class="f" cx="65" cy="66" r="2.5"/>
+<path class="s a" d="M18 20v14M18 44v10M102 26v12M102 48v8"/></svg>`,
+
+yoga:`<svg viewBox="0 0 120 78" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A figure balancing on one leg">
+<path class="s" stroke-dasharray="3 5" d="M60 4v70"/>
+<circle class="s a" cx="60" cy="15" r="7"/>
+<path class="s a" d="M60 22v22"/>
+<path class="s a" d="M60 26l-13-9M60 26l13-9"/>
+<path class="s a" d="M60 44v30"/>
+<path class="s a" d="M60 52l-14 8 6 14"/>
+<path class="s" d="M42 74h36"/></svg>`,
+
+raga:`<svg viewBox="0 0 120 78" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A vibrating string with harmonic loops">
+<path class="s" d="M12 14v50M108 14v50"/>
+<path class="s" d="M12 39h96"/>
+<path class="s a" d="M12 39C28 10 44 10 60 39s32 29 48 0"/>
+<path class="s a" d="M12 39C28 68 44 68 60 39s32-29 48 0"/>
+<circle class="f" cx="60" cy="39" r="3"/></svg>`,
+
+scale:`<svg viewBox="0 0 120 78" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Circles growing from atom to galaxy">
+<circle class="s" cx="14" cy="60" r="4"/>
+<circle class="s" cx="30" cy="55" r="8"/>
+<circle class="s a" cx="53" cy="47" r="14"/>
+<circle class="s" cx="88" cy="36" r="26"/>
+<circle class="f" cx="14" cy="60" r="1.6"/>
+<circle class="fm" cx="53" cy="47" r="3"/>
+<path class="s a" d="M88 10a26 26 0 0 1 0 52" stroke-dasharray="4 6"/></svg>`,
+
+wind:`<svg viewBox="0 0 120 78" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A wind turbine with air flowing past">
+<path class="s" d="M74 30v44M64 74h20"/>
+<circle class="f" cx="74" cy="30" r="3.5"/>
+<path class="s a" d="M74 30L60 8M74 30l24 6M74 30l-14 20"/>
+<path class="s" d="M6 20c8-5 16 5 24 0M6 40c10-5 20 5 30 0M6 58c8-5 16 5 24 0"/></svg>`,
+youq:`<svg viewBox="0 0 120 78" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A heartbeat trace beside a figure">
+<circle class="s a" cx="26" cy="20" r="9"/>
+<path class="s a" d="M26 31v22M26 37l-11 7M26 37l11 7M26 53l-8 17M26 53l8 17"/>
+<path class="s" d="M48 44h14l5-17 7 34 6-22 5 9h29"/>
+<circle class="f" cx="114" cy="44" r="3"/></svg>`,
+road:`<svg viewBox="0 0 120 78" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A helmet beside a lane marking">
+<path class="s a" d="M34 52V38c0-11 7-19 18-19s18 8 18 19v14"/>
+<path class="s a" d="M36 40h32"/>
+<path class="s a" d="M34 52h36a4 4 0 0 1 0 8H38a4 4 0 0 1-4-4z"/>
+<path class="s" d="M96 8v12M96 30v12M96 52v12"/>
+<path class="s" d="M84 70h24"/></svg>`,
+clock:`<svg viewBox="0 0 120 78" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A clock face">
+<circle class="s" cx="60" cy="39" r="30"/>
+<path class="s" d="M60 39V20M60 39l14 9"/>
+<circle class="f" cx="60" cy="39" r="3"/>
+<path class="s a" d="M60 5v5M60 68v5M91 39h5M24 39h5"/></svg>`
+};
+
+/* =====================================================================
+   RESULT MESSAGES — share of the score attempted.
+   ===================================================================== */
+/* Closing line on the result screen, by share of the score attempted. */
+const MESSAGES = [
+  {min:0.85, line:"Barely put a foot wrong."},
+  {min:0.60, line:"Strong signal. Solid thinking."},
+  {min:0.30, line:"Good haul. A few gaps worth chasing."},
+  {min:0.00, line:"Plenty left to find out \u2014 which is the fun part."},
+  {min:-99,  line:"Below zero. Now you know exactly what to go and ask about."}
+];
+const lineFor = pct => MESSAGES.find(m => pct >= m.min).line;
+
+/* =====================================================================
+   THE ZINIONS — embedded so the kiosk needs no image folder.
+   ===================================================================== */
+const MASCOT = window.ZIN || {};
+
+
+/* Which Zinion hosts which gallery. Swap any name to reassign. */
+const HOST = {
+  cymatics:"argon", rain:"niki", yoga:"tropido",
+  raga:"stephen",  scale:"harsh", wind:"harsh", youq:"stephen", road:"harsh", clock:"argon"
+};
+const HOST_NAME = {tropido:"Tropido", niki:"Niki", stephen:"Stephen", argon:"Argon", harsh:"Harsh"};
+
+
+/* =====================================================================
+   QUESTION BANK
+   ===================================================================== */
+const QUESTIONS = [
+{zone:"cymatics",q:"What is making the patterns appear in the water?",
+ options:["Heat from below","Vibration passing through it","A hidden magnet","The shape of the dish"],answer:1,
+ explain:"Sound is a vibration. When it passes through the water, some spots move a lot and some barely move at all \u2014 and the pattern is that difference made visible.",
+ wonder:"If you could see sound in the air the same way, what would this room look like?"},
+{zone:"cymatics",q:"When you raise the frequency, the pattern usually becomes\u2026",
+ options:["Simpler, with fewer shapes","More detailed, with more shapes","Completely still","Larger and slower"],answer:1,
+ explain:"Higher frequency means shorter waves, and shorter waves fit more repeats into the same dish \u2014 so the pattern gets finer and busier.",
+ wonder:"Is there a frequency where the pattern breaks down completely? Try to find it."},
+{zone:"cymatics",q:"Frequency \u2014 how many vibrations happen each second \u2014 is measured in which unit?",
+ options:["Decibels","Watts","Hertz","Newtons"],answer:2,
+ explain:"Hertz (Hz). 440 Hz means 440 vibrations every second. Decibels measure loudness instead, which is a different thing entirely.",
+ wonder:"So what changes when a sound gets louder but stays the same note?"},
+{zone:"cymatics",q:"Two people set the same frequency. What should happen to their patterns?",
+ options:["Both get the same pattern","Each gets a random pattern","The second one gets nothing","It depends on who is louder"],answer:0,
+ explain:"Same dish, same water, same frequency gives the same pattern. That repeatability is what makes it science rather than a light show.",
+ wonder:"What would you have to change to get a pattern nobody has made here before?"},
+{zone:"cymatics",q:"Sound needs something to travel through. Which of these would it NOT pass through?",
+ options:["Water","Steel","Air","A vacuum"],answer:3,
+ explain:"Sound moves by pushing particles into each other. A vacuum has almost no particles, so there is nothing to pass the push along.",
+ wonder:"Space is close to a vacuum. So what do astronauts actually hear outside the ship?"},
+
+{zone:"rain",q:"What is making the rain sound inside the instrument?",
+ options:["A recording playing","Many tiny objects striking as they fall","Water actually inside it","Air being blown through"],answer:1,
+ explain:"Hundreds of small pieces tumble past obstacles inside, and each tiny collision makes a tiny click. Together they blur into something the ear reads as rain.",
+ wonder:"Why does your brain hear \"rain\" rather than \"hundreds of clicks\"?"},
+{zone:"rain",q:"Tilt it more steeply and the sound becomes\u2026",
+ options:["Faster and heavier","Slower and softer","Higher in pitch","Exactly the same"],answer:0,
+ explain:"A steeper tilt lets the pieces fall faster, so more collisions happen each second \u2014 which the ear reads as heavier rain.",
+ wonder:"Can you make it sound like a drizzle that turns into a downpour?"},
+{zone:"rain",q:"Rain sounds louder on a tin roof than on grass. Why?",
+ options:["More rain falls on tin","Hard surfaces reflect sound, soft ones absorb it","Tin attracts rain","Grass makes rain slower"],answer:1,
+ explain:"Soft, uneven surfaces soak up sound energy. Hard, stiff ones bounce it back at you \u2014 and thin metal vibrates like a drum skin as well.",
+ wonder:"Which surfaces in your own home are secretly making it noisier?"},
+{zone:"rain",q:"Real rain forms when water vapour in a cloud\u2026",
+ options:["Heats up and expands","Cools and condenses into droplets","Freezes into stone","Is pushed down by wind"],answer:1,
+ explain:"Rising air cools. Cool air holds less vapour, so the vapour condenses onto tiny particles, droplets merge, and eventually they are heavy enough to fall.",
+ wonder:"Every raindrop formed around a speck of something. What do you think that speck usually is?"},
+{zone:"rain",q:"Roughly how fast does a large raindrop hit the ground?",
+ options:["About walking speed","About cycling speed","About highway car speed","Faster than sound"],answer:1,
+ explain:"Around 25\u201330 km/h. Air resistance balances gravity, so it stops speeding up \u2014 which is lucky for us.",
+ wonder:"What would rain feel like if air did not slow the drops down?"},
+
+{zone:"yoga",q:"Why is standing on one leg harder than standing on two?",
+ options:["One leg is weaker","Your base of support is much smaller","You weigh more on one leg","Gravity pulls sideways"],answer:1,
+ explain:"Balance means keeping your centre of gravity above the ground you are standing on. One foot gives you a much smaller patch to stay above.",
+ wonder:"Why does looking at a fixed point make it easier?"},
+{zone:"yoga",q:"Which muscle does most of the work when you breathe in?",
+ options:["The heart","The diaphragm","The stomach","The shoulders"],answer:1,
+ explain:"The diaphragm is a sheet of muscle under your lungs. It pulls down, the chest space grows, pressure drops, and air rushes in on its own.",
+ wonder:"So are you pulling air in, or is the air being pushed in?"},
+{zone:"yoga",q:"Slow, deep breathing usually makes your heart rate\u2026",
+ options:["Speed up","Slow down","Stop briefly","Stay exactly the same"],answer:1,
+ explain:"Slow breathing shifts the body towards its rest-and-recover state, and heart rate drops with it. It is one of the few automatic systems you can steer on purpose.",
+ wonder:"What else does your body do automatically that you can take control of?"},
+{zone:"yoga",q:"To balance more easily in a standing pose, you should\u2026",
+ options:["Rise onto your toes","Widen your stance","Close your eyes","Lean further forward"],answer:1,
+ explain:"A wider stance means a bigger base of support, so your centre of gravity has more room to wander before you topple.",
+ wonder:"Why do you spread your feet automatically on a moving bus?"},
+{zone:"yoga",q:"Holding a stretch over weeks improves flexibility mainly because\u2026",
+ options:["Muscles permanently get longer","Bones move apart","Tissue adapts and the nervous system allows more range","Joints wear down"],answer:2,
+ explain:"Part of it is the tissue adapting, and a large part is your nervous system slowly becoming willing to allow more range. Flexibility is trained, not stretched into place in a day.",
+ wonder:"Why can you often stretch further at the end of a session than at the start?"},
+
+{zone:"raga",q:"What decides whether a note sounds high or low?",
+ options:["How loud it is","How fast the vibration is","How long it lasts","How far away it is"],answer:1,
+ explain:"Pitch comes from frequency. Faster vibration means a higher note. Loudness is about how big the vibration is, not how fast.",
+ wonder:"Can a very quiet sound be very high, and a very loud sound be very low?"},
+{zone:"raga",q:"A longer, thicker string produces a note that is\u2026",
+ options:["Higher","Lower","Louder","Silent"],answer:1,
+ explain:"Longer and heavier strings vibrate more slowly, and slower vibration means a lower note. Tightening a string speeds it up and raises the pitch.",
+ wonder:"Which three things could you change on a string to tune it?"},
+{zone:"raga",q:"A veena and a flute play the same note. Why do they still sound different?",
+ options:["One is louder","They add different extra tones alongside the note","One is out of tune","The air is different"],answer:1,
+ explain:"Every instrument adds its own set of quieter overtones on top of the main note. That mix is what your ear recognises as the instrument.",
+ wonder:"Could you recognise a friend's voice for the same reason?"},
+{zone:"raga",q:"When a note goes up by one octave, its frequency\u2026",
+ options:["Doubles","Halves","Increases by one","Stays the same"],answer:0,
+ explain:"An octave is exactly double the frequency. The two notes sound so alike that most cultures independently gave them the same name.",
+ wonder:"Why should doubling a number sound pleasant to a human ear?"},
+{zone:"raga",q:"What is the drone of a tanpura mainly for?",
+ options:["Keeping the rhythm","Holding a constant reference pitch","Making it louder","Signalling the end"],answer:1,
+ explain:"The drone holds a steady base pitch throughout. Every note the singer chooses is heard in relation to it, which is what gives a raga its anchor.",
+ wonder:"How would the same melody feel if the drone changed halfway through?"},
+{zone:"raga",q:"A raga is best described as\u2026",
+ options:["A single fixed song","A framework of notes and movement to improvise within","A type of drum","A speed marking"],answer:1,
+ explain:"A raga sets which notes are used and how they may move and rest. Two musicians can perform the same raga and produce very different music.",
+ wonder:"Where else do rules make more creativity possible rather than less?"},
+
+{zone:"scale",q:"Put these in order from smallest to largest.",
+ options:["Cell, atom, molecule","Atom, molecule, cell","Molecule, atom, cell","Cell, molecule, atom"],answer:1,
+ explain:"Atoms join to make molecules, and enormous numbers of molecules make up a single cell. Each jump is far bigger than it feels.",
+ wonder:"How many steps of this kind would it take to get from an atom to you?"},
+{zone:"scale",q:"An atom is mostly made of\u2026",
+ options:["Solid matter","Empty space","Water","Light"],answer:1,
+ explain:"The nucleus holds nearly all the mass but takes up a tiny fraction of the volume. Everything you can touch is overwhelmingly empty space.",
+ wonder:"So why does a table feel solid when you push on it?"},
+{zone:"scale",q:"One millimetre divided into a thousand parts gives you one\u2026",
+ options:["Centimetre","Micrometre","Nanometre","Metre"],answer:1,
+ explain:"A micrometre \u2014 about the scale of a bacterium. Divide by another thousand and you reach the nanometre, where molecules live.",
+ wonder:"How many of those steps down would it take to reach an atom?"},
+{zone:"scale",q:"Light from a distant galaxy took millions of years to arrive. So you are seeing it\u2026",
+ options:["As it is right now","As it was long ago","Before it existed","In the future"],answer:1,
+ explain:"Light travels fast but not instantly. Looking far out into space is unavoidably looking back in time.",
+ wonder:"What is the oldest thing you have ever seen with your own eyes?"},
+{zone:"scale",q:"Which instrument studies things far too large and distant to visit?",
+ options:["Microscope","Telescope","Thermometer","Barometer"],answer:1,
+ explain:"A telescope gathers light from far away. A microscope does the opposite job \u2014 magnifying what is too small to see. Both extend your eyes.",
+ wonder:"Both of them collect light. So what is really different between them?"},
+{zone:"scale",q:"Which of these is smallest?",
+ options:["A grain of sand","A human hair's width","A red blood cell","A bacterium"],answer:3,
+ explain:"Bacteria are the smallest here \u2014 typically a few micrometres. A red blood cell is larger, a hair is wider still, and a sand grain dwarfs them all.",
+ wonder:"How many bacteria would fit across the width of one hair?"},
+
+{zone:"wind",q:"What actually causes wind?",
+ options:["The Earth spinning alone","Air moving from high pressure to low pressure","Trees pushing air","The Moon pulling air"],answer:1,
+ explain:"The Sun heats the ground unevenly. Warm air rises, leaving lower pressure behind, and cooler air flows in to fill the gap. That flow is wind.",
+ wonder:"If the Sun switched off, how long would there still be wind?"},
+{zone:"wind",q:"A wind turbine converts the energy of moving air into\u2026",
+ options:["Heat energy","Electrical energy","Chemical energy","Sound energy"],answer:1,
+ explain:"Moving air pushes the blades, the blades turn a generator, and the generator produces electricity. The air leaves slower than it arrived.",
+ wonder:"Could a turbine ever take all the energy out of the wind?"},
+{zone:"wind",q:"Where air moves faster over a surface, the pressure it exerts is\u2026",
+ options:["Higher","Lower","Unchanged","Zero"],answer:1,
+ explain:"Faster-moving air pushes sideways with less pressure. Shape a wing so air moves faster over the top, and the higher pressure underneath pushes it up.",
+ wonder:"Hold a strip of paper below your lips and blow across the top. Which way does it move, and why?"},
+{zone:"wind",q:"Why does a kite stay up?",
+ options:["It is lighter than air","Its angled surface deflects air downward and gets pushed up","The string pulls it upward","Hot air fills it"],answer:1,
+ explain:"The kite tilts into the wind and pushes air downward. The air pushes back just as hard, upward \u2014 and the string stops the kite being blown away.",
+ wonder:"What happens to a kite the moment the wind stops?"},
+{zone:"wind",q:"Which shape would slow down the most in moving air?",
+ options:["A smooth teardrop","A flat sheet held face-on","A thin needle point-first","A narrow wing"],answer:1,
+ explain:"A flat face-on sheet forces air to break around it messily, creating maximum drag. Streamlined shapes let air close back in smoothly behind them.",
+ wonder:"Why does a cyclist crouch low instead of sitting upright?"},
+{zone:"wind",q:"Wind speed is commonly measured with a\u2026",
+ options:["Anemometer","Seismograph","Hygrometer","Altimeter"],answer:0,
+ explain:"An anemometer \u2014 usually spinning cups. The faster they turn, the faster the wind. A hygrometer measures humidity instead.",
+ wonder:"How would you build one from things in your kitchen?"},
+{zone:"youq",q:"Your skin's outer layer replaces itself completely about every\u2026",
+ options:["28 days","28 weeks","28 months","28 years"],answer:0,
+ explain:"Roughly every four weeks. The dust in your house is partly you.",
+ wonder:"So how much of the you from last month is still here?"},
+{zone:"youq",q:"How many red blood cells does your bone marrow make every second?",
+ options:["About 20","About 2,000","About 2 million","About 2 billion"],answer:2,
+ explain:"Around 2 million a second, every second, replacing the ones wearing out.",
+ wonder:"If they are replaced that fast, what happens to the old ones?"},
+{zone:"youq",q:"A resting adult heart beats roughly how many times a minute?",
+ options:["8","80","800","8,000"],answer:1,
+ explain:"Usually between 60 and 100, so about 80 on average. A newborn's runs far faster, and a trained athlete's much slower.",
+ wonder:"Why would being fitter make your heart beat less often, not more?"},
+{zone:"youq",q:"About how many times do you blink in a minute?",
+ options:["About 2","About 15","About 60","About 200"],answer:1,
+ explain:"Around 15 to 20 times a minute while you are awake, and you almost never notice a single one.",
+ wonder:"Why does the world not go dark every time you blink?"},
+{zone:"youq",q:"Roughly how many breaths do you take in a day?",
+ options:["200","2,000","20,000","200,000"],answer:2,
+ explain:"About 20,000, mostly without ever deciding to.",
+ wonder:"What else does your body do all day without asking you?"},
+{zone:"youq",q:"How many bones are there in an adult human body?",
+ options:["106","206","306","406"],answer:1,
+ explain:"About 206. You were born with roughly 300 \u2014 many fused together as you grew.",
+ wonder:"Which ones fused, and why would that be an improvement?"},
+{zone:"youq",q:"Just sitting still, your body gives off about as much heat as\u2026",
+ options:["A candle","A 100 watt bulb","A kettle","A car engine"],answer:1,
+ explain:"A resting adult radiates roughly 100 watts. A crowded room warms up because of exactly this.",
+ wonder:"Where is all that energy coming from?"},
+{zone:"youq",q:"Roughly how many bacteria live on one square centimetre of your skin?",
+ options:["About 10","About 1,000","About 100,000","None if you washed"],answer:2,
+ explain:"Very roughly 100,000, and washing reduces them rather than removing them. Most are harmless and some are useful.",
+ wonder:"If they are mostly helpful, what happens when you scrub them all off?"},
+{zone:"youq",q:"About how long does your blood take to travel all the way round your body?",
+ options:["About a second","About a minute","About an hour","About a day"],answer:1,
+ explain:"Roughly a minute for a full circuit at rest, and quicker when you run.",
+ wonder:"How far do you think that one lap actually is?"},
+{zone:"youq",q:"Laid out flat, an adult's skin would cover about the same area as\u2026",
+ options:["A book","A bath towel","A double bed","A car"],answer:1,
+ explain:"About 1.8 square metres \u2014 close to a large bath towel. It is your heaviest organ as well as your largest.",
+ wonder:"What jobs is it doing right now that you never notice?"},
+{zone:"youq",q:"About how fast is the Sun carrying us through the galaxy?",
+ options:["230 km per hour","230 km per minute","230 km per second","230 km per day"],answer:2,
+ explain:"About 230 kilometres every second, and the whole solar system goes with it. You cannot feel it because everything around you is moving too.",
+ wonder:"Why can you feel a bus turning but not this?"},
+{zone:"youq",q:"How far does Earth travel around the Sun in one year?",
+ options:["9.4 lakh km","9.4 crore km","94 crore km","940 crore km"],answer:2,
+ explain:"About 940 million km \u2014 94 crore \u2014 every year, and you have done it once for every birthday.",
+ wonder:"How many times have you gone round now?"},
+{zone:"youq",q:"Roughly how much do the Himalayas rise each year?",
+ options:["About 5 mm","About 5 cm","About 5 metres","They do not rise"],answer:0,
+ explain:"Around 5 mm a year as India keeps pushing into Asia. Erosion wears some of it straight back off.",
+ wonder:"If it has been rising for millions of years, why is Everest not far taller?"},
+{zone:"youq",q:"How long does the Moon take to go from one new moon to the next?",
+ options:["About 7 days","About 29.5 days","About 60 days","About 365 days"],answer:1,
+ explain:"About 29.5 days. That cycle is where the month came from in the first place.",
+ wonder:"Why does the calendar month not match it exactly any more?"},
+{zone:"youq",q:"Every bank card in the world is the same width. How wide?",
+ options:["55.6 mm","85.6 mm","105.6 mm","125.6 mm"],answer:1,
+ explain:"85.6 mm, fixed by an international standard, which is why a card works in any machine anywhere in the world.",
+ wonder:"What else in your pocket is the same size everywhere on Earth?"},
+{zone:"youq",q:"In Morse code, a single dot on its own is which letter?",
+ options:["A","E","S","T"],answer:1,
+ explain:"E \u2014 the commonest letter in English got the shortest signal. T, the next commonest, is a single dash.",
+ wonder:"Why would a code designer bother sorting them that way?"},
+{zone:"youq",q:"A Braille letter is made from a grid of how many dots?",
+ options:["Four","Six","Eight","Twelve"],answer:1,
+ explain:"Six \u2014 two columns of three. That gives 64 combinations, enough for every letter, number and punctuation mark.",
+ wonder:"Why six and not more? Try covering six dots with one fingertip."},
+{zone:"youq",q:"The word PARSEC can be spelled entirely from chemical element symbols. Which ones?",
+ options:["P, A, R, S, E, C","P, Ar, Se, C","Pa, Rs, Ec","Par, Sec"],answer:1,
+ explain:"Phosphorus, Argon, Selenium, Carbon. Every symbol is one or two letters, so names can often be built this way.",
+ wonder:"Can your own name be spelled out of element symbols? Work it out on paper."},
+{zone:"youq",q:"Which of these is a real unit of distance?",
+ options:["Parsec","Parcel","Parsley","Parson"],answer:0,
+ explain:"A parsec is about 3.26 light years \u2014 a distance, not a time. It comes from the angle a star appears to shift as Earth moves round the Sun.",
+ wonder:"How could measuring an angle tell you how far away a star is?"},
+{zone:"road",q:"Which kind of helmet is the only one here that protects your chin and jaw?",
+ options:["Half helmet","Open face","Full face","Any helmet with a strap"],answer:2,
+ explain:"Only a full face helmet has a chin bar. The chin and jaw take a large share of impacts, and every other type leaves them bare.",
+ wonder:"Which part of your head hits the road first if you go over the handlebars?"},
+{zone:"road",q:"On a helmet sold in India, the ISI mark with IS 4151 should be\u2026",
+ options:["A sticker on the back","Moulded into the shell","Printed on the box only","Anywhere, it does not matter"],answer:1,
+ explain:"It is moulded in. A printed sticker is the commonest sign of a helmet that will not protect you \u2014 it exists to get past a traffic stop.",
+ wonder:"Why would anyone sell a helmet that does not work?"},
+{zone:"road",q:"You drop your helmet hard in a crash but it looks undamaged. What should you do?",
+ options:["Keep using it","Replace it","Repaint it","Only replace it if cracked"],answer:1,
+ explain:"Replace it. The foam liner works by crushing, and it only crushes once. From the outside you cannot tell it has already been used up.",
+ wonder:"If the foam crushes to protect you, what is it protecting you from exactly?"},
+{zone:"road",q:"What happens to a helmet worn with the chin strap unfastened?",
+ options:["It works normally","It comes off in the first moment of a crash","It works if it fits well","It protects the top only"],answer:1,
+ explain:"It leaves your head almost immediately, before the impact that matters. An unfastened helmet is a hat.",
+ wonder:"Why is the strap under the jaw rather than around the forehead?"},
+{zone:"road",q:"A friend has had a couple of drinks and says he is fine to ride home. What actually helps?",
+ options:["Let him go slowly","Get him a ride and keep the keys","Give him coffee first","Follow behind him"],answer:1,
+ explain:"Nothing sobers a person up except time. Coffee makes a drunk person alert and still drunk. The only thing that works is not letting them ride.",
+ wonder:"Why is it so hard to say that to a friend, and what could you say instead?"},
+{zone:"road",q:"Alcohol makes driving dangerous mainly because it\u2026",
+ options:["Blurs your vision only","Slows your reaction and spoils your judgement","Makes you drive slower","Affects only heavy drinkers"],answer:1,
+ explain:"It lengthens the gap between seeing something and acting, and it weakens the correction you then make. People also judge themselves as fine while both are happening.",
+ wonder:"If you cannot feel it happening, how would you ever know?"},
+{zone:"road",q:"A microsleep is\u2026",
+ options:["A short nap you choose to take","A few seconds of sleep you do not notice","Feeling drowsy but awake","Sleeping with your eyes shut"],answer:1,
+ explain:"A few seconds of real sleep that you do not know you had. Your eyes can even stay open. At highway speed a four-second microsleep covers well over a hundred metres.",
+ wonder:"What would the road look like to you when you came back?"},
+{zone:"road",q:"If you double your speed, the distance needed to brake to a stop roughly\u2026",
+ options:["Stays the same","Doubles","Goes up four times","Halves"],answer:2,
+ explain:"Braking distance grows with the square of speed, so twice the speed needs about four times the distance. This is why a small increase in speed matters so much.",
+ wonder:"Where is all that extra energy going when you brake?"},
+{zone:"road",q:"Reading one message takes your eyes off the road for about five seconds. At 50 km/h, how far do you travel in that time?",
+ options:["About 7 metres","About 20 metres","About 70 metres","About 200 metres"],answer:2,
+ explain:"50 km/h is just under 14 metres every second, so five seconds is around 70 metres \u2014 travelled completely blind.",
+ wonder:"Would you walk 70 metres down a road with your eyes shut?"},
+{zone:"road",q:"Who has to wear a helmet on a two-wheeler in India?",
+ options:["The rider only","The rider and the pillion","Only on highways","Only above 50 km/h"],answer:1,
+ explain:"Both. The law covers the pillion rider as well, and a pillion in a crash is thrown just as hard as the person in front.",
+ wonder:"Why do you think the pillion is so often the one without a helmet?"},
+{zone:"road",q:"Your phone buzzes while you are riding. What is the safe thing to do?",
+ options:["Check it at the next signal","Answer on speaker","Leave it until you have stopped somewhere safe","Check it quickly on a straight road"],answer:2,
+ explain:"A stopped signal is still a road with people moving around you, and a hands-free call takes your attention just as much as a handheld one. The message will wait.",
+ wonder:"How many messages have ever been worth arriving late for, let alone not arriving?"},
+{zone:"road",q:"You are on a long drive and start feeling drowsy. What actually works?",
+ options:["Loud music","Cold air from the window","Stopping and resting","Coffee and carrying on"],answer:2,
+ explain:"Music and cold air do nothing for sleep pressure \u2014 they only hide it for a few minutes. Stopping is the only thing that fixes it. Fifteen minutes off the road beats two hours of fighting it.",
+ wonder:"Why does your body insist on sleeping even when you have decided not to?"},
+{zone:"road",q:"A dog runs into the road ahead of you. What is usually safest?",
+ options:["Swerve hard around it","Brake firmly and stay in your lane","Speed up past it","Sound the horn and keep going"],answer:1,
+ explain:"Swerving at speed is how riders lose control or move into the path of something worse. Brake hard in a straight line and keep your lane. Most of the danger is what you steer into, not what you steer around.",
+ wonder:"Why does slowing down early give you so many more options than braking late?"},
+{zone:"road",q:"Which of these makes the biggest difference to whether you walk away from a crash?",
+ options:["Riding a newer bike","Wearing a certified helmet, fastened","Knowing the road well","Riding in daylight"],answer:1,
+ explain:"Familiar roads and good light help, but the helmet is the one that is doing something at the moment it matters. It is also the only one entirely within your control every single time.",
+ wonder:"What else about your journey is fully within your control?"},
+{zone:"clock",q:"Why does an hour have 60 minutes rather than 100?",
+ options:["It divides neatly by many numbers","Because of the Moon","A French decision","Nobody knows"],answer:0,
+ explain:"The Babylonians counted in sixties, and 60 splits evenly into halves, thirds, quarters, fifths, sixths, tenths and more. Hard to improve on before calculators.",
+ wonder:"What would a hundred-minute hour do to the way you split up a day?"},
+{zone:"clock",q:"Why do clock hands go the way they do?",
+ options:["A rule made by clockmakers","A sundial's shadow moves that way north of the equator","To match the stars","It was chosen at random"],answer:1,
+ explain:"Mechanical clocks copied the sundial, and in the northern hemisphere the shadow sweeps that way. Built first in the southern hemisphere, clocks would very likely run the other way.",
+ wonder:"So which way does a sundial's shadow move in Australia?"},
+{zone:"clock",q:"What is one second actually measured against today?",
+ options:["The Earth's spin","A swinging pendulum","The vibration of a caesium atom","The Sun crossing the sky"],answer:2,
+ explain:"A fixed number of oscillations of a caesium atom. The Earth's spin turned out to be slightly irregular, so it was retired as the reference.",
+ wonder:"What does it mean that our most reliable clock is a single atom?"},
+{zone:"clock",q:"How long does Earth take to spin once relative to the distant stars?",
+ options:["Exactly 24 hours","About 23 hours 56 minutes","About 25 hours","About 12 hours"],answer:1,
+ explain:"About 23 hours 56 minutes. The extra four minutes to reach 24 hours is Earth catching up with its own movement around the Sun.",
+ wonder:"So which of the two is the day your clock is actually keeping?"},
+{zone:"clock",q:"In 12 hours, how many times do the hour and minute hands sit exactly on top of each other?",
+ options:["12 times","11 times","24 times","10 times"],answer:1,
+ explain:"Eleven. They meet just after 1:05, 2:10 and so on, but never at 11 o'clock \u2014 the next meeting is 12 itself.",
+ wonder:"Why does one meeting go missing?"},
+{zone:"clock",q:"India runs on one time zone for the whole country. What is its offset?",
+ options:["Five hours ahead of UTC","Five and a half hours ahead","Six hours ahead","It varies by state"],answer:1,
+ explain:"IST is five and a half hours ahead of UTC \u2014 one of a handful of half-hour zones in the world, set on a line near Mirzapur.",
+ wonder:"What would change in Kohima and in Dwarka if India had two zones?"},
+{zone:"clock",q:"Which of these years is NOT a leap year?",
+ options:["2000","2020","1900","2024"],answer:2,
+ explain:"1900 is not. A century year is only a leap year if it divides by 400, which is why 2000 was and 1900 was not.",
+ wonder:"Why does the calendar need a rule this fiddly at all?"},
+{zone:"clock",q:"The Caf\u00e9 Wall illusion makes rows of tiles appear to slope. What is actually true of them?",
+ options:["They really do slope","They are perfectly parallel","They curve slightly","They move very slowly"],answer:1,
+ explain:"Perfectly parallel. The staggered tiles and the mortar line between them fool the edge-detecting parts of your visual system. Knowing this does not stop you seeing it.",
+ wonder:"What else might your eyes be inventing right now?"},
+{zone:"clock",q:"If a clock showed the time as element symbols by atomic number, what would 26 be?",
+ options:["Iron","Copper","Silver","Neon"],answer:0,
+ explain:"Iron, atomic number 26. Every element has a number telling you how many protons sit in its nucleus, so any number can be written as a symbol.",
+ wonder:"What would your age look like written as an element?"},
+{zone:"clock",q:"Earth moves around the Sun at roughly what speed?",
+ options:["About 3 km per second","About 30 km per second","About 300 km per second","About 3,000 km per second"],answer:1,
+ explain:"About 30 kilometres every second \u2014 near enough 1,800 km in the time it takes to read this question.",
+ wonder:"Why has nobody ever felt it?"}
+];
+
+const C2I_ROUNDS = {
+  cymatics: [
+    { stage:"Citizen", type:"text", q:"What do you think is happening here.", minWords:8, allowSkip:true },
+    { stage:"Seeker", type:"text", q:"Why do you think the water is moving or what is making the water move.", minWords:12, allowSkip:true },
+    { stage:"Solver", type:"text", q:"Why does low frequency make the water more active.", minWords:15, allowSkip:true, keywords:["frequency","vibration","energy","low","water","active"] },
+    { stage:"Transition", type:"text", q:"What changed in the system when the frequency was reduced?", minWords:10, allowSkip:true },
+    { stage:"Transition", type:"text", q:"How do you know the movement is linked to vibration and not just to the water itself?", minWords:12, allowSkip:true },
+    { stage:"Innovator", type:"text", q:"Where else could this be applied? Or how could this be made more efficient?", minWords:20, allowSkip:true }
+  ],
+  rain: [
+    { stage:"Citizen", type:"text", q:"What do you think is happening here.", minWords:8, allowSkip:true },
+    { stage:"Seeker", type:"text", q:"Why do you think the rain sound is being created inside the instrument?", minWords:12, allowSkip:true },
+    { stage:"Solver", type:"text", q:"Why does a steeper tilt make the sound heavier and faster?", minWords:15, allowSkip:true, keywords:["tilt","gravity","impact","speed","collisions","rain"] },
+    { stage:"Transition", type:"text", q:"What changed when the instrument was tilted more?", minWords:10, allowSkip:true },
+    { stage:"Transition", type:"text", q:"How do you know the sound is caused by many small collisions rather than one big sound?", minWords:12, allowSkip:true },
+    { stage:"Innovator", type:"text", q:"Where else could this be applied? Or how could this be made more efficient?", minWords:20, allowSkip:true }
+  ],
+  yoga: [
+    { stage:"Citizen", type:"text", q:"What do you think is happening here.", minWords:8, allowSkip:true },
+    { stage:"Seeker", type:"text", q:"Why do you think standing on one leg feels harder than standing on two?", minWords:12, allowSkip:true },
+    { stage:"Solver", type:"text", q:"Why does a wider stance make balancing easier?", minWords:15, allowSkip:true, keywords:["stance","base","support","centre","balance","gravity"] },
+    { stage:"Transition", type:"text", q:"What changed when the base of support became smaller or larger?", minWords:10, allowSkip:true },
+    { stage:"Transition", type:"text", q:"How do you know breathing and body control are connected to stability?", minWords:12, allowSkip:true },
+    { stage:"Innovator", type:"text", q:"Where else could this be applied? Or how could this be made more efficient?", minWords:20, allowSkip:true }
+  ],
+  raga: [
+    { stage:"Citizen", type:"text", q:"What do you think is happening here.", minWords:8, allowSkip:true },
+    { stage:"Seeker", type:"text", q:"Why do you think the notes sound different when the string or pitch changes?", minWords:12, allowSkip:true },
+    { stage:"Solver", type:"text", q:"Why does a longer or heavier string produce a lower note?", minWords:15, allowSkip:true, keywords:["string","length","mass","vibration","pitch","frequency"] },
+    { stage:"Transition", type:"text", q:"What changed in the vibration when the string was lengthened or tightened?", minWords:10, allowSkip:true },
+    { stage:"Transition", type:"text", q:"How do you know the sound is not only about loudness but also about frequency and tone?", minWords:12, allowSkip:true },
+    { stage:"Innovator", type:"text", q:"Where else could this be applied? Or how could this be made more efficient?", minWords:20, allowSkip:true }
+  ],
+  scale: [
+    { stage:"Citizen", type:"text", q:"What do you think is happening here.", minWords:8, allowSkip:true },
+    { stage:"Seeker", type:"text", q:"Why do you think the world looks different at different scales?", minWords:12, allowSkip:true },
+    { stage:"Solver", type:"text", q:"Why is an atom mostly empty space even though matter feels solid?", minWords:15, allowSkip:true, keywords:["atom","space","matter","solid","nucleus","empty"] },
+    { stage:"Transition", type:"text", q:"What changed when you moved from one scale to another?", minWords:10, allowSkip:true },
+    { stage:"Transition", type:"text", q:"How do you know the structure of matter is different from what it appears to be at the surface?", minWords:12, allowSkip:true },
+    { stage:"Innovator", type:"text", q:"Where else could this be applied? Or how could this be made more efficient?", minWords:20, allowSkip:true }
+  ],
+  wind: [
+    { stage:"Citizen", type:"text", q:"What do you think is happening here.", minWords:8, allowSkip:true },
+    { stage:"Seeker", type:"text", q:"Why do you think the air is moving or changing direction?", minWords:12, allowSkip:true },
+    { stage:"Solver", type:"text", q:"Why does moving air create lift and pressure differences?", minWords:15, allowSkip:true, keywords:["air","pressure","lift","speed","wind","flow"] },
+    { stage:"Transition", type:"text", q:"What changed when the airflow became faster or slower?", minWords:10, allowSkip:true },
+    { stage:"Transition", type:"text", q:"How do you know the shape of the surface is affecting the movement of air?", minWords:12, allowSkip:true },
+    { stage:"Innovator", type:"text", q:"Where else could this be applied? Or how could this be made more efficient?", minWords:20, allowSkip:true }
+  ],
+  youq: [
+    { stage:"Citizen", type:"text", q:"What do you think is happening here.", minWords:8, allowSkip:true },
+    { stage:"Seeker", type:"text", q:"Why do you think the body is behaving in this way?", minWords:12, allowSkip:true },
+    { stage:"Solver", type:"text", q:"Why does the body respond the way it does to movement, breath, or measurement?", minWords:15, allowSkip:true, keywords:["body","breath","heart","response","signal","measurement"] },
+    { stage:"Transition", type:"text", q:"What changed in the body when the condition or activity was altered?", minWords:10, allowSkip:true },
+    { stage:"Transition", type:"text", q:"How do you know the response is connected to the system being measured and not just random?", minWords:12, allowSkip:true },
+    { stage:"Innovator", type:"text", q:"Where else could this be applied? Or how could this be made more efficient?", minWords:20, allowSkip:true }
+  ],
+  road: [
+    { stage:"Citizen", type:"text", q:"What do you think is happening here.", minWords:8, allowSkip:true },
+    { stage:"Seeker", type:"text", q:"Why do you think the person or object is behaving in this way on the road?", minWords:12, allowSkip:true },
+    { stage:"Solver", type:"text", q:"Why does speed, reaction time, or protection change the outcome of a crash?", minWords:15, allowSkip:true, keywords:["speed","reaction","helmet","braking","distance","safety"] },
+    { stage:"Transition", type:"text", q:"What changed when the speed, attention, or protection was different?", minWords:10, allowSkip:true },
+    { stage:"Transition", type:"text", q:"How do you know the risk is linked to delay, force, and reaction rather than just chance?", minWords:12, allowSkip:true },
+    { stage:"Innovator", type:"text", q:"Where else could this be applied? Or how could this be made more efficient?", minWords:20, allowSkip:true }
+  ],
+  clock: [
+    { stage:"Citizen", type:"text", q:"What do you think is happening here.", minWords:8, allowSkip:true },
+    { stage:"Seeker", type:"text", q:"Why do you think the hands or measurement change in the way they do?", minWords:12, allowSkip:true },
+    { stage:"Solver", type:"text", q:"Why does time measurement depend on regular motion or a fixed reference?", minWords:15, allowSkip:true, keywords:["time","motion","reference","clock","frequency","seconds"] },
+    { stage:"Transition", type:"text", q:"What changed when the reference or motion was altered?", minWords:10, allowSkip:true },
+    { stage:"Transition", type:"text", q:"How do you know time is not just a human idea but a measurable system?", minWords:12, allowSkip:true },
+    { stage:"Innovator", type:"text", q:"Where else could this be applied? Or how could this be made more efficient?", minWords:20, allowSkip:true }
+  ]
+};
+
+let c2iState = { unlocked:false, solved:false, transitionDone:false };
+
+function isTextQuestion(item){ return item && item.type === 'text'; }
+
+function evaluateC2IAnswer(item, value){
+  const text = (value || '').trim();
+  if(!text){ return { pass:false, message:'Please type an answer before submitting.' }; }
+
+  const words = text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
+  if(words.length < (item.minWords || 8)){
+    return { pass:false, message:`Please write at least ${item.minWords} words.` };
+  }
+
+  if(item.stage === 'Solver'){
+    const keys = item.keywords || [];
+    const hitCount = keys.filter(k => text.toLowerCase().includes(k.toLowerCase())).length;
+    if(hitCount >= 2 || text.toLowerCase().includes('low frequency') || text.toLowerCase().includes('vibration')){
+      return { pass:true, message:'Good explanation. The transition questions are now unlocked.' };
+    }
+    return { pass:false, message:'Try linking the movement to frequency, vibration, and the energy being transferred through the water.' };
+  }
+
+  if(item.stage === 'Innovator'){
+    return { pass:true, message:'Nice idea. You have completed the innovation stage.' };
+  }
+
+  return { pass:true, message:'Thank you for sharing your observation.' };
+}
+
+function submitTextAnswer(item){
+  const answerBox = $('textAnswer');
+  if(!answerBox) return;
+
+  const result = evaluateC2IAnswer(item, answerBox.value);
+  if(!result.pass){
+    say(result.message, 2600);
+    return;
+  }
+
+  if(item.stage === 'Solver'){
+    c2iState.solved = true;
+    c2iState.unlocked = true;
+    c2iState.transitionDone = true;
+  }
+
+  if(item.stage === 'Transition'){
+    c2iState.transitionDone = true;
+  }
+
+  if(item.stage === 'Innovator' && c2iState.transitionDone){
+    c2iState.unlocked = true;
+  }
+
+  $('verdict').textContent = 'Response recorded.';
+  $('verdict').className = 'verdict good';
+  $('feedback').classList.add('on');
+  $('explain').textContent = item.stage === 'Solver'
+    ? 'Lower frequency means the water is being driven more strongly over time, so the movement becomes easier to see and more energetic.'
+    : item.stage === 'Transition'
+      ? 'The pattern changes because the vibration is changing, which alters how energy is transferred through the water.'
+      : 'Your idea is valuable. Keep building on the pattern you noticed.';
+  $('wonder').textContent = 'What would you test next?';
+
+  $('nextBtn').style.visibility = 'visible';
+  $('nextBtn').textContent = (idx === round.length - 1) ? 'See your score' : 'Next question';
+  $('nextBtn').focus({preventScroll:true});
+  clearTimeout(advanceTimer);
+  clearInterval(tickTimer);
+  advanceTimer = setTimeout(next, AUTO_ADVANCE_SEC * 1000);
+}
+
+/* ================== SETTINGS ================== */
+const PER_ROUND        = 10;
+const POINTS_RIGHT     = 100;
+const POINTS_WRONG     = -50;
+const IDLE_RESET_SEC   = 180;  // kiosk returns to the start screen after this long with no activity
+const AUTO_ADVANCE_SEC = 4;
+/* Timer. TIMER_MODE: 'round' = one clock for the whole round,
+   'question' = a fresh clock on every question, 'off' = no timer.
+   The clock pauses while an explanation is on screen either way.   */
+const TIMER_MODE       = 'round';
+const TIMER_SECONDS    = 60;
+const KEY_PLAYERS = 'parsec_wf_quiz_players';
+const KEY_MISSES  = 'parsec_wf_quiz_misses';
+const KEY_DAY     = 'parsec_wf_quiz_day';
+
+/* ================== STORAGE ================== */
+function today(){ return new Date().toDateString(); }
+function store(key, fallback){
+  try{
+    if(localStorage.getItem(KEY_DAY) !== today()){
+      localStorage.setItem(KEY_DAY, today());
+      localStorage.removeItem(KEY_PLAYERS);
+      localStorage.removeItem(KEY_MISSES);
+      localStorage.removeItem(KEY_GAME);
+      localStorage.removeItem(KEY_BULB);
+      localStorage.removeItem(KEY_PUZ);
+      localStorage.removeItem(KEY_WIND);
+    }
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  }catch(e){ return fallback; }
+}
+function save(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+
+/* ================== ENGINE ================== */
+const $ = id => document.getElementById(id);
+let round=[], idx=0, score=0, right=0, wrong=0, locked=false;
+let player='', zoneId=null, advanceTimer=null, tickTimer=null;
+
+function clearTimers(){ clearTimeout(advanceTimer); advanceTimer=null; clearInterval(tickTimer); tickTimer=null; }
+function show(n){
+  ['start','mode','pick','quiz','game','bulbs','puzzle','wind','end','thanks','dash'].forEach(s => $(s).classList.toggle('on', s===n));
+  $('hostwrap').classList.toggle('hide', n !== 'quiz' && n !== 'end');
+  $('clock').classList.toggle('hide', n !== 'quiz');
+  $('drift').style.opacity = (n === 'start' || n === 'mode' || n === 'pick' || n === 'thanks') ? '1' : '0';
+  if(n !== 'bulbs' && typeof bulbClearTimers === 'function') bulbClearTimers();
+  if(n !== 'game' && typeof leaveGame === 'function') leaveGame();
+  if(n !== 'wind' && typeof windLeave === 'function') windLeave();
+}
+function shuffle(a){ const b=a.slice(); for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];} return b; }
+function clean(s){ return s.replace(/[<>]/g,'').trim().slice(0,18); }
+
+/* the drifting crowd behind the start screen */
+(function(){
+  const d = $('drift');
+  ['tropido','niki','harsh','argon','stephen'].forEach(k => {
+    const i = document.createElement('img');
+    i.src = MASCOT[k]; i.alt = '';
+    d.appendChild(i);
+  });
+})();
+
+let hostKey = null;
+function setHost(zid){
+  hostKey = HOST[zid] || 'stephen';
+  $('hostimg').src = MASCOT[hostKey];
+  $('hostimg').alt = HOST_NAME[hostKey] + ', your guide';
+  $('hostwrap').classList.remove('hide');
+  say(`${HOST_NAME[hostKey]} is with you`, 2600);
+}
+let sayTimer;
+function say(text, ms){
+  const el = $('hostsay');
+  el.textContent = text;
+  el.classList.add('on');
+  clearTimeout(sayTimer);
+  sayTimer = setTimeout(() => el.classList.remove('on'), ms || 2400);
+}
+function react(good){
+  const img = $('hostimg');
+  img.classList.remove('cheer','shrug'); void img.offsetWidth;
+  img.classList.add(good ? 'cheer' : 'shrug');
+  const yes = ['Yes!','That is it.','Nailed it.','Good one.'];
+  const no  = ['Not that one.','Close.','Try the next.','Keep going.'];
+  const pick = good ? yes : no;
+  say(pick[Math.floor(Math.random()*pick.length)], 2200);
+}
+
+/* zone picker */
+(function(){
+  const wrap = $('zones');
+  ZONES.forEach(z => {
+    if(!QUESTIONS.some(q => q.zone === z.id)) return;
+    const b = document.createElement('button');
+    b.className = 'zone';
+    b.innerHTML = `<b>${z.name}</b><i>${z.tag}</i>`;
+    b.addEventListener('click', () => startRound(z.id));
+    wrap.appendChild(b);
+  });
+  const all = document.createElement('button');
+  all.className = 'zone all';
+  all.innerHTML = `<b>Mix of everything</b><i>Questions from across the floor</i>`;
+  all.addEventListener('click', () => startRound(null));
+  wrap.appendChild(all);
+})();
+
+function goPick(){
+  const v = clean($('nameInput').value);
+  if(!v){ $('nameInput').focus(); return; }
+  player = v;
+  $('hello').textContent = `Pick a gallery, ${player}`;
+  $('modeHello').textContent = `What shall it be, ${player}?`;
+  show('mode');
+}
+
+function startRound(zid){
+  clearTimers();
+  zoneId = zid;
+  c2iState = { unlocked:false, solved:false, transitionDone:false };
+
+  if(C2I_ROUNDS[zid]){
+    round = C2I_ROUNDS[zid].map(q => ({...q}));
+    idx = 0; score = 0; right = 0; wrong = 0;
+    const z = ZONES.find(z => z.id === zid);
+    $('zoneName').textContent = z ? z.name : 'Across the floor';
+    $('scoreWho').textContent = player;
+    setHost(zid || (ZONES[Math.floor(Math.random()*ZONES.length)].id));
+    paintScore();
+    show('quiz');
+    renderQuestion();
+    return;
+  }
+
+  const pool = zid ? QUESTIONS.filter(q => q.zone === zid) : QUESTIONS;
+  round = shuffle(pool).slice(0, Math.min(PER_ROUND, pool.length));
+  idx=0; score=0; right=0; wrong=0;
+  const z = ZONES.find(z => z.id === zid);
+  $('zoneName').textContent = z ? z.name : 'Across the floor';
+  $('scoreWho').textContent = player;
+  setHost(zid || (ZONES[Math.floor(Math.random()*ZONES.length)].id));
+  paintScore();
+  show('quiz');
+  if(TIMER_MODE === 'round') startClock();
+  renderQuestion();
+}
+
+function paintScore(){
+  $('score').textContent = score;
+  $('score').classList.toggle('neg', score < 0);
+}
+
+function renderQuestion(){
+  clearTimers(); locked = false;
+  const item = round[idx];
+  const stageBadge = $('stageBadge');
+  const stageKey = (item.stage || 'Citizen').toLowerCase();
+  $('count').textContent = `Question ${idx+1} of ${round.length}`;
+  $('fill').style.width = (idx / round.length * 100) + '%';
+  stageBadge.textContent = '';
+  stageBadge.className = 'stage-badge hidden';
+  $('question').textContent = item.q;
+  $('feedback').classList.remove('on');
+  $('nextBtn').style.visibility = 'hidden';
+  const box = $('opts');
+  box.className = 'opts'; box.innerHTML = '';
+
+  if(isTextQuestion(item)){
+    const isLockedTransition = item.stage === 'Transition' && !c2iState.solved;
+    const isLockedInnovator = item.stage === 'Innovator' && !c2iState.transitionDone;
+
+    if(isLockedTransition || isLockedInnovator){
+      const notice = document.createElement('div');
+      notice.className = 'c2i-note';
+      notice.textContent = isLockedTransition
+        ? 'This question unlocks after a previous answer is completed.'
+        : 'This question can be skipped for now and revisited later.';
+      box.appendChild(notice);
+
+      const actions = document.createElement('div');
+      actions.className = 'c2i-actions';
+      const skip = document.createElement('button');
+      skip.className = 'opt alt';
+      skip.textContent = 'Skip';
+      skip.addEventListener('click', () => next());
+      actions.appendChild(skip);
+      box.appendChild(actions);
+      $('verdict').textContent = '';
+      $('verdict').className = 'verdict';
+      return;
+    }
+
+    const notice = document.createElement('div');
+    notice.className = 'c2i-note';
+    notice.textContent = 'Type your response in the box below.';
+    box.appendChild(notice);
+
+    const field = document.createElement('textarea');
+    field.id = 'textAnswer';
+    field.placeholder = 'Type your answer here...';
+    field.rows = 5;
+    field.value = '';
+    box.appendChild(field);
+
+    const actions = document.createElement('div');
+    actions.className = 'c2i-actions';
+
+    const submit = document.createElement('button');
+    submit.className = 'opt';
+    submit.textContent = 'Submit';
+    submit.addEventListener('click', () => submitTextAnswer(item));
+    actions.appendChild(submit);
+
+    if(item.allowSkip){
+      const skip = document.createElement('button');
+      skip.className = 'opt alt';
+      skip.textContent = 'Skip';
+      skip.addEventListener('click', () => next());
+      actions.appendChild(skip);
+    }
+
+    box.appendChild(actions);
+    $('verdict').textContent = '';
+    $('verdict').className = 'verdict';
+    $('explain').textContent = '';
+    $('wonder').textContent = '';
+    return;
+  }
+
+  item.options.forEach((text,i) => {
+    const b = document.createElement('button');
+    b.className = 'opt'; b.textContent = text;
+    b.addEventListener('click', () => answer(i));
+    box.appendChild(b);
+  });
+
+  if(TIMER_MODE === 'question') startClock();
+  else if(TIMER_MODE === 'round') runClock();   // resume after the explanation pause
+}
+
+/* ---------- countdown clock ---------- */
+let timeLeft = 0, clockInt = null;
+
+function paintClock(){
+  const c = $('clock');
+  $('clockNum').textContent = Math.max(0, timeLeft);
+  c.classList.toggle('warn', timeLeft <= 20 && timeLeft > 10);
+  c.classList.toggle('crit', timeLeft <= 10);
+}
+function startClock(){
+  if(TIMER_MODE === 'off'){ $('clock').classList.add('hide'); return; }
+  $('clock').classList.remove('hide');
+  timeLeft = TIMER_SECONDS;
+  paintClock();
+  runClock();
+}
+function runClock(){
+  if(TIMER_MODE === 'off') return;
+  clearInterval(clockInt);
+  clockInt = setInterval(() => {
+    timeLeft--;
+    paintClock();
+    if(timeLeft <= 0) timeUp();
+  }, 1000);
+}
+function stopClock(){ clearInterval(clockInt); clockInt = null; }
+
+function timeUp(){
+  stopClock();
+  if(TIMER_MODE === 'question'){
+    if(!locked) answer(-1);          // no choice made: counts as wrong
+  }else{
+    locked = true;
+    $('opts').classList.add('locked');
+    say("Time's up!", 4000);
+    finish();
+  }
+}
+
+function popScore(delta, good){
+  const pop = $('pop');
+  pop.textContent = (delta > 0 ? '+' : '\u2212') + Math.abs(delta);
+  pop.style.color = good ? 'var(--amber)' : 'var(--coral)';
+  pop.classList.remove('go'); void pop.offsetWidth; pop.classList.add('go');
+}
+
+function answer(choice){
+  if(locked) return;
+  const item = round[idx];
+  if(isTextQuestion(item)){
+    return submitTextAnswer(item);
+  }
+
+  locked = true;
+  stopClock();
+  const isRight = choice === item.answer;
+  $('opts').classList.add('locked');
+  [...$('opts').children].forEach((b,i) => {
+    if(i === item.answer) b.classList.add('correct');
+    else if(i === choice) b.classList.add('wrong');
+    else b.classList.add('dim');
+  });
+
+  const delta = isRight ? POINTS_RIGHT : POINTS_WRONG;
+  score += delta;
+  isRight ? right++ : wrong++;
+  paintScore();
+
+  if(!isRight){
+    const m = store(KEY_MISSES, {});
+    m[item.q] = (m[item.q] || 0) + 1;
+    save(KEY_MISSES, m);
+  }
+
+  popScore(delta, isRight);
+  react(isRight);
+
+  $('verdict').textContent = isRight ? 'Right \u2014 and here is why.' : 'Not this time. Here is what is going on.';
+  $('verdict').className = 'verdict ' + (isRight ? 'good' : 'bad');
+  $('explain').textContent = item.explain;
+  $('wonder').textContent = item.wonder;
+  $('feedback').classList.add('on');
+
+  const label = (idx === round.length-1) ? 'See your score' : 'Next question';
+  const btn = $('nextBtn');
+  btn.style.visibility = 'visible';
+  btn.focus({preventScroll:true});
+  let left = AUTO_ADVANCE_SEC;
+  btn.textContent = `${label} (${left})`;
+  tickTimer = setInterval(() => { left--; btn.textContent = left>0 ? `${label} (${left})` : label; }, 1000);
+  advanceTimer = setTimeout(next, AUTO_ADVANCE_SEC*1000);
+}
+
+function next(){ clearTimers(); idx++; if(idx >= round.length) finish(); else renderQuestion(); }
+
+function finish(){
+  clearTimers();
+  stopClock();
+  const attempted = right + wrong;
+  const max = (attempted || round.length) * POINTS_RIGHT;
+  const pct = max ? score / max : 0;
+  const z = ZONES.find(z => z.id === zoneId);
+
+  $('endWho').textContent = `${player}, you brought back`;
+  $('final').textContent = score;
+  $('final').classList.toggle('neg', score < 0);
+  $('endVerdict').textContent = lineFor(pct);
+  $('tally').innerHTML =
+    `<span>${right} right &middot; +${right*POINTS_RIGHT}</span>` +
+    `<span>${wrong} wrong &middot; &minus;${wrong*Math.abs(POINTS_WRONG)}</span>` +
+    (attempted < round.length ? `<span>${round.length-attempted} unanswered</span>` : '');
+
+  say(score >= 0 ? 'Nice round!' : 'Come back for another go.', 5000);
+
+  const players = store(KEY_PLAYERS, []);
+  players.push({
+    name: player,
+    score: score,
+    right: right,
+    wrong: wrong,
+    zone: z ? z.name : 'Mixed',
+    at: new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'})
+  });
+  save(KEY_PLAYERS, players);
+
+  show('end');
+}
+
+/* ---------- thank you ---------- */
+function showThanks(){
+  clearTimers();
+  const k = hostKey || 'stephen';
+  $('thanksImg').src = MASCOT[k];
+  $('thanksImg').alt = HOST_NAME[k];
+  $('thanksTitle').textContent = player ? `Thank you, ${player}!` : 'Thank you!';
+  $('thanksLine').textContent =
+    `${HOST_NAME[k]} enjoyed that. You answered ${right + wrong} question${right+wrong===1?'':'s'} and scored ${score}.`;
+  show('thanks');
+}
+
+/* ---------- scroll reveal ---------- */
+let revealObserver = null;
+function armReveals(){
+  const targets = [
+    ...document.querySelectorAll('#heroSlot > *'),
+    ...document.querySelectorAll('#stats > *'),
+    ...document.querySelectorAll('#dash .sectitle'),
+    ...document.querySelectorAll('#gcards > *'),
+    ...document.querySelectorAll('#board > *'),
+    ...document.querySelectorAll('#scPanel > *')
+  ];
+  if(!revealObserver){
+    revealObserver = new IntersectionObserver(entries => {
+      entries.forEach(en => en.target.classList.toggle('in', en.isIntersecting));
+    }, {root: $('dash'), threshold: 0.15, rootMargin: '0px 0px -6% 0px'});
+  }else{
+    revealObserver.disconnect();
+  }
+  targets.forEach((el, i) => {
+    el.classList.add('rv');
+    el.style.transitionDelay = Math.min(i % 6, 5) * 55 + 'ms';
+    revealObserver.observe(el);
+  });
+}
+
+/* ---------- dashboard ---------- */
+function renderDash(){
+  const all = store(KEY_PLAYERS, []);
+  const players = all.slice().sort((a,b) => b.score - a.score);
+  const board = $('board');
+
+  $('daystamp').textContent = new Date().toLocaleDateString('en-IN',
+    {day:'2-digit', month:'short', year:'numeric'});
+
+  /* leader hero */
+  const hero = $('heroSlot');
+  if(players.length){
+    const top = players[0];
+    const z = ZONES.find(z => z.name === top.zone);
+    hero.innerHTML =
+      `<div class="hero">
+         <div>
+           <div class="hero-eyebrow">Leading the floor</div>
+           <div class="hero-name">${top.name}</div>
+           <div class="hero-meta">
+             <span class="hero-score">${top.score} points</span>
+             <span class="daystamp">${top.zone} &middot; ${top.at}</span>
+           </div>
+         </div>
+         <div class="hero-art art">${z ? ART[z.id] : ART.scale}<img class="mascot heromascot" src="${MASCOT[z ? HOST[z.id] : 'stephen']}" alt=""></div>
+       </div>`;
+  }else{
+    hero.innerHTML = `<div class="hero"><div>
+      <div class="hero-eyebrow">Nobody has played yet</div>
+      <div class="hero-name">The board is empty</div>
+      <div class="hero-meta"><span class="daystamp">Be the first name on it.</span></div>
+    </div><div class="hero-art art">${ART.cymatics}</div></div>`;
+  }
+
+  /* stat strip */
+  const rounds = all.length;
+  const totalRight = all.reduce((s,p) => s + (p.right || 0), 0);
+  const totalWrong = all.reduce((s,p) => s + (p.wrong || 0), 0);
+  const totalQs = totalRight + totalWrong;
+  const accuracy = totalQs ? Math.round(totalRight / totalQs * 100) : 0;
+  const best = players.length ? players[0].score : 0;
+  const zoneCounts = {};
+  all.forEach(p => { zoneCounts[p.zone] = (zoneCounts[p.zone] || 0) + 1; });
+  const busiest = Object.entries(zoneCounts).sort((a,b) => b[1]-a[1])[0];
+
+  $('stats').innerHTML =
+    `<div class="stat"><b>${rounds}</b><span>rounds played today</span></div>` +
+    `<div class="stat"><b>${totalQs}</b><span>questions answered</span></div>` +
+    `<div class="stat"><b>${accuracy}%</b><span>answered correctly</span></div>` +
+    `<div class="stat"><b>${best}</b><span>highest score</span></div>` +
+    `<div class="stat"><b>${busiest ? busiest[0] : '\u2014'}</b><span>busiest gallery</span></div>`;
+
+  /* gallery cards */
+  $('gcards').innerHTML = ZONES.map(z => {
+    const n = zoneCounts[z.name] || 0;
+    const hk = HOST[z.id];
+    return `<div class="gcard">
+      <div class="art gart">${ART[z.id]}</div>
+      <div class="gbody">
+        <b>${z.name}</b>
+        <p>${z.about}</p>
+        <span class="gplays">${HOST_NAME[hk]} hosts &middot; ${n ? n + (n === 1 ? ' round today' : ' rounds today') : 'no rounds yet'}</span>
+      </div></div>`;
+  }).join('');
+
+  /* full list */
+  board.innerHTML = '';
+  if(!players.length){
+    board.innerHTML = '<p class="empty">The board fills up as visitors play.</p>';
+  }else{
+    players.slice(0, 15).forEach((p, i) => {
+      const row = document.createElement('div');
+      row.className = 'row' + (i === 0 ? ' lead' : '');
+      row.innerHTML =
+        `<div class="rank">${i+1}</div>` +
+        `<div class="who">${p.name}<small>${p.zone} &middot; ${p.at}</small></div>` +
+        `<div class="pts${p.score < 0 ? ' neg' : ''}">${p.score}</div>`;
+      board.appendChild(row);
+    });
+  }
+
+  const misses = store(KEY_MISSES, {});
+  const top5 = Object.entries(misses).sort((a,b) => b[1]-a[1]).slice(0,5);
+  const panel = $('scPanel');
+  panel.innerHTML = '';
+  if(top5.length){
+    const h = document.createElement('div');
+    h.className = 'sectitle';
+    h.textContent = 'For Science Communicators \u2014 most missed today';
+    panel.appendChild(h);
+    top5.forEach(([q,n]) => {
+      const d = document.createElement('div');
+      d.className = 'miss';
+      d.innerHTML = `<span>${q}</span><span>${n} missed</span>`;
+      panel.appendChild(d);
+    });
+  }
+  show('dash');
+  $('dash').scrollTop = 0;
+  armReveals();
+}
+
+
+/* =====================================================================
+   SCREAM LAB — shout and Niki jumps. Mic if allowed, tap to jump if not.
+   No audio is recorded or stored; only the live loudness level is read.
+   Clear a level and the next one is faster, tighter and wider.
+   ===================================================================== */
+const JUMP = {
+  gravity: 760,       // pull downward while airborne
+  jump:    550,       // push from one shout
+  hold:    0.35,      // keep shouting while rising and gravity softens to this
+  cooldown:0.10       // shortest gap between two hops
+};
+/* Each level: faster ground, rocks closer together, taller, and from
+   level 4 some are wide enough that one hop only just clears them. */
+function levelOf(n){
+  return {
+    speed:  115 * (1 + 0.13*(n-1)),
+    every:  Math.max(250, 520 - 28*(n-1)),
+    hMin:   28 + Math.min(18, 2.5*(n-1)),
+    wide:   n >= 4 ? Math.min(0.45, 0.12*(n-3)) : 0,
+    target: 6 + 2*n
+  };
+}
+const KEY_GAME = 'parsec_wf_scream_best';
+const GROUND = 46;
+
+let gCv, gCtx, gRaf = null, gRunning = false, gLast = 0;
+let gPlayer, gRocks, gCleared, gLevel, gL, gSpeed, gSprite = null;
+let micStream = null, micCtx = null, micAn = null, micBuf = null, micOn = false;
+let holding = false, jumpCool = 0, wasLoud = false, jumpsLeft = 1;
+
+// Resize the canvas for high-density screens while keeping CSS pixels as the
+// coordinate system used by the game physics.
+function fitCanvas(){
+  const r = gCv.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  gCv.width = Math.round(r.width*dpr); gCv.height = Math.round(r.height*dpr);
+  gCtx.setTransform(dpr,0,0,dpr,0,0);
+  return {w:r.width, h:r.height};
+}
+
+async function initMic(){
+  const state = msg => { const el = $('gMicState'); if(el) el.textContent = msg; };
+
+  // Reasons the browser will refuse before we even ask
+  if(!window.isSecureContext){
+    micOn = false;
+    $('gNote').textContent = 'Tap to jump. The microphone needs the page opened over https:// or from localhost \u2014 browsers block it for files opened straight from a folder.';
+    state('Microphone blocked: this page is not on https or localhost.');
+    return false;
+  }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    micOn = false;
+    $('gNote').textContent = 'Tap to jump. This browser has no microphone support.';
+    state('Microphone not available in this browser.');
+    return false;
+  }
+
+  try{
+    micStream = await navigator.mediaDevices.getUserMedia({audio:{
+      echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
+    micCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Browsers start the audio engine suspended until a real tap. Without this
+    // the analyser returns pure silence and nothing ever jumps.
+    if(micCtx.state === 'suspended') await micCtx.resume();
+    const src = micCtx.createMediaStreamSource(micStream);
+    micAn = micCtx.createAnalyser(); micAn.fftSize = 1024;
+    micBuf = new Uint8Array(micAn.fftSize);
+    src.connect(micAn);
+    micOn = true;
+    state('Listening to the room\u2026');
+    await calibrate();
+    $('gNote').textContent = 'Microphone on. Nothing is recorded \u2014 only how loud it is right now.';
+    state('Microphone ready. Shout and the bar should fill.');
+    micWatch();
+    return true;
+  }catch(e){
+    micOn = false;
+    const denied = e && (e.name === 'NotAllowedError' || e.name === 'SecurityError');
+    $('gNote').textContent = denied
+      ? 'Microphone permission was refused, so tap the picture to jump instead.'
+      : 'No microphone found, so tap the picture to jump instead.';
+    state(denied ? 'Permission refused. Tap "Turn on the microphone" to ask again.'
+                 : 'No microphone detected (' + (e && e.name ? e.name : 'unknown') + ').');
+    return false;
+  }
+}
+
+/* keep showing the live level even before a game starts, so anyone can
+   see at a glance whether the kiosk is hearing them at all */
+let micWatchTimer = null;
+function micWatch(){
+  clearInterval(micWatchTimer);
+  micWatchTimer = setInterval(() => {
+    if(!micOn){ clearInterval(micWatchTimer); return; }
+    if(gRunning) return;                       // the game drives the meter itself
+    const lv = level();
+    const bar = $('gMeter'); if(bar) bar.style.width = Math.round(lv*100) + '%';
+    const el = $('gMicState');
+    if(el && !gRunning) el.textContent = loudNow()
+      ? 'Hearing you \u2014 that would jump.'
+      : 'Microphone ready. Say anything and the bar should pass the white line.';
+  }, 100);
+}
+
+function stopMic(){
+  clearInterval(micWatchTimer); micWatchTimer = null;
+  if(micStream){ micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  if(micCtx){ micCtx.close(); micCtx = null; }
+  micAn = null; micOn = false;
+}
+/* learn how noisy the gallery already is, so the floor's own din does not jump for you */
+function calibrate(){
+  return new Promise(res => {
+    const samples = [];
+    const t = setInterval(() => samples.push(rawLevel()), 60);
+    setTimeout(() => {
+      clearInterval(t);
+      samples.sort((a,b) => a-b);
+      micFloor = samples[Math.floor(samples.length*0.5)] || 0.02;
+      markMeter();
+      res();
+    }, 1200);
+  });
+}
+function rawLevel(){
+  if(!micAn) return 0;
+  micAn.getByteTimeDomainData(micBuf);
+  let sum = 0;
+  for(let i=0;i<micBuf.length;i++){ const v=(micBuf[i]-128)/128; sum += v*v; }
+  return Math.sqrt(sum/micBuf.length);
+}
+
+/* How loud counts as a shout has to be relative, not a fixed number.
+   A quiet gallery and a gallery with forty children in it differ by more
+   than a child's voice does, so the floor is tracked continuously and the
+   trigger sits a multiple above whatever the room is doing right now. */
+let micFloor = 0.02;
+let micSens = 1.9;          // the slider moves this
+const MIC_MIN = 0.012;      // absolute floor, so silence never triggers
+
+function micUpdate(raw){
+  // falls quickly toward quiet, rises very slowly, so one shout cannot
+  // drag the baseline up and lock you out of your own next shout
+  if(raw < micFloor*1.5) micFloor = micFloor*0.97  + raw*0.03;   // settles quickly toward quiet
+  else                   micFloor = micFloor*0.993 + raw*0.007;  // climbs when the hall fills up
+  micFloor = Math.max(0.004, micFloor);
+}
+/* A single noisy frame is not a shout. In a hall full of children the
+   background alone spikes past any threshold now and then, so the level
+   has to hold for two frames running before it counts. */
+let micHold = 0;
+function isLoud(raw){
+  const over = raw > Math.max(MIC_MIN, micFloor*micSens);
+  micHold = over ? micHold + 1 : 0;
+  return micHold >= 2;
+}
+
+/* 0 to 1 for the meter, where 1 is comfortably past the trigger */
+function level(){
+  if(!micOn) return holding ? 1 : 0;
+  const raw = rawLevel();
+  micUpdate(raw);
+  const trig = Math.max(MIC_MIN, micFloor*micSens);
+  return Math.max(0, Math.min(1, raw / (trig*1.6)));
+}
+function loudNow(){
+  if(!micOn) return holding;
+  return isLoud(rawLevel());
+}
+function markMeter(){
+  const el = $('gMark');
+  if(el) el.style.left = Math.round(100/1.6) + '%';   // where the trigger sits on the bar
+}
+
+function addBump(x){
+  const wide = Math.random() < gL.wide;
+  gRocks.push({x, w:(wide?52:22) + Math.random()*10, h: gL.hMin + Math.random()*14, passed:false, wide});
+}
+
+// Reset the player, obstacles, score, and canvas dimensions for a new level.
+function setLevel(n){
+  gLevel = n;
+  gL = levelOf(n);
+  gSpeed = gL.speed;
+  gCleared = 0;
+  gRocks = [];
+  const {w,h} = fitCanvas();
+  gPlayer = {x: Math.max(60, w*0.17), y: h - GROUND, vy:0, r:18, onGround:true};
+  jumpCool = 0; wasLoud = false; jumpsLeft = 1;
+  addBump(w + 300); addBump(w + 300 + gL.every);
+  $('gLevel').textContent = `Level ${n}`;
+  $('gScore').textContent = `0 / ${gL.target}`;
+  const best = Number(store(KEY_GAME, 0)) || 0;
+  $('gBest').textContent = best ? `Best today: level ${best}` : '';
+}
+
+function startGame(){
+  gRunning = true;
+  $('gOver').classList.remove('on');
+  setLevel(1);
+  gLast = performance.now();
+  cancelAnimationFrame(gRaf);
+  gRaf = requestAnimationFrame(gLoop);
+}
+
+function gLoop(now){
+  if(!gRunning) return;
+  const dt = Math.min(0.034, (now - gLast)/1000);
+  gLast = now;
+  const r = gCv.getBoundingClientRect();
+  const w = r.width, h = r.height, ground = h - GROUND;
+  const lv = level();
+  $('gMeter').style.width = Math.round(lv*100) + '%';
+
+  // A fresh shout jumps from the ground or gives one extra mid-air boost.
+  const loud = loudNow();
+  // On the ground any shout hops, so a child who screams non-stop keeps bouncing.
+  // In the air only a fresh shout gives the second push, and holding the shout
+  // while still rising softens gravity, so a longer scream jumps higher.
+  if(loud && jumpCool <= 0 && (gPlayer.onGround || (!wasLoud && jumpsLeft > 0))){
+    gPlayer.vy = -JUMP.jump * (gPlayer.onGround ? 1 : 0.8);
+    if(!gPlayer.onGround) jumpsLeft--;
+    gPlayer.onGround = false;
+    jumpCool = JUMP.cooldown;
+  }
+  wasLoud = loud;
+
+  if(!gPlayer.onGround){
+    const g = (loud && gPlayer.vy < 0) ? JUMP.gravity*JUMP.hold : JUMP.gravity;
+    gPlayer.vy += g*dt;
+    gPlayer.y  += gPlayer.vy*dt;
+    if(gPlayer.y < gPlayer.r*2){ gPlayer.y = gPlayer.r*2; gPlayer.vy = 0; }
+    if(gPlayer.y >= ground){ gPlayer.y = ground; gPlayer.vy = 0; gPlayer.onGround = true; jumpsLeft = 1; }
+  }
+
+  // Obstacles move left past a mostly stationary player.
+  gRocks.forEach(o => { o.x -= gSpeed*dt; });
+  if(gRocks.length && gRocks[gRocks.length-1].x < w - gL.every) addBump(w + 30);
+  gRocks = gRocks.filter(o => o.x > -90);
+
+  for(const o of gRocks){
+    if(!o.passed && o.x + o.w < gPlayer.x - gPlayer.r){
+      o.passed = true;
+      gCleared++;
+      $('gScore').textContent = `${gCleared} / ${gL.target}`;
+      if(gCleared >= gL.target) return levelUp();
+    }
+    const nearX = gPlayer.x + gPlayer.r > o.x && gPlayer.x - gPlayer.r < o.x + o.w;
+    if(nearX && gPlayer.y > ground - o.h + 5) return gameOver();   // +5 forgives a graze
+  }
+
+  gDraw(w, h, ground);
+  gRaf = requestAnimationFrame(gLoop);
+}
+
+function gDraw(w, h, ground){
+  const c = gCtx;
+  c.clearRect(0,0,w,h);
+  const sky = c.createLinearGradient(0,0,0,h);
+  sky.addColorStop(0,'#124454'); sky.addColorStop(1,'#0A2530');
+  c.fillStyle = sky; c.fillRect(0,0,w,h);
+
+  c.fillStyle = '#0E3341'; c.fillRect(0, ground, w, h-ground);
+  c.strokeStyle = '#2C6377'; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(0,ground); c.lineTo(w,ground); c.stroke();
+
+  // Wide rocks are drawn differently so their increased risk is visible.
+  gRocks.forEach(o => {
+    c.fillStyle = o.wide ? '#1C5568' : '#17495A';
+    c.strokeStyle = '#2C6377'; c.lineWidth = 2;
+    roundRect(c, o.x, ground - o.h, o.w, o.h, 7); c.fill(); c.stroke();
+    c.fillStyle = 'rgba(242,166,59,.55)';
+    c.fillRect(o.x+4, ground - o.h + 4, o.w - 8, 3);
+  });
+
+  const airborne = !gPlayer.onGround;
+  c.save();
+  c.translate(gPlayer.x, gPlayer.y - gPlayer.r);
+  c.rotate(airborne ? Math.max(-0.3, Math.min(0.3, gPlayer.vy/1400)) : 0);
+  if(gSprite && gSprite.complete){
+    const size = gPlayer.r*3.4;
+    c.drawImage(gSprite, -size/2, -size + gPlayer.r, size, size);
+  }else{
+    c.fillStyle = '#EAF3F2';
+    c.beginPath(); c.arc(0, -gPlayer.r/2, gPlayer.r, 0, Math.PI*2); c.fill();
+  }
+  c.restore();
+}
+function roundRect(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y); c.closePath();
+}
+
+function levelUp(){
+  gRunning = false;
+  cancelAnimationFrame(gRaf);
+  const next = gLevel + 1;
+  const best = Number(store(KEY_GAME, 0)) || 0;
+  if(gLevel > best) save(KEY_GAME, gLevel);
+  $('gOverTitle').textContent = `Level ${gLevel} cleared!`;
+  $('gOverText').textContent = nextLevelNote(next);
+  $('gStart').textContent = `Start level ${next}`;
+  $('gStart').onclick = () => {
+    gRunning = true;
+    $('gOver').classList.remove('on');
+    setLevel(next);
+    gLast = performance.now();
+    gRaf = requestAnimationFrame(gLoop);
+  };
+  $('gOver').classList.add('on');
+  say(`Level ${gLevel} cleared!`, 3000);
+}
+function nextLevelNote(n){
+  if(n === 4) return 'From here some rocks are wide. One hop only just clears those \u2014 a longer shout goes further.';
+  if(n === 8) return 'It gets properly hard now. The ground is moving nearly twice as fast as it did on level one.';
+  return 'Faster ground and less room between the rocks from here.';
+}
+
+function gameOver(){
+  if(!gRunning) return;
+  gRunning = false;
+  cancelAnimationFrame(gRaf);
+  const best = Number(store(KEY_GAME, 0)) || 0;
+  const reached = gLevel;
+  if(reached > best) save(KEY_GAME, reached);
+  $('gBest').textContent = `Best today: level ${Math.max(best, reached)}`;
+  $('gOverTitle').textContent = gCleared === 0 ? 'Straight into a rock' : `Level ${gLevel}: ${gCleared} of ${gL.target}`;
+  $('gOverText').textContent = 'Let the rock get close, then one good shout. Keep shouting while she rises and she goes higher.';
+  $('gStart').textContent = 'Try level 1 again';
+  $('gStart').onclick = startGame;
+  $('gOver').classList.add('on');
+}
+
+async function openGame(){
+  show('game');
+  gCv = $('gameCanvas'); gCtx = gCv.getContext('2d');
+  if(!gSprite){ gSprite = new Image(); gSprite.src = MASCOT.niki; }
+  $('gOverTitle').textContent = 'Scream Lab';
+  $('gOverText').textContent = 'Niki runs. Shout and she jumps. Wait until a rock is close before you shout \u2014 too early and she lands on it.';
+  $('gStart').textContent = 'Start level 1';
+  $('gStart').onclick = startGame;
+  $('gOver').classList.add('on');
+  $('gNote').textContent = 'Asking for the microphone\u2026';
+  fitCanvas(); setLevel(1);
+  const r = gCv.getBoundingClientRect();
+  gDraw(r.width, r.height, r.height - GROUND);
+  await initMic();
+}
+function leaveGame(){
+  gRunning = false;
+  cancelAnimationFrame(gRaf);
+  stopMic();
+}
+
+// Tap/press is the fallback control when microphone access is unavailable.
+['pointerdown','touchstart'].forEach(e =>
+  $('game') && $('game').addEventListener(e, () => {
+    holding = true;
+    if(micCtx && micCtx.state === 'suspended') micCtx.resume();
+  }, {passive:true}));
+['pointerup','pointercancel','touchend','touchcancel'].forEach(e =>
+  document.addEventListener(e, () => { holding = false; }, {passive:true}));
+window.addEventListener('resize', () => { if($('game').classList.contains('on')) fitCanvas(); });
+
+/* =====================================================================
+   ZINION BULBS — the bulbs light in an order, you repeat it.
+   Every bulb belongs to a Zinion, who cheers when you get the round right.
+   ===================================================================== */
+const KEY_BULB = 'parsec_wf_bulb_best';
+const BULB_ZIN = ['tropido','niki','stephen','argon','harsh'];
+let bulbSeq = [], bulbStep = 0, bulbRound = 0, bulbBusy = false, bulbTimers = [];
+
+function bulbEls(){ return [...document.querySelectorAll('#bulbRow .bulb')]; }
+function bulbClearTimers(){ bulbTimers.forEach(clearTimeout); bulbTimers = []; }
+function bulbLater(fn, ms){ bulbTimers.push(setTimeout(fn, ms)); }
+
+function bulbFlash(i, cls, on, off){
+  const el = bulbEls()[i];
+  if(!el) return;
+  bulbLater(() => el.classList.add(cls || 'lit'), on);
+  bulbLater(() => el.classList.remove(cls || 'lit'), off);
+}
+
+function bulbSay(text, tone){
+  const el = $('bulbSay');
+  el.textContent = text;
+  el.className = 'bulbsay' + (tone ? ' ' + tone : '');
+}
+
+function bulbReset(){
+  bulbClearTimers();
+  bulbEls().forEach(el => el.classList.remove('lit','wrong','dead'));
+  $('bulbRow').classList.remove('bulbs-lock');
+  bulbSeq = []; bulbStep = 0; bulbRound = 0; bulbBusy = false;
+  $('bulbRound').textContent = 'Round 1';
+  const best = Number(store(KEY_BULB, 0)) || 0;
+  $('bulbBest').textContent = best ? `Best today: round ${best}` : '';
+  bulbSay('Watch which bulbs light up.');
+  $('bulbStart').textContent = 'Start';
+}
+
+function bulbNextRound(){
+  bulbRound++;
+  bulbStep = 0;
+  bulbSeq.push(Math.floor(Math.random() * bulbEls().length));
+  $('bulbRound').textContent = `Round ${bulbRound}`;
+  bulbPlay();
+}
+
+function bulbPlay(){
+  bulbBusy = true;
+  $('bulbRow').classList.add('bulbs-lock');
+  bulbSay('Watch\u2026');
+  const gap = Math.max(360, 620 - bulbRound * 22);   // speeds up as rounds go on
+  bulbSeq.forEach((b, i) => bulbFlash(b, 'lit', 500 + i*gap, 500 + i*gap + gap*0.62));
+  bulbLater(() => {
+    bulbBusy = false;
+    $('bulbRow').classList.remove('bulbs-lock');
+    bulbSay('Your turn.', 'go');
+  }, 500 + bulbSeq.length*gap + 120);
+}
+
+function bulbTap(i){
+  if(bulbBusy || !bulbSeq.length) return;
+  const el = bulbEls()[i];
+  el.classList.add('lit');
+  setTimeout(() => el.classList.remove('lit'), 220);
+
+  if(i === bulbSeq[bulbStep]){
+    bulbStep++;
+    if(bulbStep === bulbSeq.length){
+      bulbBusy = true;
+      $('bulbRow').classList.add('bulbs-lock');
+      const z = BULB_ZIN[i] || 'stephen';
+      bulbSay(`${HOST_NAME[z]} says yes!`, 'go');
+      bulbLater(bulbNextRound, 900);
+    }
+  }else{
+    bulbOver(i);
+  }
+}
+
+function bulbOver(i){
+  bulbBusy = true;
+  bulbClearTimers();
+  $('bulbRow').classList.add('bulbs-lock');
+  const el = bulbEls()[i];
+  el.classList.add('wrong');
+  setTimeout(() => el.classList.remove('wrong'), 700);
+  bulbEls().forEach((b, n) => { if(n !== bulbSeq[bulbStep]) b.classList.add('dead'); });
+  bulbLater(() => bulbEls().forEach(b => b.classList.remove('dead')), 900);
+
+  const reached = bulbRound - 1;
+  const best = Number(store(KEY_BULB, 0)) || 0;
+  if(reached > best) save(KEY_BULB, reached);
+  $('bulbBest').textContent = `Best today: round ${Math.max(best, reached)}`;
+  bulbSay(reached < 1 ? 'That was the wrong one. Try again.'
+                      : `You held ${reached} round${reached === 1 ? '' : 's'}. Go again?`, 'bad');
+  $('bulbStart').textContent = 'Go again';
+  bulbLater(() => { bulbBusy = false; }, 900);
+}
+
+function openBulbs(){ show('bulbs'); bulbReset(); }
+function bulbBegin(){ bulbReset(); bulbLater(bulbNextRound, 300); }
+
+
+
+/* =====================================================================
+   ZINION PUZZLE — a sliding tile puzzle made from the Zinion artwork.
+   Shuffled by legal moves only, so every board can always be solved.
+   ===================================================================== */
+const KEY_PUZ = 'parsec_wf_puzzle_best';
+const PUZ_KEYS = ['tropido','niki','stephen','argon','harsh'];
+let puzN = 3, puzLevel = 2, puzChar = 'tropido', puzTiles = [], puzBlank = 0, puzMoves = 0, puzLive = false, puzTry = 0, puzAdvanceTimer = null;
+const PUZ_SQUARE = {};   // square versions of each mascot, made once
+const PUZ_LEVEL_STEPS = [12, 40, 90];
+
+/* the artwork is tall and transparent, so square it off first
+   or the pieces come out stretched and unreadable */
+function squareUp(key){
+  return new Promise(res => {
+    if(PUZ_SQUARE[key]) return res(PUZ_SQUARE[key]);
+    const img = new Image();
+    img.onload = () => {
+      const S = 600;
+      const c = document.createElement('canvas');
+      c.width = S; c.height = S;
+      const x = c.getContext('2d');
+      x.fillStyle = '#17495A'; x.fillRect(0, 0, S, S);
+      const k = Math.min(S*0.94 / img.width, S*0.94 / img.height);
+      const w = img.width*k, h = img.height*k;
+      x.drawImage(img, (S-w)/2, (S-h)/2, w, h);
+      PUZ_SQUARE[key] = c.toDataURL('image/png');
+      res(PUZ_SQUARE[key]);
+    };
+    img.onerror = () => res(null);
+    img.src = MASCOT[key];
+  });
+}
+
+function puzBestKey(){ return `${puzChar}:${puzN}:${puzLevel}`; }
+function puzShowBest(){
+  const all = store(KEY_PUZ, {});
+  const b = all[puzBestKey()];
+  $('puzBest').textContent = b ? b + ' moves' : '\u2014';
+}
+
+async function puzBuild(shuffle){
+  const src = await squareUp(puzChar);
+  const n = puzN, total = n*n;
+  if(shuffle || !puzTiles.length){
+    puzTiles = Array.from({length: total}, (_, i) => i);
+    puzBlank = total - 1;
+    // Shuffle by legal moves only, so the board is always solvable.
+    // The step count must be random: a fixed count on a 2x2 walks the blank
+    // in a 4-move loop and lands right back on the solved board every time.
+    let last = -1;
+    const steps = total*PUZ_LEVEL_STEPS[puzLevel - 1] + Math.floor(Math.random() * (total*8 + 7));
+    for(let i = 0; i < steps; i++){
+      const opts = puzNeighbours(puzBlank).filter(x => x !== last);
+      const pick = opts[Math.floor(Math.random()*opts.length)];
+      last = puzBlank;
+      puzTiles[puzBlank] = puzTiles[pick];
+      puzTiles[pick] = total - 1;
+      puzBlank = pick;
+    }
+    if(puzSolved() && (puzTry = (puzTry||0) + 1) < 12) return puzBuild(true);  // reshuffle if it landed solved
+    puzTry = 0;
+    puzMoves = 0;
+    $('puzMoves').textContent = '0';
+    $('puzSay').textContent = 'Slide the pieces until the Zinion is whole again.';
+    $('puzSay').className = 'puzsay';
+    puzLive = true;
+  }
+  const complete = !shuffle && puzSolved();
+  const board = $('puzBoard');
+  board.classList.toggle('done', complete);
+  board.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+  board.innerHTML = '';
+  puzTiles.forEach((tile, pos) => {
+    const d = document.createElement('div');
+    const isBlank = (tile === total - 1) && !complete;   // once solved, the gap fills in
+    d.className = 'ptile' + (isBlank ? ' blank' : '');
+    if(complete && tile === total - 1) d.classList.add('lastpiece');
+    if(!isBlank && src){
+      const r = Math.floor(tile / n), c = tile % n;
+      d.style.backgroundImage = `url(${src})`;
+      d.style.backgroundSize = `${n*100}% ${n*100}%`;
+      d.style.backgroundPosition = `${(c/(n-1))*100}% ${(r/(n-1))*100}%`;
+      d.innerHTML = `<span>${tile+1}</span>`;
+    }
+    d.addEventListener('click', () => puzTap(pos));
+    board.appendChild(d);
+  });
+  puzShowBest();
+}
+
+function puzNeighbours(i){
+  const n = puzN, r = Math.floor(i/n), c = i % n, out = [];
+  if(r > 0) out.push(i-n);
+  if(r < n-1) out.push(i+n);
+  if(c > 0) out.push(i-1);
+  if(c < n-1) out.push(i+1);
+  return out;
+}
+
+function puzSolved(){ return puzTiles.every((t, i) => t === i); }
+
+async function puzTap(pos){
+  if(!puzLive) return;
+  if(!puzNeighbours(puzBlank).includes(pos)) return;
+  puzTiles[puzBlank] = puzTiles[pos];
+  puzTiles[pos] = puzN*puzN - 1;
+  puzBlank = pos;
+  puzMoves++;
+  $('puzMoves').textContent = puzMoves;
+
+  const won = puzSolved();
+  if(won) puzLive = false;          // stop further taps before the redraw lands
+  await puzBuild(false);            // must finish before the win is drawn
+  if(won) puzWin();
+}
+
+function puzWin(){
+  puzLive = false;                  // the board is already drawn complete by puzBuild
+  const all = store(KEY_PUZ, {});
+  const k = puzBestKey();
+  const isBest = !all[k] || puzMoves < all[k];
+  if(isBest){ all[k] = puzMoves; save(KEY_PUZ, all); }
+  puzShowBest();
+  $('puzSay').textContent = isBest
+    ? `Back together in ${puzMoves} moves \u2014 best today!`
+    : `Back together in ${puzMoves} moves.`;
+  $('puzSay').className = 'puzsay win';
+  say(`${HOST_NAME[puzChar]} is whole again!`, 4000);
+  if(puzLevel < 3){
+    // Give the solved board a brief moment, then move to the next difficulty.
+    puzAdvanceTimer = setTimeout(() => {
+      if(!$('puzzle').classList.contains('on')) return;
+      puzLevel++;
+      document.querySelectorAll('.puzlevel').forEach(b =>
+        b.classList.toggle('on', Number(b.dataset.level) === puzLevel));
+      puzBuild(true);
+    }, 1100);
+  }
+}
+
+function puzOpen(){
+  show('puzzle');
+  const pick = $('puzPick');
+  pick.innerHTML = '';
+  PUZ_KEYS.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'puzchar' + (k === puzChar ? ' on' : '');
+    b.innerHTML = `<img src="${MASCOT[k]}" alt="${HOST_NAME[k]}">`;
+    b.addEventListener('click', () => {
+      puzChar = k;
+      [...pick.children].forEach(c => c.classList.remove('on'));
+      b.classList.add('on');
+      puzBuild(true);
+    });
+    pick.appendChild(b);
+  });
+  puzBuild(true);
+}
+
+
+
+
+/* =====================================================================
+   WIND TUNNEL — hold to run the fan. Moving air lifts the balloon and
+   pushes it along; let go and it sinks and slows. The fan has a limit,
+   so it has to be used in bursts rather than held down.
+   ===================================================================== */
+const KEY_WIND = 'parsec_wf_wind_best';
+
+/* Two fan strengths. Lift stays a fixed multiple of gravity and the
+   recharge always sustains the duty cycle hovering needs \u2014 otherwise
+   staying up becomes impossible however skilled the player is. */
+const FANS = {
+  gentle: {mult:2.1, drain:22, recharge:24},
+  strong: {mult:2.6, drain:26, recharge:22}
+};
+let fanKind = 'gentle';
+
+// Derive physics and gate spacing from the level so difficulty grows together.
+function windLevel(n){
+  const f = FANS[fanKind];
+  const gravity = 250 + 10*(n-1);
+  return {
+    gravity, lift: gravity*f.mult, vyMax:150,
+    vxMin: 40 + 3*(n-1), vxMax: 100 + 7*(n-1), accel:40, drag:50,
+    drain: f.drain, recharge: f.recharge,
+    gap: Math.max(145, 220 - 9*(n-1)),
+    every: Math.max(300, 420 - 16*(n-1)),
+    target: 4 + n
+  };
+}
+
+let wCv, wCtx, wRaf = null, wRunning = false, wLast = 0;
+let wBall, wGates, wPower, wLevel, wL, wPassed, wHold = false;
+
+function windFit(){
+  const r = wCv.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  wCv.width = Math.round(r.width*dpr); wCv.height = Math.round(r.height*dpr);
+  wCtx.setTransform(dpr,0,0,dpr,0,0);
+  return {w:r.width, h:r.height};
+}
+
+// Gates remember their position and whether the balloon has already passed.
+function addGate(x, h){
+  wGates.push({x, gap:wL.gap, top: 40 + Math.random()*(h - wL.gap - 80), done:false});
+}
+function windSet(n){
+  wLevel = n; wL = windLevel(n);
+  const {w,h} = windFit();
+  wBall = {x: Math.max(56, w*0.16), y: h/2, vy:0, vx: wL.vxMin, r:16};
+  wGates = []; wPower = 100; wPassed = 0;
+  addGate(w + 120, h); addGate(w + 120 + wL.every, h);
+  $('wLevel').textContent = `Level ${n}`;
+  $('wGates').textContent = `0 / ${wL.target}`;
+  const best = Number(store(KEY_WIND, 0)) || 0;
+  $('wBest').textContent = best ? `Best today: level ${best}` : '';
+}
+function windStart(){
+  wRunning = true;
+  $('wOver').classList.remove('on');
+  windSet(1);
+  wLast = performance.now();
+  cancelAnimationFrame(wRaf);
+  wRaf = requestAnimationFrame(windLoop);
+}
+
+function windLoop(now){
+  if(!wRunning) return;
+  const dt = Math.min(0.034, (now - wLast)/1000);
+  wLast = now;
+  const r = wCv.getBoundingClientRect();
+  const w = r.width, h = r.height;
+
+  // Holding spends fan power; releasing slows the balloon and recharges it.
+  const fanning = wHold && wPower > 0.5;
+  if(fanning){
+    wPower = Math.max(0, wPower - wL.drain*dt);
+    wBall.vy -= wL.lift*dt;
+    wBall.vx = Math.min(wL.vxMax, wBall.vx + wL.accel*dt);
+  }else{
+    wPower = Math.min(100, wPower + wL.recharge*dt);
+    wBall.vx = Math.max(wL.vxMin, wBall.vx - wL.drag*dt);
+  }
+  $('wFan').style.width = wPower + '%';
+  $('wFanBar').classList.toggle('low', wPower < 25);
+
+  wBall.vy += wL.gravity*dt;
+  wBall.vy = Math.max(-wL.vyMax, Math.min(wL.vyMax, wBall.vy));
+  wBall.y += wBall.vy*dt;
+  if(wBall.y < wBall.r){ wBall.y = wBall.r; wBall.vy = 0; }
+  if(wBall.y > h - wBall.r) return windOver('It touched the ground.');
+
+  // The balloon stays near the left side while the tunnel moves toward it.
+  wGates.forEach(g => { g.x -= wBall.vx*dt; });
+  if(wGates.length && wGates[wGates.length-1].x < w - wL.every) addGate(w + 20, h);
+  wGates = wGates.filter(g => g.x > -50);
+
+  for(const g of wGates){
+    if(!g.done && g.x + 22 < wBall.x - wBall.r){
+      g.done = true; wPassed++;
+      $('wGates').textContent = `${wPassed} / ${wL.target}`;
+      if(wPassed >= wL.target) return windUp();
+    }
+    const nearX = wBall.x + wBall.r > g.x && wBall.x - wBall.r < g.x + 22;
+    if(nearX && (wBall.y - wBall.r < g.top || wBall.y + wBall.r > g.top + g.gap))
+      return windOver('Clipped the edge.');
+  }
+
+  windDraw(w, h, fanning);
+  wRaf = requestAnimationFrame(windLoop);
+}
+
+function windDraw(w, h, fanning){
+  const c = wCtx;
+  c.clearRect(0,0,w,h);
+  const sky = c.createLinearGradient(0,0,0,h);
+  sky.addColorStop(0,'#124454'); sky.addColorStop(1,'#0A2530');
+  c.fillStyle = sky; c.fillRect(0,0,w,h);
+
+  // the fan at the bottom left, and its airflow when running
+  const fx = 26, fy = h - 26;
+  c.strokeStyle = fanning ? '#F2A63B' : '#2C6377';
+  c.lineWidth = 3;
+  c.beginPath(); c.arc(fx, fy, 15, 0, Math.PI*2); c.stroke();
+  c.beginPath(); c.moveTo(fx, fy); c.lineTo(fx, fy-15);
+  c.moveTo(fx, fy); c.lineTo(fx+13, fy+7);
+  c.moveTo(fx, fy); c.lineTo(fx-13, fy+7); c.stroke();
+
+  if(fanning){
+    c.strokeStyle = 'rgba(242,166,59,.4)'; c.lineWidth = 2;
+    for(let i=0;i<4;i++){
+      const yy = wBall.y + 40 + i*22 + ((performance.now()/9 + i*30) % 22);
+      if(yy > h) continue;
+      c.beginPath(); c.moveTo(wBall.x - 16, yy); c.lineTo(wBall.x + 16, yy - 7); c.stroke();
+    }
+  }
+
+  wGates.forEach(g => {
+    c.fillStyle = '#17495A'; c.strokeStyle = '#2C6377'; c.lineWidth = 2;
+    roundRect(c, g.x, -12, 22, g.top + 12, 8); c.fill(); c.stroke();
+    roundRect(c, g.x, g.top + g.gap, 22, h - (g.top+g.gap) + 12, 8); c.fill(); c.stroke();
+    c.fillStyle = 'rgba(242,166,59,.5)';
+    c.fillRect(g.x+3, g.top-4, 16, 3);
+    c.fillRect(g.x+3, g.top+g.gap+1, 16, 3);
+  });
+
+  // the balloon
+  c.fillStyle = '#F2A63B';
+  c.beginPath(); c.ellipse(wBall.x, wBall.y, wBall.r, wBall.r*1.15, 0, 0, Math.PI*2); c.fill();
+  c.fillStyle = '#10222A';
+  c.beginPath(); c.moveTo(wBall.x-4, wBall.y+wBall.r*1.1);
+  c.lineTo(wBall.x+4, wBall.y+wBall.r*1.1); c.lineTo(wBall.x, wBall.y+wBall.r*1.5); c.closePath(); c.fill();
+}
+
+function windUp(){
+  wRunning = false;
+  cancelAnimationFrame(wRaf);
+  const best = Number(store(KEY_WIND, 0)) || 0;
+  if(wLevel > best) save(KEY_WIND, wLevel);
+  const next = wLevel + 1;
+  $('wOverTitle').textContent = `Level ${wLevel} cleared!`;
+  $('wOverText').textContent = next === 5
+    ? 'The gaps get narrow from here. Short bursts of fan, and let it sink between them.'
+    : 'Narrower gaps and faster air from here.';
+  $('wStart').textContent = `Start level ${next}`;
+  $('wStart').onclick = () => {
+    wRunning = true;
+    $('wOver').classList.remove('on');
+    windSet(next);
+    wLast = performance.now();
+    wRaf = requestAnimationFrame(windLoop);
+  };
+  $('wOver').classList.add('on');
+  say(`Level ${wLevel} cleared!`, 3000);
+}
+
+function windOver(why){
+  if(!wRunning) return;
+  wRunning = false;
+  cancelAnimationFrame(wRaf);
+  const best = Number(store(KEY_WIND, 0)) || 0;
+  if(wLevel > best) save(KEY_WIND, wLevel);
+  $('wBest').textContent = `Best today: level ${Math.max(best, wLevel)}`;
+  $('wOverTitle').textContent = why;
+  $('wOverText').textContent = wPassed === 0
+    ? 'Hold to lift, let go to sink. Letting go also slows you down, which gives you time to aim.'
+    : `Level ${wLevel}: ${wPassed} of ${wL.target} gaps. Short bursts beat holding it down \u2014 the fan runs out.`;
+  $('wStart').textContent = 'Try level 1 again';
+  $('wStart').onclick = windStart;
+  $('wOver').classList.add('on');
+}
+
+function windOpen(){
+  show('wind');
+  wCv = $('windCanvas'); wCtx = wCv.getContext('2d');
+  $('wOverTitle').textContent = 'Wind Tunnel';
+  $('wOverText').textContent = 'Hold anywhere to run the fan. Air pushes the balloon up and pushes it along faster. Let go and it sinks, and slows down \u2014 which is how you line up a gap.';
+  $('wStart').textContent = 'Start level 1';
+  $('wStart').onclick = windStart;
+  $('wOver').classList.add('on');
+  windFit(); windSet(1);
+  const r = wCv.getBoundingClientRect();
+  windDraw(r.width, r.height, false);
+}
+
+// Pointer and keyboard input share one flag across touch, mouse, and spacebar.
+function windLeave(){ wRunning = false; cancelAnimationFrame(wRaf); wHold = false; }
+
+['pointerdown','touchstart'].forEach(e =>
+  $('wind') && $('wind').addEventListener(e, () => { wHold = true; }, {passive:true}));
+['pointerup','pointercancel','touchend','touchcancel'].forEach(e =>
+  document.addEventListener(e, () => { wHold = false; }, {passive:true}));
+document.addEventListener('keydown', e => { if(e.key === ' ' && $('wind').classList.contains('on')) wHold = true; });
+document.addEventListener('keyup',   e => { if(e.key === ' ') wHold = false; });
+window.addEventListener('resize', () => { if($('wind').classList.contains('on')) windFit(); });
+
+/* ---------- idle reset ---------- */
+let idleTimer;
+function resetIdle(){
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    // never wipe someone mid-typing, or a name already entered on the start screen
+    if(document.activeElement === $('nameInput')){ resetIdle(); return; }
+    if($('start').classList.contains('on') && $('nameInput').value.trim()){ resetIdle(); return; }
+    clearTimers(); player=''; $('nameInput').value=''; show('start');
+  }, IDLE_RESET_SEC*1000);
+}
+['click','keydown','keyup','input','touchstart','touchmove','pointerdown','focusin']
+  .forEach(e => document.addEventListener(e, resetIdle, {passive:true}));
+resetIdle();
+
+/* ---------- wiring ---------- */
+$('nameGo').addEventListener('click', goPick);
+$('nameInput').addEventListener('keydown', e => { if(e.key === 'Enter') goPick(); });
+$('backName').addEventListener('click', () => show('mode'));
+$('modeBack').addEventListener('click', () => { $('nameInput').value=''; show('start'); });
+$('modeQuiz').addEventListener('click', () => show('pick'));
+$('modeGame').addEventListener('click', openGame);
+$('gSens').addEventListener('input', e => {
+  micSens = Number(e.target.value)/100;
+  $('gMicState').textContent = `Sensitivity ${micSens.toFixed(2)}\u00d7 the room's own noise.`;
+});
+$('gRecal').addEventListener('click', async () => {
+  if(!micOn){ $('gMicState').textContent = 'Microphone is not on yet.'; return; }
+  $('gMicState').textContent = 'Listening to the room, stay quiet for a second\u2026';
+  await calibrate();
+  $('gMicState').textContent = 'Done. Say anything and the bar should pass the white line.';
+});
+$('gMicBtn').addEventListener('click', async () => {
+  $('gMicState').textContent = 'Asking the browser\u2026';
+  stopMic();
+  await initMic();
+});
+$('modeBulbs').addEventListener('click', openBulbs);
+$('modePuzzle').addEventListener('click', puzOpen);
+$('modeWind').addEventListener('click', windOpen);
+$('windBack').addEventListener('click', () => { windLeave(); show('mode'); });
+document.querySelectorAll('.fanbtn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.fanbtn').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); fanKind = b.dataset.f;
+  if(!wRunning) windSet(1);
+}));
+$('puzShuffle').addEventListener('click', () => puzBuild(true));
+$('puzBack').addEventListener('click', () => show('mode'));
+document.querySelectorAll('.puzsize').forEach(b =>
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.puzsize').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    puzN = Number(b.dataset.n);
+    puzBuild(true);
+  }));
+document.querySelectorAll('.puzlevel').forEach(b =>
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.puzlevel').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    puzLevel = Number(b.dataset.level);
+    puzBuild(true);
+  }));
+$('bulbStart').addEventListener('click', bulbBegin);
+$('bulbBack').addEventListener('click', () => show('mode'));
+document.querySelectorAll('#bulbRow .bulb').forEach(b =>
+  b.addEventListener('click', () => bulbTap(Number(b.dataset.b))));
+$('gBack').addEventListener('click', () => show('mode'));
+$('gBoard').addEventListener('click', renderDash);
+$('nextBtn').addEventListener('click', next);
+$('quizBack').addEventListener('click', () => { clearTimers(); show('mode'); });
+$('doneBtn').addEventListener('click', showThanks);
+$('thanksAgain').addEventListener('click', () => show('mode'));
+$('thanksBoard').addEventListener('click', renderDash);
+$('thanksBack').addEventListener('click', () => show('mode'));
+$('againBtn').addEventListener('click', () => show('mode'));
+$('boardBtn1').addEventListener('click', renderDash);
+$('boardBtn2').addEventListener('click', renderDash);
+$('dashBack').addEventListener('click', () => { player=''; $('nameInput').value=''; show('start'); });
+
+</script>
