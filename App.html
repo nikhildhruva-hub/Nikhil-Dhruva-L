@@ -730,8 +730,6 @@ function paintScore(){
 function renderQuestion(){
   clearTimers(); locked = false;
   const item = round[idx];
-  const stageBadge = $('stageBadge');
-  const stageKey = (item.stage || 'Citizen').toLowerCase();
   $('count').textContent = `Question ${idx+1} of ${round.length}`;
   $('fill').style.width = (idx / round.length * 100) + '%';
   $('question').textContent = item.q;
@@ -739,14 +737,6 @@ function renderQuestion(){
   $('nextBtn').style.visibility = 'hidden';
   const box = $('opts');
   box.className = 'opts'; box.innerHTML = '';
-
-  if(item.stage){
-    stageBadge.textContent = item.stage;
-    stageBadge.className = 'stage-badge ' + stageKey;
-  }else{
-    stageBadge.textContent = '';
-    stageBadge.className = 'stage-badge hidden';
-  }
 
   if(isTextQuestion(item)){
     const notice = document.createElement('div');
