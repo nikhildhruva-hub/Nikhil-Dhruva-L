@@ -949,6 +949,7 @@ function finish(){
   if(c2iReached){
     const end = C2I_END_LINES[c2iReached] || { head:'', line:'' };
     $('endWho').textContent = `${player},`;
+    $('endWho').className = 'sub endname';
     $('final').textContent = end.head;
     $('final').className = 'final msg' + (end.head.length > 60 ? ' long' : '');   // long headlines: smaller, wider, ~2 lines
     $('endVerdict').textContent = end.line;
@@ -956,6 +957,7 @@ function finish(){
     say('Nice thinking!', 5000);
   }else{
     $('final').className = 'final';
+    $('endWho').className = 'sub';
     const attempted = right + wrong;
     const max = (attempted || round.length) * POINTS_RIGHT;
     const pct = max ? score / max : 0;
