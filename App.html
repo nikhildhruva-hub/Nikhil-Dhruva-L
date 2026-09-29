@@ -984,6 +984,15 @@ function finish(){
   });
   save(KEY_PLAYERS, players);
 
+  // Also send the result to the server for the daily email report. Best-effort:
+  // outside Apps Script (or offline) this just does nothing.
+  try{
+    if(window.google && google.script && google.script.run){
+      google.script.run.withFailureHandler(() => {})
+        .logResult({ name: player, zone: z ? z.name : 'Mixed', stage: c2iReached || '' });
+    }
+  }catch(e){}
+
   show('end');
 }
 
