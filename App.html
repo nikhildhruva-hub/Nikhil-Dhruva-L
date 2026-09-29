@@ -932,13 +932,13 @@ function answer(choice){
 
 function next(){ clearTimers(); idx++; if(idx >= round.length) finish(); else renderQuestion(); }
 
-/* What to tell the player once they've landed on a stage — there's no
-   right or wrong answer here, so the takeaway is the stage itself, not a score. */
+/* What to tell the player once they've landed on a stage. The stage name itself
+   isn't shown — just a headline and a closing line; the stage still goes to the dashboard. */
 const C2I_END_LINES = {
-  Innovator: "You're already thinking like an Innovator — ready to build on what you saw.",
-  Solver:    "You worked it out like a Solver — you found the reason behind it.",
-  Seeker:    "You're a Seeker — curious about what's really going on.",
-  Citizen:   "You're a Citizen scientist — you noticed something worth asking about."
+  Innovator: { head:"You saw past what was built. Now build it.",   line:"An idea nobody makes is just a thought." },
+  Solver:    { head:"You fix what is in front of you.",             line:"The next step is spotting the problem nobody has reported yet." },
+  Seeker:    { head:"You ask good questions. Now break something.", line:"Understanding starts where the trying begins." },
+  Citizen:   { head:"You came to see. Next time, come to ask.",     line:"The best questions in this building were asked by people who did not know the answer." }
 };
 
 function finish(){
@@ -947,10 +947,11 @@ function finish(){
   const z = ZONES.find(z => z.id === zoneId);
 
   if(c2iReached){
-    $('endWho').textContent = `${player}, you reached`;
-    $('final').textContent = c2iReached;
-    $('final').className = 'final word';
-    $('endVerdict').textContent = C2I_END_LINES[c2iReached] || '';
+    const end = C2I_END_LINES[c2iReached] || { head:'', line:'' };
+    $('endWho').textContent = `${player},`;
+    $('final').textContent = end.head;
+    $('final').className = 'final msg';
+    $('endVerdict').textContent = end.line;
     $('tally').innerHTML = '';
     say('Nice thinking!', 5000);
   }else{
