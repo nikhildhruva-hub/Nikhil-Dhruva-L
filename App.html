@@ -950,7 +950,7 @@ function finish(){
     const end = C2I_END_LINES[c2iReached] || { head:'', line:'' };
     $('endWho').textContent = `${player},`;
     $('final').textContent = end.head;
-    $('final').className = 'final msg';
+    $('final').className = 'final msg' + (end.head.length > 60 ? ' long' : '');   // long headlines: smaller, wider, ~2 lines
     $('endVerdict').textContent = end.line;
     $('tally').innerHTML = '';
     say('Nice thinking!', 5000);
