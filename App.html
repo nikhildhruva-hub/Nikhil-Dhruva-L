@@ -440,6 +440,7 @@ const C2I_ROUNDS = {
     { stage:"Solver", type:"text", q:"Why does low frequency make the water more active.", allowSkip:true },
     { stage:"Seeker", type:"mcq", q:"Why do you think the water is moving, or what is making the water move?",
       options:["Vibration from sound passing through it","The water is slowly evaporating","Someone is stirring it by hand","It is reacting to light from above"],
+      answer:0, rightStage:"Solver",   // right → classified Solver; wrong → drops to Citizen
       allowSkip:true,
       explain:"Sound is a vibration. As it passes through the water, it keeps pushing and pulling the surface — and that constant push and pull is the movement you see.",
       wonder:"If the sound stopped completely, how quickly do you think the water would settle?" },
@@ -548,7 +549,6 @@ function submitTextAnswer(item){
   c2iReached = item.stage;
   right++;
   score += POINTS_RIGHT;
-  paintScore();
 
   $('verdict').textContent = 'Response recorded.';
   $('verdict').className = 'verdict good';
@@ -701,9 +701,7 @@ function startRound(zid){
     idx = 0; score = 0; right = 0; wrong = 0;
     const z = ZONES.find(z => z.id === zid);
     $('zoneName').textContent = z ? z.name : 'Across the floor';
-    $('scoreWho').textContent = player;
     setHost(zid || (ZONES[Math.floor(Math.random()*ZONES.length)].id));
-    paintScore();
     show('quiz');
     renderQuestion();
     return;
@@ -714,17 +712,10 @@ function startRound(zid){
   idx=0; score=0; right=0; wrong=0;
   const z = ZONES.find(z => z.id === zid);
   $('zoneName').textContent = z ? z.name : 'Across the floor';
-  $('scoreWho').textContent = player;
   setHost(zid || (ZONES[Math.floor(Math.random()*ZONES.length)].id));
-  paintScore();
   show('quiz');
   if(TIMER_MODE === 'round') startClock();
   renderQuestion();
-}
-
-function paintScore(){
-  $('score').textContent = score;
-  $('score').classList.toggle('neg', score < 0);
 }
 
 function renderQuestion(){
@@ -837,13 +828,6 @@ function timeUp(){
   }
 }
 
-function popScore(delta, good){
-  const pop = $('pop');
-  pop.textContent = (delta > 0 ? '+' : '\u2212') + Math.abs(delta);
-  pop.style.color = good ? 'var(--amber)' : 'var(--coral)';
-  pop.classList.remove('go'); void pop.offsetWidth; pop.classList.add('go');
-}
-
 function answer(choice){
   if(locked) return;
   const item = round[idx];
@@ -855,6 +839,39 @@ function answer(choice){
   stopClock();
   $('opts').classList.add('locked');
 
+  if(item.stage && item.answer !== undefined){
+    // Cascade MCQ with a right answer: right lands on item.rightStage and ends the
+    // round; wrong shows what's going on, then drops to the next stage down.
+    const isRight = choice === item.answer;
+    [...$('opts').children].forEach((b,i) => {
+      if(i === item.answer) b.classList.add('correct');
+      else if(i === choice) b.classList.add('wrong');
+      else b.classList.add('dim');
+    });
+    react(isRight);
+
+    $('verdict').textContent = isRight ? 'Right — and here is why.' : 'Not quite. Here is what is going on.';
+    $('verdict').className = 'verdict ' + (isRight ? 'good' : 'bad');
+    $('explain').textContent = item.explain;
+    $('wonder').textContent = item.wonder;
+    $('feedback').classList.add('on');
+
+    const btn = $('nextBtn');
+    btn.style.visibility = 'visible';
+    btn.focus({preventScroll:true});
+    if(isRight){
+      c2iReached = item.rightStage || item.stage;
+      right++;
+      score += POINTS_RIGHT;
+      btn.textContent = 'See your score';
+      advanceTimer = setTimeout(endC2IRound, AUTO_ADVANCE_SEC*1000);
+    }else{
+      btn.textContent = 'Next question';
+      advanceTimer = setTimeout(next, AUTO_ADVANCE_SEC*1000);
+    }
+    return;
+  }
+
   if(item.stage){
     // Citizen/Seeker in the cymatics cascade: there is no wrong answer here,
     // every perspective is valid \u2014 just acknowledge it and explain what's really going on.
@@ -862,8 +879,6 @@ function answer(choice){
     c2iReached = item.stage;
     right++;
     score += POINTS_RIGHT;
-    paintScore();
-    popScore(POINTS_RIGHT, true);
     react(true);
 
     $('verdict').textContent = 'Thanks for sharing your thinking \u2014 here is what is actually going on.';
@@ -890,7 +905,6 @@ function answer(choice){
   const delta = isRight ? POINTS_RIGHT : POINTS_WRONG;
   score += delta;
   isRight ? right++ : wrong++;
-  paintScore();
 
   if(!isRight){
     const m = store(KEY_MISSES, {});
@@ -898,7 +912,6 @@ function answer(choice){
     save(KEY_MISSES, m);
   }
 
-  popScore(delta, isRight);
   react(isRight);
 
   $('verdict').textContent = isRight ? 'Right \u2014 and here is why.' : 'Not this time. Here is what is going on.';
@@ -2064,7 +2077,7 @@ document.querySelectorAll('#bulbRow .bulb').forEach(b =>
   b.addEventListener('click', () => bulbTap(Number(b.dataset.b))));
 $('gBack').addEventListener('click', () => show('mode'));
 $('gBoard').addEventListener('click', renderDash);
-$('nextBtn').addEventListener('click', next);
+$('nextBtn').addEventListener('click', () => c2iReached ? endC2IRound() : next());
 $('quizBack').addEventListener('click', () => { clearTimers(); show('mode'); });
 $('doneBtn').addEventListener('click', showThanks);
 $('thanksAgain').addEventListener('click', () => show('mode'));
