@@ -4,24 +4,22 @@
    ZONES
    ===================================================================== */
 const ZONES = [
-  {id:"cymatics", name:"Water Cymatics",  tag:"Sound you can see",
-   about:"Vibration turns still water into standing patterns. Change the frequency and the shape changes with it."},
-  {id:"rain",     name:"Rain Instrument", tag:"Making weather with sound",
-   about:"Hundreds of tiny collisions, one after another, until your ear stops hearing clicks and starts hearing rain."},
-  {id:"yoga",     name:"Yoga Gallery",    tag:"Balance, breath and the body",
-   about:"Centre of gravity, base of support, and the one automatic system you can take manual control of \u2014 your breath."},
-  {id:"raga",     name:"Ragasrusti",      tag:"Pitch, strings and raga",
-   about:"Why a string sounds the way it does, and how a set of rules can make more music possible rather than less."},
-  {id:"scale",    name:"Micro & Macro",   tag:"From atoms to galaxies",
-   about:"Step down to the atom, then out to the galaxy, and find that both directions run further than they feel."},
-  {id:"wind",     name:"Wind Exhibit",    tag:"Moving air, lift and power",
-   about:"Air you cannot see, doing work you can. Uneven heating becomes wind, and wind becomes lift and electricity."},
-  {id:"youq",     name:"All About You",       tag:"Your body, your planet, your name",
-   about:"Your own body, the ground under it, and the codes a name can be written in \u2014 all measured in numbers."},
-  {id:"road",     name:"Traffic Gallery", tag:"Helmets, rules and the road",
-   about:"What actually protects you on a road, and what happens to a person's reactions when they are tired, distracted or drunk."},
-  {id:"clock",    name:"The Clock Tower",  tag:"Time, and the odd ways we count it",
-   about:"Why an hour has sixty minutes, why clocks turn the way they do, and what a second is actually measured against."}
+  {id:"cymatics", name:"Water Cymatics", tag:"Vibration makes an invisible thing visible", about:"Vibration makes an invisible thing visible"},
+  {id:"colors", name:"Colors", tag:"Light, ink and the eye rarely agree", about:"Light, ink and the eye rarely agree"},
+  {id:"kinetic", name:"Kinetic", tag:"One turn of a handle becomes a living movement", about:"One turn of a handle becomes a living movement"},
+  {id:"shapes", name:"Shapes", tag:"Rules of form that hold whether you like them or not", about:"Rules of form that hold whether you like them or not"},
+  {id:"noneuclid", name:"Non-Euclidean", tag:"Familiar games on surfaces that break the rules", about:"Familiar games on surfaces that break the rules"},
+  {id:"scale", name:"Micro-Macro", tag:"The same eye, pointed at the very small and the very far", about:"The same eye, pointed at the very small and the very far"},
+  {id:"raga", name:"Raga–Srishti", tag:"Sound as something you can make, shape and measure", about:"Sound as something you can make, shape and measure"},
+  {id:"prakrithi", name:"Prakrithi", tag:"Earth, water, fire, air and space, as systems", about:"Earth, water, fire, air and space, as systems"},
+  {id:"road", name:"Traffic Gallery", tag:"Rules, risk and consequence", about:"Rules, risk and consequence"},
+  {id:"plug", name:"Plug n Play", tag:"Try it, watch it fail, adjust, try again", about:"Try it, watch it fail, adjust, try again"},
+  {id:"charges", name:"Charges", tag:"Electricity made visible, audible and slightly alarming", about:"Electricity made visible, audible and slightly alarming"},
+  {id:"yoga", name:"Yoga", tag:"A tradition old enough to be worth testing", about:"A tradition old enough to be worth testing"},
+  {id:"youq", name:"YOU", tag:"Identity, perception and the stories we accept about ourselves", about:"Identity, perception and the stories we accept about ourselves"},
+  {id:"loo", name:"Loo Labs", tag:"The ordinary thing nobody will discuss", about:"The ordinary thing nobody will discuss"},
+  {id:"outdoor", name:"Outdoor", tag:"Stone, metal and open air — science without a roof", about:"Stone, metal and open air — science without a roof"},
+  {id:"lobby", name:"Lobby", tag:"The people who asked first, and the map of where you are", about:"The people who asked first, and the map of where you are"}
 ];
 
 /* Drawn artwork \u2014 no image files, works offline. */
@@ -110,8 +108,7 @@ const MASCOT = window.ZIN || {};
 
 /* Which Zinion hosts which gallery. Swap any name to reassign. */
 const HOST = {
-  cymatics:"argon", rain:"niki", yoga:"tropido",
-  raga:"stephen",  scale:"harsh", wind:"harsh", youq:"stephen", road:"harsh", clock:"argon"
+  cymatics:"argon", colors:"niki", kinetic:"tropido", shapes:"stephen", noneuclid:"harsh", scale:"harsh", raga:"stephen", prakrithi:"tropido", road:"harsh", plug:"harsh", charges:"argon", yoga:"tropido", youq:"stephen", loo:"stephen", outdoor:"harsh", lobby:"argon"
 };
 const HOST_NAME = {tropido:"Tropido", niki:"Niki", stephen:"Stephen", argon:"Argon", harsh:"Harsh"};
 
@@ -528,69 +525,252 @@ function noteAnswer(item, text){ if(item && item.stage) c2iAnswers[item.stage] =
 /* Galleries that don't use the cascade send their own [column, value] list instead. */
 let c2iFields = null;
 
-/* ================== PICK ROUNDS (Traffic) ==================
-   A different pattern from the Cymatics cascade: the visitor first says whether they've
-   been through the gallery, then answers that track's four questions. Every option is
-   tagged with a stage (never shown); the stage they land on is the one they picked most,
-   a tie going to the higher stage. "Or write your own" and Skip are recorded but not
-   counted, and a visitor with nothing counted lands on Citizen.
-   Option: [stage, text] — add true as a third item for "name it" options. */
-const PICK_ROUNDS = {
-  road: {
-    ask: "Have you been through the Traffic gallery yet?",
-    tracks: [
-      { label: "Not yet", questions: [
-        { q: "You see somebody riding without a helmet. You:", options: [
-          ["Seeker",    "Wonder why they chose not to"],
-          ["Citizen",   "Notice, and move on"],
-          ["Innovator", "Think the helmet itself needs redesigning so they would want to"],
-          ["Solver",    "Think about what would make them wear one"] ] },
-        { q: "A rule exists that everybody knows and nobody follows. That tells you:", options: [
-          ["Solver",    "The rule needs better enforcement"],
-          ["Innovator", "The rule is badly designed for how people actually behave"],
-          ["Citizen",   "People are careless"],
-          ["Seeker",    "There is a reason worth finding"] ] },
-        { q: "What makes a road near you unsafe?", options: [
-          ["Citizen",   "I haven't thought about it"],
-          ["Solver",    "I can name the exact spot and the fix"],
-          ["Seeker",    "I'd need to watch it for a while first"],
-          ["Innovator", "I'd change something nobody counts as part of the road"] ] },
-        { q: "Safety equipment you would invent:", options: [
-          ["Innovator", "Protection for a risk nobody has named", true],
-          ["Citizen",   "Whatever the experts recommend"],
-          ["Seeker",    "I'd study the injuries first"],
-          ["Solver",    "An improvement to something that already exists"] ] }
-      ]},
-      { label: "Already visited", questions: [
-        { q: "After Helmet or Harm, what stayed with you?", options: [
-          ["Citizen",   "That it was dramatic to watch"],
-          ["Seeker",    "Why the foam matters more than the shell"],
-          ["Solver",    "That I should check my own helmet"],
-          ["Innovator", "That the same idea could protect something else entirely"] ] },
-        { q: "This gallery is about a rule people know and still break. What would change that?", options: [
-          ["Innovator", "Redesigning the thing so the unsafe option isn't possible"],
-          ["Citizen",   "Telling them more clearly"],
-          ["Solver",    "Making the safe option the easy one"],
-          ["Seeker",    "Understanding why they break it"] ] },
-        { q: "If you could add one exhibit to this gallery, it would:", options: [
-          ["Solver",    "Let people practise a decision under time pressure"],
-          ["Seeker",    "Show what happens inside the body in a crash"],
-          ["Citizen",   "Explain the rules better"],
-          ["Innovator", "Take a real junction near your home and let people redesign it"] ] },
-        { q: "The ideas in this room \u2014 where else do they apply?", options: [
-          ["Citizen",   "Only on roads"],
-          ["Innovator", "A place nobody treats as a safety problem yet", true],
-          ["Seeker",    "I'd like to know where else risk works this way"],
-          ["Solver",    "School corridors, staircases, crowds"] ] }
-      ]}
+/* ================== GALLERY QUESTIONS (C2I stage diagnostic) ==================
+   Source: PFT/PROG/TOOL/2026-001, "C2I Stage Diagnostic" (draft v0.2, 26 Sep 2026).
+   Every gallery asks the same way: first "have you been through it yet?", then that
+   branch's four questions. Each option is tagged 1 Citizen · 2 Seeker · 3 Solver ·
+   4 Innovator — never shown, and the option order is shuffled per visitor so the
+   Innovator option can't be spotted by position. The reading is the most frequent tag;
+   an even split takes the LOWER stage (an unearned label is worse than a modest one).
+   Written answers and skips are recorded but never scored — a Science Communicator
+   reads and tags them. Option: [tag, text] or [tag, text, 1] for "name it" options.
+   Branches: [notVisitedYet, alreadyVisited]; question: [text, options]. */
+const STAGE_BY_TAG = [null, 'Citizen', 'Seeker', 'Solver', 'Innovator'];
+const BRANCHES = [
+  { label: 'Not visited yet', hint: "I'm about to go in" },
+  { label: 'Already visited', hint: "I've just walked through it" }
+];
+const C2I_BANK = {
+  cymatics: [
+    [
+      ["Something in your house makes a noise it never used to make. You:", [[1,"Ignore it until somebody else notices"], [2,"Listen carefully to work out what has changed"], [3,"Open it up and find the loose part"], [4,"Think: that noise is information — something should be reading it"]]],
+      ["Sound is a vibration. What would you most want to do with that fact?", [[2,"Understand why different sounds vibrate differently"], [4,"Build something that uses vibration for a job it isn't used for"], [1,"Have somebody show me what it means"], [3,"Use it to detect a problem early"]]],
+      ["You are told a machine can turn sound into a picture. Your first reaction:", [[3,"What could it diagnose?"], [1,"Show me"], [4,"What could it make that doesn't exist yet?"], [2,"How does it do that?"]]],
+      ["What would you put into such a machine?", [[4,"Something nobody would think to try",1], [2,"Different sounds, to compare them"], [3,"A sound from something that is broken"], [1,"Whatever is already set up"]]]
+    ],
+    [
+      ["Standing at the water plate, what were you actually doing?", [[1,"Watching, waiting to see what it did next"], [2,"Trying to work out what was causing the pattern"], [3,"Changing the dial to get one particular pattern I wanted"], [4,"Wondering what else I could put on that plate instead of water"]]],
+      ["You have now seen sound make patterns you can look at. What does that give you?", [[2,"A question I want answered"], [4,"A machine I could build with it"], [1,"A good thing to show somebody"], [3,"A way to check something I couldn't see before"]]],
+      ["If the exhibit had one more control on it, what should that control do?", [[3,"Let me save a pattern and come back to it"], [1,"Explain what is happening on a screen"], [4,"Let me feed in my own sound — my voice, a song, traffic"], [2,"Show me the frequency number as I change it"]]],
+      ["“Invisible thing made visible” — where does that belong outside this room?", [[4,"Somewhere nobody has tried it — name the place"], [3,"Checking machines for faults by their vibration"], [1,"Nowhere, it is a display piece"], [2,"I'd like to know where it is already used"]]]
     ]
-  }
+  ],
+  colors: [
+    [
+      ["Two people look at the same thing and name its colour differently. You:", [[1,"Assume one of them is just wrong"], [2,"Wonder how two pairs of eyes can differ"], [3,"Find a way to settle it properly"], [4,"Think our way of naming colour needs rebuilding"]]],
+      ["Colour is not in the object, it is in the light and your eye. What does that give you?", [[3,"A reason to check the lighting where I work"], [1,"An interesting thing to repeat to somebody"], [4,"An idea for something that changes with its light"], [2,"A question about how my own eyes work"]]],
+      ["A screen makes every colour from three. What should be done with that?", [[1,"Explained to me clearly"], [4,"Used to build something from very few parts"], [2,"Understood properly — why three?"], [3,"Used to fix colours that come out wrong"]]],
+      ["Where does “what you see is not what is there” matter most?", [[2,"I'd like to know where it already causes trouble"], [4,"Somewhere nobody has checked it",1], [1,"Nowhere much"], [3,"Signs, labels and warnings people have to read fast"]]]
+    ],
+    [
+      ["At the colour shadow wall, what were you doing?", [[1,"Looking at the shadows somebody else was making"], [2,"Moving to see which light made which colour"], [3,"Trying to get one exact shadow I had in mind"], [4,"Wondering what else I could block the light with"]]],
+      ["You have now seen the same surface change colour under different light. So:", [[2,"I want to know which one is the real colour"], [3,"I'd test a room's lighting before trusting what I see"], [1,"It was a good trick"], [4,"I'd design something meant to be seen under two lights"]]],
+      ["If this gallery had one more exhibit, it should:", [[4,"Let visitors design for somebody who sees colour differently"], [2,"Show what the eye is actually doing"], [1,"Explain the colours on a panel"], [3,"Let people match a colour and check how close they got"]]],
+      ["Take this out of the gallery. Where does it apply?", [[1,"Only to screens and paint"], [3,"Safety signage, uniforms, packaging"], [2,"I'd like to know where it is already used"], [4,"A place nobody treats as a colour problem",1]]]
+    ]
+  ],
+  kinetic: [
+    [
+      ["You watch something mechanical move convincingly, like an animal. You:", [[1,"Enjoy watching it"], [2,"Want to see what is underneath"], [3,"Work out which part drives which"], [4,"Think of a movement nobody has built yet"]]],
+      ["A handle, a few rods and a cam make a whole body move. That is:", [[2,"Something I want to understand properly"], [1,"Clever, and pleasant to look at"], [3,"A way to make one motor do several jobs"], [4,"A kit I could build something unexpected out of"]]],
+      ["If you were given the rods and cams, what would you do first?", [[1,"Follow the instructions"], [3,"Rebuild something that already works, properly"], [2,"Test each part to see what it does"], [4,"Build something the parts were not meant for"]]],
+      ["Where would a mechanism like this be genuinely useful?", [[3,"Anywhere a motor is doing a job a linkage could do"], [1,"In museums"], [4,"Somewhere mechanical movement isn't used at all",1], [2,"I'd want to know where it already is"]]]
+    ],
+    [
+      ["At the kinetic sculptures, what did you spend your time on?", [[1,"Watching them run"], [4,"Imagining a creature of my own on the same mechanism"], [2,"Following the linkage to see how the motion passes along"], [3,"Turning it slowly to find where the movement comes from"]]],
+      ["You have now seen one input become many movements. What do you take?", [[3,"A way to simplify something that currently needs two motors"], [2,"A question about how the timing is set"], [1,"A memory of a nice thing"], [4,"An idea for a machine that moves like something alive"]]],
+      ["One more exhibit in this gallery should:", [[4,"Let visitors design a cam and watch their own motion run"], [1,"Explain the mechanism on a board"], [3,"Let people repair a deliberately broken linkage"], [2,"Show the same mechanism at three speeds"]]],
+      ["Outside this room, where does “one input, many outputs” belong?", [[2,"I'd like to know where engineers already use it"], [4,"A place nobody has mechanised",1], [3,"Farm tools, kitchen tools, anything hand-powered"], [1,"Nowhere obvious"]]]
+    ]
+  ],
+  shapes: [
+    [
+      ["You are given a pile of identical tiles and a floor to cover. You:", [[1,"Wait to be told the pattern"], [3,"Work out the layout that leaves no gaps"], [2,"Try a few and see which ones fit together"], [4,"Change the tile shape so it does something new"]]],
+      ["Some shapes fit together and some cannot, and it is not a matter of taste. That is:", [[1,"A fact to remember"], [4,"A constraint I'd like to design against"], [2,"Something I want the reason for"], [3,"Useful the next time I'm laying something out"]]],
+      ["Straight lines can make a curve. Your response:", [[4,"What else could be built out of the wrong parts?"], [2,"How does that actually work?"], [1,"Show me again"], [3,"That would make something easier to manufacture"]]],
+      ["Where do shape rules decide something that matters?", [[3,"Packing, storage, anything that has to fit"], [1,"In maths class"], [2,"I'd like to know where nature uses them"], [4,"Somewhere shape isn't thought about",1]]]
+    ],
+    [
+      ["At the tessellation wall, what happened?", [[2,"I was trying to see why some shapes fit"], [1,"I watched somebody else do it"], [4,"I wanted a shape that isn't in the box"], [3,"I filled it completely and was pleased with that"]]],
+      ["You have now seen structure decided by shape alone. What do you take?", [[3,"A rule I can use when I build something"], [2,"A question about why hexagons win"], [4,"An idea for a shape nobody uses"], [1,"That it looked good"]]],
+      ["One more exhibit here should:", [[1,"Explain the geometry on a panel"], [3,"Let people build a structure that has to hold weight"], [4,"Let visitors invent a tile and test whether it tessellates"], [2,"Show the same shape behaving differently on a curved surface"]]],
+      ["Take the idea out of the gallery. Where does it go?", [[2,"I'd like to know where it already shows up"], [4,"A place nobody treats as a geometry problem",1], [3,"Building, packing, laying things out"], [1,"Nowhere in particular"]]]
+    ]
+  ],
+  noneuclid: [
+    [
+      ["The rules of a game you know well are changed without warning. You:", [[1,"Wait for somebody to explain the new rules"], [3,"Play until I find a strategy that works"], [2,"Ask what exactly changed and why"], [4,"Start changing the rules further myself"]]],
+      ["Your old strategy stops working when the surface changes. That tells you:", [[4,"Rules are a design choice, not a fact"], [1,"The game is harder now"], [3,"I need a new strategy, and I can find one"], [2,"The strategy was about the board, not the game"]]],
+      ["If you could change one thing about a familiar game, it would be:", [[1,"Nothing, it works as it is"], [2,"I'd first want to know why it's built that way"], [4,"The surface it is played on"], [3,"The part that makes matches drag"]]],
+      ["Where else does changing the surface change the answer?", [[2,"I'd like to know where mathematicians use this"], [3,"Navigation, mapping, anything on a globe"], [1,"Only in puzzles"], [4,"Somewhere nobody has tried it",1]]]
+    ],
+    [
+      ["Playing chess on a cube or tic-tac-toe on a cylinder, what did you do?", [[2,"Worked out how the board wraps"], [1,"Let somebody else make the moves"], [4,"Thought about which other game I'd break this way"], [3,"Found the winning line and used it"]]],
+      ["You have now played on a surface with no corners. What stayed with you?", [[3,"A better way to think about position"], [4,"An idea for a game of my own"], [2,"A question about what “straight” even means there"], [1,"That it was confusing"]]],
+      ["One more exhibit here should:", [[2,"Show why the geometry changes the outcome"], [1,"Explain the rules more clearly"], [3,"Let people practise against the machine"], [4,"Let visitors define their own surface and play on it"]]],
+      ["Outside the gallery, where does this belong?", [[4,"A place nobody thinks of as having a shape",1], [1,"Nowhere, it's a curiosity"], [2,"I'd like to know where it is already used"], [3,"Flight paths, sea routes, maps"]]]
+    ]
+  ],
+  scale: [
+    [
+      ["You are handed an instrument you have never used. You:", [[2,"Ask what it is for before touching it"], [1,"Wait for somebody to demonstrate"], [4,"Wonder what it could be used for that it wasn't made for"], [3,"Work out the controls by using it"]]],
+      ["Two lenses see further than one big one. What does that give you?", [[4,"An idea about solving a problem with arrangement, not size"], [2,"A question about how the two work together"], [3,"A way to get more out of equipment I already have"], [1,"A fact worth knowing"]]],
+      ["If you could point an instrument anywhere, you would:", [[3,"Check something I already suspect"], [1,"Look at whatever is recommended"], [4,"Look where nobody bothers to look"], [2,"Compare several things to see how they differ"]]],
+      ["Where does “looking closer changes the answer” matter?", [[1,"In laboratories"], [4,"Somewhere nobody looks closely",1], [3,"Quality checks, repairs, diagnosis"], [2,"I'd like to know where it already matters"]]]
+    ],
+    [
+      ["At the live microscope, what did you do?", [[1,"Looked at what was already on the slide"], [3,"Adjusted focus until I could see clearly"], [2,"Wanted to know what I was actually looking at"], [4,"Wanted to put something of my own under it"]]],
+      ["You have now seen a scale far outside your own. What do you take?", [[2,"A question about what sits between the two ends"], [1,"That it was impressive"], [4,"Something I want to look at that nobody has"], [3,"A better sense of what I can and can't measure"]]],
+      ["One more exhibit here should:", [[3,"Let people measure something and compare results"], [4,"Let visitors bring anything and put it under the lens"], [1,"Explain magnification on a board"], [2,"Show the same object at five scales at once"]]],
+      ["Take it out of the gallery. Where does it apply?", [[3,"Anything where a small fault becomes a big one"], [2,"I'd like to know where it already applies"], [1,"Only to science"], [4,"A place nobody inspects",1]]]
+    ]
+  ],
+  raga: [
+    [
+      ["You are put in a room full of instruments you cannot play. You:", [[3,"Work at one until I can get a tune out of it"], [1,"Watch whoever can play"], [4,"Try to make a sound the instrument wasn't built for"], [2,"Try each one to hear how they differ"]]],
+      ["Pitch is just how fast something vibrates. What does that give you?", [[1,"Something interesting to know"], [3,"A way to tune something by ear with confidence"], [4,"An idea for turning something that isn't sound into sound"], [2,"A question about why some combinations please us"]]],
+      ["If you could add one control to any instrument, it would:", [[4,"Let it be played by something other than hands"], [1,"Make it easier to play the right note"], [2,"Show me what is happening as I play"], [3,"Let me tune it exactly"]]],
+      ["Where does sound carry information people ignore?", [[2,"I'd like to know where it already does"], [4,"Somewhere nobody listens",1], [1,"Nowhere much"], [3,"Engines, machines, anything that changes when it fails"]]]
+    ],
+    [
+      ["In this gallery, what did you actually do?", [[4,"Played something in a way it isn't meant to be played"], [2,"Compared instruments to hear what changed the sound"], [1,"Listened while others played"], [3,"Kept at one until I could hold a rhythm"]]],
+      ["You have now heard size and tension decide a note. What do you take?", [[2,"A question about why some notes sound right together"], [4,"An instrument I want to build out of something else"], [3,"A way to fix an instrument that sounds wrong"], [1,"That it sounded good"]]],
+      ["One more exhibit here should:", [[3,"Let people tune an instrument against a reference"], [1,"Explain how each instrument works"], [4,"Let visitors turn any object in the room into an instrument"], [2,"Show the vibration while the note sounds"]]],
+      ["Take the idea out of this room. Where does it belong?", [[1,"In music only"], [3,"Diagnosis by ear — vehicles, machines, the body"], [4,"A place nobody treats as audible",1], [2,"I'd like to know where it is used already"]]]
+    ]
+  ],
+  prakrithi: [
+    [
+      ["A sealed jar of plants survives for years without watering. You:", [[1,"Accept that it works"], [4,"Wonder what else could be made self-sustaining"], [2,"Want to know where the water goes"], [3,"Work out what you'd need to keep one alive"]]],
+      ["A closed system recycles everything it has. What does that give you?", [[3,"A way to waste less of something I use"], [1,"A nice idea"], [2,"A question about where the energy comes from"], [4,"A design principle for something bigger"]]],
+      ["If you could measure one thing about your surroundings, it would be:", [[2,"Something I've always wondered about"], [4,"Something nobody measures"], [1,"Whatever is normally measured"], [3,"The thing I suspect is wrong"]]],
+      ["Where would closing a loop make the biggest difference?", [[4,"Somewhere nobody has tried",1], [3,"Water, food waste, packaging"], [1,"For governments to decide"], [2,"I'd like to know where it is already done"]]]
+    ],
+    [
+      ["At the terrarium, what were you doing?", [[2,"Trying to work out how it sustains itself"], [3,"Thinking about what I'd need to build one"], [1,"Looking at the plants"], [4,"Wondering what else could be sealed and still live"]]],
+      ["You have now seen the five elements treated as one system. What do you take?", [[4,"An idea for closing a loop somewhere it is open"], [2,"A question about how the parts connect"], [3,"Something I could change at home"], [1,"That it was beautifully done"]]],
+      ["One more exhibit here should:", [[3,"Let people test what breaks the balance"], [4,"Let visitors design a closed system of their own"], [2,"Show the cycle running faster than real time"], [1,"Explain the five elements clearly"]]],
+      ["Take it out of the gallery. Where does it belong?", [[1,"In nature documentaries"], [2,"I'd like to know who already does this"], [3,"My own home, first"], [4,"A system nobody thinks of as a loop",1]]]
+    ]
+  ],
+  road: [
+    [
+      ["You see somebody riding without a helmet. You:", [[2,"Wonder why they chose not to"], [1,"Notice, and move on"], [4,"Think the helmet itself needs redesigning so they would want to"], [3,"Think about what would make them wear one"]]],
+      ["A rule exists that everybody knows and nobody follows. That tells you:", [[3,"The rule needs better enforcement"], [4,"The rule is badly designed for how people actually behave"], [1,"People are careless"], [2,"There is a reason worth finding"]]],
+      ["What makes a road near you unsafe?", [[1,"I haven't thought about it"], [3,"I can name the exact spot and the fix"], [2,"I'd need to watch it for a while first"], [4,"I'd change something nobody counts as part of the road"]]],
+      ["Safety equipment you would invent:", [[4,"Protection for a risk nobody has named",1], [1,"Whatever the experts recommend"], [2,"I'd study the injuries first"], [3,"An improvement to something that already exists"]]]
+    ],
+    [
+      ["After Helmet or Harm, what stayed with you?", [[1,"That it was dramatic to watch"], [2,"Why the foam matters more than the shell"], [3,"That I should check my own helmet"], [4,"That the same idea could protect something else entirely"]]],
+      ["This gallery is about a rule people know and still break. What would change that?", [[4,"Redesigning the thing so the unsafe option isn't possible"], [1,"Telling them more clearly"], [3,"Making the safe option the easy one"], [2,"Understanding why they break it"]]],
+      ["If you could add one exhibit to this gallery, it would:", [[3,"Let people practise a decision under time pressure"], [2,"Show what happens inside the body in a crash"], [1,"Explain the rules better"], [4,"Take a real junction near your home and let people redesign it"]]],
+      ["The ideas in this room — where else do they apply?", [[1,"Only on roads"], [4,"A place nobody treats as a safety problem yet",1], [2,"I'd like to know where else risk works this way"], [3,"School corridors, staircases, crowds"]]]
+    ]
+  ],
+  plug: [
+    [
+      ["You are given blocks and told to build as high as you can. You:", [[1,"Copy whatever is already standing"], [3,"Build, watch where it wobbles, fix that"], [2,"Test how much lean it takes before it falls"], [4,"Build something that isn't a tower"]]],
+      ["Failing at something quickly, over and over, is:", [[2,"How you find out what is really going on"], [1,"Frustrating"], [4,"Where the unexpected idea comes from"], [3,"The fastest way to a working version"]]],
+      ["If the rules of a game were left out of the box, you would:", [[3,"Invent rules that make it work"], [1,"Look them up"], [4,"Invent a different game"], [2,"Try it and see what the pieces suggest"]]],
+      ["Where is trying and failing quickly the right approach?", [[1,"In play only"], [2,"I'd like to know where it is used seriously"], [3,"Anything being fixed or prototyped"], [4,"Somewhere people are afraid to fail",1]]]
+    ],
+    [
+      ["At the tower or the slingshot, what did you do when it failed?", [[4,"Changed the goal to something more interesting"], [1,"Left it and moved on"], [3,"Worked out what gave way and rebuilt that bit"], [2,"Tried to see exactly when it started going wrong"]]],
+      ["You have now built something that fell down. What do you take?", [[3,"A clear idea of what to do differently"], [1,"That it was fun"], [2,"A question about why it went at that point"], [4,"An idea for building something else entirely"]]],
+      ["One more thing in this zone should:", [[1,"Explain how to do it properly"], [4,"Give people parts with no stated purpose"], [2,"Show what happened, in slow motion"], [3,"Set a target that takes several attempts"]]],
+      ["Take it out of this zone. Where does it belong?", [[4,"A place where failing isn't allowed",1], [3,"Repairs, planning, anything with a deadline"], [1,"Nowhere serious"], [2,"I'd like to know who already works this way"]]]
+    ]
+  ],
+  charges: [
+    [
+      ["Something harmless happens that looks dangerous. You:", [[1,"Step back and watch"], [4,"Think about what it could be made to do"], [3,"Work out what would make it safe to handle"], [2,"Want to know why it looks that way"]]],
+      ["Charge builds, then finds the easiest path out. What does that give you?", [[3,"A way to think about where a fault would go"], [4,"An idea for moving energy somewhere it isn't moved"], [1,"Something impressive to describe"], [2,"A question about what “easiest path” means"]]],
+      ["If you could control one property of electricity, it would be:", [[2,"I'd first want to understand what there is to control"], [3,"Where it goes"], [1,"Whatever engineers usually control"], [4,"Whether it needs a wire at all"]]],
+      ["Where does “it takes the easiest path” apply beyond electricity?", [[4,"Somewhere nobody thinks of it that way",1], [1,"Nowhere, it's about wires"], [2,"I'd like to know where else it holds"], [3,"Water, crowds, traffic — anything that flows"]]]
+    ],
+    [
+      ["At the Van de Graaff or plasma tube, what did you do?", [[2,"Tried to work out what was reaching my hand"], [1,"Watched somebody else touch it"], [3,"Tried to control the effect deliberately"], [4,"Thought about what else could be made to do this"]]],
+      ["You have now seen electricity as something with a shape. What do you take?", [[4,"An idea for something powered without a wire"], [2,"A question about how it chooses its path"], [1,"That it looked spectacular"], [3,"A better sense of what to keep away from"]]],
+      ["One more exhibit here should:", [[1,"Explain what is happening on a panel"], [3,"Let people trace a fault to its source"], [2,"Show the path the charge actually takes"], [4,"Let visitors power something of their own"]]],
+      ["Take it out of the gallery. Where does it belong?", [[3,"Drainage, crowd flow, queues"], [2,"I'd like to know where the analogy breaks"], [4,"A system nobody models this way",1], [1,"Only in physics"]]]
+    ]
+  ],
+  yoga: [
+    [
+      ["Somebody tells you a practice is good for you. You:", [[3,"Try it and judge by how I feel"], [1,"Accept it, they probably know"], [2,"Ask what it is supposed to do and why"], [4,"Wonder what else could be built on the same idea"]]],
+      ["A claim has been made for centuries but never measured. That is:", [[2,"A question worth answering"], [4,"An opportunity to build the test nobody built"], [1,"Fine — tradition is its own evidence"], [3,"Something I could check on myself"]]],
+      ["If you had to find out whether a practice works, you would:", [[1,"Ask an expert"], [3,"Try it for a month and track how I felt"], [4,"Design a way to measure it that doesn't exist yet"], [2,"Read what has already been found"]]],
+      ["Where else do we accept claims without checking them?", [[3,"Health advice I could test on myself"], [2,"I'd like to know which ones have been checked"], [1,"Most things, and that's alright"], [4,"An area nobody questions",1]]]
+    ],
+    [
+      ["At the yoga tower or the posture shelves, what did you do?", [[4,"Thought about how this could be taught differently"], [2,"Wondered why that posture is meant to help"], [3,"Kept adjusting until I could hold it"], [1,"Read the boards"]]],
+      ["You have now tried a posture and read its claim. What do you take?", [[1,"That it was harder than it looked"], [3,"Something I'll actually practise"], [4,"An idea for testing the claim properly"], [2,"A question about which claims hold up"]]],
+      ["One more exhibit here should:", [[2,"Show what the body is doing during the posture"], [3,"Let people track their own balance over several visits"], [1,"Explain each posture more clearly"], [4,"Let visitors design a test for one of the claims"]]],
+      ["Take the idea out of the gallery. Where does it apply?", [[4,"A belief nobody has tested",1], [1,"Nowhere, some things needn't be tested"], [3,"Anything I do daily out of habit"], [2,"I'd like to know what has already been studied"]]]
+    ]
+  ],
+  youq: [
+    [
+      ["A description of your personality turns out to fit you well. You:", [[2,"Wonder how it could know that"], [1,"Enjoy it and take it at face value"], [4,"Think about what a genuinely useful version would look like"], [3,"Check whether it fits everybody equally well"]]],
+      ["A vague statement can feel personal to almost anyone. That is:", [[4,"A tool, if you know you're using it"], [1,"A bit of fun"], [3,"Something to watch out for when I'm being sold something"], [2,"A question about how belief actually forms"]]],
+      ["If you could ask one question that reveals who somebody is, it would:", [[1,"Be one of the standard ones"], [4,"Be one nobody asks"], [3,"Be one that's hard to answer dishonestly"], [2,"Be one that tells me how they think"]]],
+      ["Where does “it feels true, so I believe it” cause real damage?", [[3,"Advertising, health claims, forwarded messages"], [2,"I'd like to know where it's been studied"], [4,"Somewhere nobody treats it as a risk",1], [1,"Nowhere serious"]]]
+    ],
+    [
+      ["After the palm reader, what did you think?", [[3,"I compared it with what it told somebody else"], [1,"It was surprisingly accurate"], [2,"I wanted to know how it works"], [4,"I thought about building one that does something real"]]],
+      ["You have now seen yourself reflected, renamed and predicted. What do you take?", [[2,"A question about what identity actually is"], [4,"An idea for something that shows people themselves differently"], [1,"That it was an interesting experience"], [3,"A sharper eye for when I'm being flattered"]]],
+      ["One more exhibit here should:", [[4,"Let visitors design the question that reveals somebody"], [3,"Let people test a prediction against a second person"], [2,"Show why the mind accepts what it's told"], [1,"Explain the psychology on a panel"]]],
+      ["Take it out of the gallery. Where does it belong?", [[1,"Only in fortune telling"], [4,"A place nobody calls persuasion",1], [3,"Anything I'm asked to believe quickly"], [2,"I'd like to know who studies this"]]]
+    ]
+  ],
+  loo: [
+    [
+      ["Something about your own body is worth paying attention to, but it's awkward. You:", [[1,"Leave it alone"], [2,"Read about it quietly"], [4,"Think the awkwardness itself is the problem to solve"], [3,"Track it and see whether anything changes"]]],
+      ["Something this ordinary carries real information. That is:", [[3,"Worth checking on myself"], [4,"A sign that embarrassment is hiding useful data"], [2,"A question about what else the body signals"], [1,"Surprising"]]],
+      ["If you had to make an awkward subject discussable, you would:", [[1,"Leave it to doctors"], [3,"Give people a simple way to check themselves"], [2,"Find out why it became awkward"], [4,"Build something that makes it ordinary to talk about"]]],
+      ["What else is ignored purely because it is embarrassing?", [[4,"Something nobody has made discussable",1], [2,"I'd like to know what health checks miss"], [1,"Nothing much"], [3,"Symptoms people delay reporting"]]]
+    ],
+    [
+      ["In Loo Labs, what did you actually do?", [[2,"Read properly, because I hadn't known this"], [4,"Thought about what else gets ignored for being embarrassing"], [3,"Worked out what mine says about me"], [1,"Laughed and moved on"]]],
+      ["You have now seen a taboo treated as data. What do you take?", [[4,"An idea about making another awkward subject discussable"], [1,"That it was funny and well done"], [2,"A question about what else goes unexamined"], [3,"Something to actually pay attention to"]]],
+      ["One more exhibit here should:", [[3,"Let people check their own answer privately"], [2,"Show what the body is doing to cause it"], [4,"Take a second taboo and treat it the same way"], [1,"Explain it more clearly"]]],
+      ["Take the approach out of this room. Where does it belong?", [[2,"I'd like to know where this has worked before"], [1,"Nowhere, this is a one-off"], [4,"A subject nobody will touch",1], [3,"Any health message people avoid"]]]
+    ]
+  ],
+  outdoor: [
+    [
+      ["You pass something in a public space that makes a sound when struck. You:", [[2,"Try a few to hear how they differ"], [1,"Walk past"], [4,"Think about what else in the open could be made to play"], [3,"Work out how to get a tune out of it"]]],
+      ["A rock can be tuned. What does that give you?", [[1,"Something surprising"], [4,"An idea for an instrument made of something unlikely"], [2,"A question about what decides the note"], [3,"A way to make something musical out of what's lying around"]]],
+      ["If you could put one thing in a public open space, it would:", [[4,"Do something nobody expects outdoors"], [3,"Solve something people complain about"], [1,"Be attractive to look at"], [2,"Teach people something as they pass"]]],
+      ["Where else could a public space teach something without a label?", [[3,"Parks, bus stops, school grounds"], [1,"Nowhere, that's what museums are for"], [4,"Somewhere nobody expects to learn",1], [2,"I'd like to know where it's been done"]]]
+    ],
+    [
+      ["At the stone instruments outside, what did you do?", [[3,"Kept at it until I could play something"], [4,"Tried to play it in a way it isn't meant to be played"], [1,"Listened to somebody else"], [2,"Compared the big ones with the small ones"]]],
+      ["You have now seen a few flat pieces read as an animal. What do you take?", [[2,"A question about how little information the eye needs"], [3,"A way to suggest something with fewer parts"], [1,"That it looked good"], [4,"An idea for building something recognisable out of almost nothing"]]],
+      ["One more thing outdoors should:", [[1,"Explain what these are"], [2,"Show why size changes the note"], [4,"Let visitors add a piece of their own"], [3,"Let people tune it themselves"]]],
+      ["Take it out of the campus. Where does it belong?", [[4,"A public place nobody has used this way",1], [2,"I'd like to know who already does this"], [3,"Anywhere people already wait around"], [1,"Only here"]]]
+    ]
+  ],
+  lobby: [
+    [
+      ["You are told about somebody who solved a hard problem. You:", [[1,"Note the name"], [2,"Want to know what made them ask that question"], [4,"Think about which problem is unclaimed now"], [3,"Want to know how they actually did it"]]],
+      ["These people mostly worked without the equipment we have. That is:", [[4,"A sign that ideas matter more than apparatus"], [2,"A question about what they used instead"], [1,"Impressive"], [3,"Encouraging — I have more to work with than they did"]]],
+      ["If a wall like this existed in fifty years, you would want it to show:", [[2,"Why the problems of today were hard"], [1,"The famous names of the time"], [4,"People nobody expected"], [3,"What was actually fixed"]]],
+      ["What problem today would you want your name attached to?", [[1,"None, that's for other people"], [3,"One I already know how to start on"], [2,"One I'd want to understand first"], [4,"One nobody is working on",1]]]
+    ],
+    [
+      ["At the scientist panels, what held your attention?", [[3,"How they worked, not just what they found"], [4,"What I'd want my own name attached to"], [1,"The photographs"], [2,"Why they chose that problem"]]],
+      ["You have now walked past five people who changed something. What do you take?", [[1,"That they were exceptional"], [3,"A method I could borrow"], [2,"A question about how a discovery gets recognised"], [4,"A problem I'd like to put my own name to"]]],
+      ["One more thing in the lobby should:", [[4,"Let visitors add the problem they'd want solved"], [1,"Tell their stories better"], [2,"Show what they were up against"], [3,"Show how each discovery was actually made"]]],
+      ["Take the lobby's question with you. What is it?", [[2,"What makes a question worth years of somebody's life?"], [4,"Which problem is still unclaimed",1], [1,"Nothing in particular"], [3,"What could I actually fix from here?"]]]
+    ]
+  ]
 };
 
-let pick = null;   // { set, track, i, counts, fields } while a pick round is running
+let pick = null;   // { zid, branch, i, counts, fields, order } while a round is running
 
 function startPickRound(zid){
-  pick = { set: PICK_ROUNDS[zid], track: null, i: 0, counts: {}, fields: [] };
+  pick = { zid, branch: null, i: 0, counts: {}, fields: [] };
   const z = ZONES.find(z => z.id === zid);
   $('zoneName').textContent = z ? z.name : '';
   setHost(zid);
@@ -598,80 +778,126 @@ function startPickRound(zid){
   renderPick();
 }
 
-function pickButton(text, cls, onClick){
-  const b = document.createElement('button');
-  b.className = 'opt' + (cls ? ' ' + cls : '');
-  b.textContent = text;
-  b.addEventListener('click', onClick);
-  return b;
+function el(tag, cls, text){
+  const e = document.createElement(tag);
+  if(cls) e.className = cls;
+  if(text != null) e.textContent = text;
+  return e;
 }
 
 function renderPick(){
   clearTimers(); locked = false;
-  const total = 1 + pick.set.tracks[0].questions.length;
-  const step = pick.track ? pick.i + 1 : 0;
-  $('count').textContent = `Question ${step + 1} of ${total}`;
-  $('fill').style.width = (step / total * 100) + '%';
+  const qs = pick.branch == null ? null : C2I_BANK[pick.zid][pick.branch];
+  const total = C2I_BANK[pick.zid][0].length;
+  $('count').textContent = qs ? `Question ${pick.i + 1} of ${total}` : 'Before you start';
+  $('fill').style.width = (qs ? (pick.i + 1) / total * 100 : 0) + '%';
   $('feedback').classList.remove('on');
   $('nextBtn').style.visibility = 'hidden';
   const box = $('opts');
-  box.className = 'opts'; box.innerHTML = '';
+  box.innerHTML = '';
 
-  if(!pick.track){
-    $('question').textContent = pick.set.ask;
-    pick.set.tracks.forEach(t => box.appendChild(pickButton(t.label, '', () => {
-      pick.track = t;
-      pick.fields.push(['Visited before', t.label]);
-      renderPick();
-    })));
+  // Step 1: which branch.
+  if(!qs){
+    box.className = 'opts visits';
+    $('question').textContent = 'Have you been through this gallery yet?';
+    BRANCHES.forEach((b, n) => {
+      const card = el('button', 'visit');
+      card.append(el('span', 'visit-ico ' + (n ? 'done' : 'ahead')), el('b', '', b.label), el('span', 'visit-hint', b.hint));
+      card.addEventListener('click', () => {
+        pick.branch = n;
+        pick.fields.push(['Visited before', b.label]);
+        renderPick();
+      });
+      box.appendChild(card);
+    });
     return;
   }
 
-  const item = pick.track.questions[pick.i];
-  $('question').textContent = item.q;
-  item.options.forEach(([stage, text, nameIt]) => box.appendChild(pickButton(
-    nameIt ? `${text} \u2014 name it` : text, '',
-    () => nameIt ? pickWrite(`Name it: ${text.toLowerCase()}`, v => pickDone(v ? `${text}: ${v}` : text, stage), false)
-                 : pickDone(text, stage))));
-  box.appendChild(pickButton('Or write your own \u2192', 'alt', () =>
-    pickWrite('Write your own answer.', v => pickDone(`Own answer: ${v}`, null), true)));
-  box.appendChild(pickButton('Skip', 'alt', () => pickDone('Skipped', null)));
+  // Step 2: one of the four questions.
+  box.className = 'opts';
+  const [q, options] = qs[pick.i];
+  $('question').textContent = q;
+  shuffle(options).forEach(([tag, text, nameIt], n) => {
+    const b = el('button', 'opt choice');
+    b.append(el('span', 'optkey', 'ABCD'[n]), el('span', 'opttext', text));
+    if(nameIt) b.appendChild(el('em', 'nameit', 'name it'));
+    b.addEventListener('click', () => {
+      if(locked) return;
+      if(nameIt) return openWrite(b, `Name it — ${text.toLowerCase()}:`, false,
+        v => answerPick(b, v ? `${text}: ${v}` : text, tag));
+      answerPick(b, text, tag);
+    });
+    box.appendChild(b);
+  });
+
+  const own = el('button', 'opt own');
+  own.append(el('span', 'optkey', '+'), el('span', 'opttext', 'Or write your own'));
+  own.addEventListener('click', () => {
+    if(locked) return;
+    openWrite(own, 'Say it your way:', true, v => answerPick(own, `Own answer: ${v}`, 0));
+  });
+  box.appendChild(own);
+
+  const skip = el('button', 'skiplink', 'Skip this question');
+  skip.addEventListener('click', () => { if(!locked) answerPick(null, 'Skipped', 0); });
+  box.appendChild(skip);
 }
 
-/* Swaps the options for a text box. required: an empty box can't be submitted. */
-function pickWrite(note, done, required){
+/* Opens a writing box below the options (always the same spot, so the option grid
+   never reflows). For "Or write your own" the box takes that button's place. */
+function openWrite(anchor, note, required, done){
   const box = $('opts');
-  box.innerHTML = '';
-  const n = document.createElement('div');
-  n.className = 'c2i-note'; n.textContent = note;
-  const field = document.createElement('textarea');
-  field.id = 'textAnswer'; field.rows = 4; field.maxLength = 1000;
-  field.placeholder = 'Type here...';
-  const actions = document.createElement('div');
-  actions.className = 'c2i-actions';
-  actions.appendChild(pickButton('Submit', '', () => {
+  const old = box.querySelector('.writebox');
+  if(old) old.remove();
+  const own = box.querySelector('.opt.own');
+  [...box.querySelectorAll('.opt')].forEach(o => o.classList.toggle('active', o === anchor));
+  own.hidden = anchor === own;
+
+  const wrap = el('div', 'writebox');
+  const field = el('textarea');
+  field.id = 'textAnswer'; field.rows = 2; field.maxLength = 1000; field.placeholder = 'Type here…';
+  const actions = el('div', 'c2i-actions');
+  const ok = el('button', 'opt go', 'Submit');
+  ok.addEventListener('click', () => {
     const v = field.value.trim();
-    if(required && !v){ say('Please type an answer before submitting.', 2600); return; }
+    if(required && !v){ say('Write something first, or pick an option above.', 2600); field.focus(); return; }
     done(v);
-  }));
-  actions.appendChild(pickButton('Back', 'alt', renderPick));
-  box.append(n, field, actions);
+  });
+  const cancel = el('button', 'opt alt', 'Cancel');
+  cancel.addEventListener('click', () => { wrap.remove(); anchor.classList.remove('active'); own.hidden = false; });
+  actions.append(ok, cancel);
+  wrap.append(el('div', 'c2i-note', note), field, actions);
+  own.after(wrap);
   field.focus({preventScroll:true});
+  wrap.scrollIntoView({block:'nearest', behavior:'smooth'});
 }
 
-function pickDone(value, stage){
-  pick.fields.push([`Question ${pick.i + 1}`, stage ? `${value} (${stage})` : value]);
-  if(stage){ pick.counts[stage] = (pick.counts[stage] || 0) + 1; react(true); }
-  pick.i++;
-  if(pick.i < pick.track.questions.length) return renderPick();
+const NOTED = ['Noted.', 'Interesting.', 'Got it.', 'Good thinking.', 'Hmm, nice.'];
 
-  // Most-picked stage wins; checking the highest stage first means a tie goes upward.
-  const order = ['Innovator', 'Solver', 'Seeker', 'Citizen'];
-  const best = order.reduce((a, b) => (pick.counts[b] || 0) > (pick.counts[a] || 0) ? b : a);
-  c2iReached = (pick.counts[best] || 0) ? best : 'Citizen';
-  c2iFields = pick.fields;
-  pick = null;
-  finish();
+function answerPick(card, value, tag){
+  locked = true;
+  const stage = STAGE_BY_TAG[tag] || null;
+  pick.fields.push([`Question ${pick.i + 1}`, stage ? `${value} (${stage})` : value]);
+  if(stage) pick.counts[stage] = (pick.counts[stage] || 0) + 1;
+
+  const box = $('opts');
+  box.classList.add('locked');
+  [...box.querySelectorAll('.opt')].forEach(o => o.classList.add(o === card ? 'picked' : 'dim'));
+  const img = $('hostimg');
+  img.classList.remove('cheer', 'shrug'); void img.offsetWidth; img.classList.add('cheer');
+  say(NOTED[Math.floor(Math.random() * NOTED.length)], 1400);
+
+  advanceTimer = setTimeout(() => {
+    pick.i++;
+    if(pick.i < C2I_BANK[pick.zid][pick.branch].length) return renderPick();
+    // Most frequent stage; walking up from Citizen and only moving on a strictly higher
+    // count means an even split stays on the lower stage. Nothing scored → Citizen.
+    const order = ['Citizen', 'Seeker', 'Solver', 'Innovator'];
+    c2iReached = order.reduce((a, b) => (pick.counts[b] || 0) > (pick.counts[a] || 0) ? b : a);
+    c2iFields = pick.fields;
+    pick = null;
+    finish();
+  }, 650);
 }
 
 function isTextQuestion(item){ return item && item.type === 'text'; }
@@ -810,15 +1036,15 @@ function react(good){
   say(pick[Math.floor(Math.random()*pick.length)], 2200);
 }
 
-/* zone picker — only these galleries are offered for now. Add a zone id back in
-   here once its Citizen→Innovator cascade has been written, the way Cymatics's was. */
-const ACTIVE_ZONES = ['cymatics', 'road'];
+/* zone picker — every gallery in the diagnostic except Charges, which the source marks
+   as not on the floor yet ("must not go live until that is confirmed"). */
+const ACTIVE_ZONES = Object.keys(C2I_BANK).filter(id => id !== 'charges');
 
 (function(){
   const wrap = $('zones');
   ZONES.forEach(z => {
     if(!ACTIVE_ZONES.includes(z.id)) return;
-    if(!QUESTIONS.some(q => q.zone === z.id) && !C2I_ROUNDS[z.id] && !PICK_ROUNDS[z.id]) return;
+    if(!QUESTIONS.some(q => q.zone === z.id) && !C2I_ROUNDS[z.id] && !C2I_BANK[z.id]) return;
     const b = document.createElement('button');
     b.className = 'zone';
     b.innerHTML = `<b>${z.name}</b><i>${z.tag}</i>`;
@@ -852,7 +1078,7 @@ function startRound(zid){
   c2iAnswers = {};
   c2iFields = null;
 
-  if(PICK_ROUNDS[zid]) return startPickRound(zid);
+  if(C2I_BANK[zid]) return startPickRound(zid);
 
   if(C2I_ROUNDS[zid]){
     round = C2I_ROUNDS[zid].map(q => ({...q}));
@@ -1113,11 +1339,13 @@ function finish(){
     $('final').textContent = end.head;
     $('final').className = 'final msg' + (end.head.length > 60 ? ' long' : '');   // long headlines: smaller, wider, ~2 lines
     $('endVerdict').textContent = end.line;
+    $('endTag').hidden = false;
     $('tally').innerHTML = '';
     say('Nice thinking!', 5000);
   }else{
     $('final').className = 'final';
     $('endWho').className = 'sub';
+    $('endTag').hidden = true;
     const attempted = right + wrong;
     const max = (attempted || round.length) * POINTS_RIGHT;
     const pct = max ? score / max : 0;
@@ -1219,7 +1447,7 @@ function renderDash(){
              <span class="daystamp">${top.zone} &middot; ${top.at}</span>
            </div>
          </div>
-         <div class="hero-art art">${z ? ART[z.id] : ART.scale}<img class="mascot heromascot" src="${MASCOT[z ? HOST[z.id] : 'stephen']}" alt=""></div>
+         <div class="hero-art art">${(z && ART[z.id]) || ART.scale}<img class="mascot heromascot" src="${MASCOT[z ? HOST[z.id] : 'stephen']}" alt=""></div>
        </div>`;
   }else{
     hero.innerHTML = `<div class="hero"><div>
@@ -1252,7 +1480,7 @@ function renderDash(){
     const n = zoneCounts[z.name] || 0;
     const hk = HOST[z.id];
     return `<div class="gcard">
-      <div class="art gart">${ART[z.id]}</div>
+      <div class="art gart">${ART[z.id] || ''}</div>
       <div class="gbody">
         <b>${z.name}</b>
         <p>${z.about}</p>
@@ -1803,7 +2031,7 @@ function squareUp(key){
       const c = document.createElement('canvas');
       c.width = S; c.height = S;
       const x = c.getContext('2d');
-      x.fillStyle = '#17495A'; x.fillRect(0, 0, S, S);
+      x.fillStyle = '#22268A'; x.fillRect(0, 0, S, S);
       const k = Math.min(S*0.94 / img.width, S*0.94 / img.height);
       const w = img.width*k, h = img.height*k;
       x.drawImage(img, (S-w)/2, (S-h)/2, w, h);
@@ -2249,14 +2477,11 @@ $('bulbBack').addEventListener('click', () => show('mode'));
 document.querySelectorAll('#bulbRow .bulb').forEach(b =>
   b.addEventListener('click', () => bulbTap(Number(b.dataset.b))));
 $('gBack').addEventListener('click', () => show('mode'));
-$('gBoard').addEventListener('click', renderDash);
 $('nextBtn').addEventListener('click', () => c2iReached ? endC2IRound() : next());
 $('quizBack').addEventListener('click', () => { clearTimers(); show('mode'); });
 $('doneBtn').addEventListener('click', showThanks);
 $('thanksHome').addEventListener('click', () => show('mode'));
-$('thanksBoard').addEventListener('click', renderDash);
 $('againBtn').addEventListener('click', () => show('mode'));
-$('boardBtn2').addEventListener('click', renderDash);
 $('dashBack').addEventListener('click', () => { player=''; $('nameInput').value=''; show('start'); });
 
 </script>
