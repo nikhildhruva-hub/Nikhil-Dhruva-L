@@ -59,8 +59,10 @@ const REPORT_TO     = 'nikhil.dhruva@paraminnovation.org';
 const REPORT_HOUR   = 20;              // 8 pm, Asia/Kolkata (Apps Script runs it within that hour)
 const REPORT_TZ     = 'Asia/Kolkata';
 const REPORT_FOLDER = 'Zinia Lab Daily Reports';
-const LOG_HEADERS   = ['Date', 'Time', 'Name', 'Gallery', 'Stage reached'];
 const STAGES        = ['Citizen', 'Seeker', 'Solver', 'Innovator'];
+const ANSWER_STAGES = ['Innovator', 'Solver', 'Seeker', 'Citizen'];   // the order the cascade asks them
+const LOG_HEADERS   = ['Date', 'Time', 'Name', 'Gallery', 'Stage reached']
+  .concat(ANSWER_STAGES.map(s => `${s} answer`));
 
 /** The results Sheet, created on first use; its ID is kept in Script Properties. */
 function logSheet_() {
@@ -76,7 +78,12 @@ function logSheet_() {
     DriveApp.getRootFolder().removeFile(DriveApp.getFileById(ss.getId()));
     props.setProperty('LOG_SHEET_ID', ss.getId());
   }
-  return ss.getSheetByName('Results');
+  const sheet = ss.getSheetByName('Results');
+  // A Sheet made before the answer columns existed gets its header row brought up to date.
+  if (sheet.getLastColumn() < LOG_HEADERS.length) {
+    sheet.getRange(1, 1, 1, LOG_HEADERS.length).setValues([LOG_HEADERS]);
+  }
+  return sheet;
 }
 
 function reportFolder_() {
@@ -84,24 +91,58 @@ function reportFolder_() {
   return it.hasNext() ? it.next() : DriveApp.createFolder(REPORT_FOLDER);
 }
 
-/** Called from the kiosk (google.script.run) when a quiz round finishes. */
+/** Called from the kiosk (google.script.run) when a quiz round finishes.
+ *  Adds one row to the results Sheet and one row to the "Zinian Data" Doc. */
 function logResult(entry) {
   if (!entry || typeof entry !== 'object') return;
-  const clean = v => String(v == null ? '' : v).slice(0, 80);
+  const clean = (v, max) => String(v == null ? '' : v).slice(0, max || 80);
+  const answers = (entry.answers && typeof entry.answers === 'object') ? entry.answers : {};
   const now = new Date();
+  const row = [
+    Utilities.formatDate(now, REPORT_TZ, 'yyyy-MM-dd'),
+    Utilities.formatDate(now, REPORT_TZ, 'HH:mm'),
+    clean(entry.name),
+    clean(entry.zone),
+    STAGES.indexOf(entry.stage) >= 0 ? entry.stage : ''
+  ].concat(ANSWER_STAGES.map(s => clean(answers[s], 1000)));
+
   const lock = LockService.getScriptLock();
-  lock.waitLock(10000);
+  lock.waitLock(20000);
   try {
-    logSheet_().appendRow([
-      Utilities.formatDate(now, REPORT_TZ, 'yyyy-MM-dd'),
-      Utilities.formatDate(now, REPORT_TZ, 'HH:mm'),
-      clean(entry.name),
-      clean(entry.zone),
-      STAGES.indexOf(entry.stage) >= 0 ? entry.stage : ''
-    ]);
+    // Leading = + - @ would make Sheets treat a visitor's text as a formula; the ' keeps it plain text.
+    logSheet_().appendRow(row.map(v => v.replace(/^[=+\-@]/, "'$&")));
+    try { appendToDataDoc_(row); } catch (e) { console.error('Zinian Data doc: ' + e); }
   } finally {
     lock.releaseLock();
   }
+}
+
+/** The running record in the "Zinian Data" Google Doc: one table, one row per visitor. */
+const DATA_DOC_ID = '1LURjSxi0QpdKldZpUpJqf6w2_mcYYEAkF1L_2bF-cGw';
+
+function appendToDataDoc_(row) {
+  const doc = DocumentApp.openById(DATA_DOC_ID);
+  const body = doc.getBody();
+  let table = body.getTables().find(t => t.getNumRows() && t.getCell(0, 0).getText() === LOG_HEADERS[0]);
+  if (!table) {
+    const first = body.getParagraphs()[0];
+    if (body.getNumChildren() === 1 && first.getText() === '') {
+      first.setText('Zinia Experimental Lab — Gallery Quiz Data').setHeading(DocumentApp.ParagraphHeading.TITLE);
+    } else {
+      body.appendParagraph('Zinia Experimental Lab — Gallery Quiz Data').setHeading(DocumentApp.ParagraphHeading.TITLE);
+    }
+    body.setPageWidth(842).setPageHeight(595);   // A4 landscape, so the nine columns fit
+    body.appendParagraph('PARSEC Whitefield · one row per visitor, added automatically by the kiosk.');
+    table = body.appendTable([LOG_HEADERS]);
+    table.getRow(0).editAsText().setBold(true);
+  }
+  // Show the date the Foundation way (DD MMM YYYY) in the Doc; the Sheet keeps yyyy-MM-dd for filtering.
+  const shown = row.slice();
+  shown[0] = Utilities.formatDate(new Date(row[0] + 'T12:00:00'), REPORT_TZ, 'dd MMM yyyy');
+  const tr = table.appendTableRow();
+  shown.forEach(v => tr.appendTableCell(v));
+  tr.editAsText().setBold(false);
+  doc.saveAndClose();
 }
 
 /** Builds today's report as a Google Doc and emails it as a PDF. Run daily by the trigger. */

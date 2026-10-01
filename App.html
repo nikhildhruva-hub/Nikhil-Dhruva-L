@@ -521,6 +521,10 @@ const C2I_ROUNDS = {
 /* Which Citizen/Seeker/Solver/Innovator stage the current player reached in the
    cascade this round — recorded onto their entry in finish() for the dashboard. */
 let c2iReached = null;
+/* What the player answered at each stage this round, e.g. { Seeker:'… (wrong)' } —
+   sent with the result to the server for the results Sheet. */
+let c2iAnswers = {};
+function noteAnswer(item, text){ if(item && item.stage) c2iAnswers[item.stage] = text; }
 
 function isTextQuestion(item){ return item && item.type === 'text'; }
 
@@ -547,6 +551,7 @@ function submitTextAnswer(item){
 
   stopClock();
   c2iReached = item.stage;
+  noteAnswer(item, answerBox.value.trim());
   right++;
   score += POINTS_RIGHT;
 
@@ -695,6 +700,7 @@ function startRound(zid){
   clearTimers();
   zoneId = zid;
   c2iReached = null;
+  c2iAnswers = {};
 
   if(C2I_ROUNDS[zid]){
     round = C2I_ROUNDS[zid].map(q => ({...q}));
@@ -755,7 +761,7 @@ function renderQuestion(){
       const skip = document.createElement('button');
       skip.className = 'opt alt';
       skip.textContent = 'Skip';
-      skip.addEventListener('click', () => next());
+      skip.addEventListener('click', () => { noteAnswer(item, 'Skipped'); next(); });
       actions.appendChild(skip);
     }
 
@@ -776,7 +782,7 @@ function renderQuestion(){
       const skip = document.createElement('button');
       skip.className = 'opt alt full';
       skip.textContent = 'Skip';
-      skip.addEventListener('click', () => next());
+      skip.addEventListener('click', () => { noteAnswer(item, 'Skipped'); next(); });
       box.appendChild(skip);
     }
   }
@@ -843,6 +849,7 @@ function answer(choice){
     // Cascade MCQ with a right answer: right lands on item.rightStage and ends the
     // round; wrong shows what's going on, then drops to the next stage down.
     const isRight = choice === item.answer;
+    noteAnswer(item, `${item.options[choice] || 'No answer'} (${isRight ? 'right' : 'wrong'})`);
     [...$('opts').children].forEach((b,i) => {
       if(i === item.answer) b.classList.add('correct');
       else if(i === choice) b.classList.add('wrong');
@@ -877,6 +884,7 @@ function answer(choice){
     // every perspective is valid \u2014 just acknowledge it and explain what's really going on.
     [...$('opts').children].forEach((b,i) => b.classList.add(i === choice ? 'correct' : 'dim'));
     c2iReached = item.stage;
+    noteAnswer(item, item.options[choice] || 'No answer');
     right++;
     score += POINTS_RIGHT;
     react(true);
@@ -989,7 +997,7 @@ function finish(){
   try{
     if(window.google && google.script && google.script.run){
       google.script.run.withFailureHandler(() => {})
-        .logResult({ name: player, zone: z ? z.name : 'Mixed', stage: c2iReached || '' });
+        .logResult({ name: player, zone: z ? z.name : 'Mixed', stage: c2iReached || '', answers: c2iAnswers });
     }
   }catch(e){}
 
