@@ -18,7 +18,7 @@ const ZONES = [
    about:"Air you cannot see, doing work you can. Uneven heating becomes wind, and wind becomes lift and electricity."},
   {id:"youq",     name:"All About You",       tag:"Your body, your planet, your name",
    about:"Your own body, the ground under it, and the codes a name can be written in \u2014 all measured in numbers."},
-  {id:"road",     name:"Traffic",         tag:"Helmets, reactions and stopping",
+  {id:"road",     name:"Traffic Gallery", tag:"Helmets, rules and the road",
    about:"What actually protects you on a road, and what happens to a person's reactions when they are tired, distracted or drunk."},
   {id:"clock",    name:"The Clock Tower",  tag:"Time, and the odd ways we count it",
    about:"Why an hour has sixty minutes, why clocks turn the way they do, and what a second is actually measured against."}
@@ -525,6 +525,154 @@ let c2iReached = null;
    sent with the result to the server for the results Sheet. */
 let c2iAnswers = {};
 function noteAnswer(item, text){ if(item && item.stage) c2iAnswers[item.stage] = text; }
+/* Galleries that don't use the cascade send their own [column, value] list instead. */
+let c2iFields = null;
+
+/* ================== PICK ROUNDS (Traffic) ==================
+   A different pattern from the Cymatics cascade: the visitor first says whether they've
+   been through the gallery, then answers that track's four questions. Every option is
+   tagged with a stage (never shown); the stage they land on is the one they picked most,
+   a tie going to the higher stage. "Or write your own" and Skip are recorded but not
+   counted, and a visitor with nothing counted lands on Citizen.
+   Option: [stage, text] — add true as a third item for "name it" options. */
+const PICK_ROUNDS = {
+  road: {
+    ask: "Have you been through the Traffic gallery yet?",
+    tracks: [
+      { label: "Not yet", questions: [
+        { q: "You see somebody riding without a helmet. You:", options: [
+          ["Seeker",    "Wonder why they chose not to"],
+          ["Citizen",   "Notice, and move on"],
+          ["Innovator", "Think the helmet itself needs redesigning so they would want to"],
+          ["Solver",    "Think about what would make them wear one"] ] },
+        { q: "A rule exists that everybody knows and nobody follows. That tells you:", options: [
+          ["Solver",    "The rule needs better enforcement"],
+          ["Innovator", "The rule is badly designed for how people actually behave"],
+          ["Citizen",   "People are careless"],
+          ["Seeker",    "There is a reason worth finding"] ] },
+        { q: "What makes a road near you unsafe?", options: [
+          ["Citizen",   "I haven't thought about it"],
+          ["Solver",    "I can name the exact spot and the fix"],
+          ["Seeker",    "I'd need to watch it for a while first"],
+          ["Innovator", "I'd change something nobody counts as part of the road"] ] },
+        { q: "Safety equipment you would invent:", options: [
+          ["Innovator", "Protection for a risk nobody has named", true],
+          ["Citizen",   "Whatever the experts recommend"],
+          ["Seeker",    "I'd study the injuries first"],
+          ["Solver",    "An improvement to something that already exists"] ] }
+      ]},
+      { label: "Already visited", questions: [
+        { q: "After Helmet or Harm, what stayed with you?", options: [
+          ["Citizen",   "That it was dramatic to watch"],
+          ["Seeker",    "Why the foam matters more than the shell"],
+          ["Solver",    "That I should check my own helmet"],
+          ["Innovator", "That the same idea could protect something else entirely"] ] },
+        { q: "This gallery is about a rule people know and still break. What would change that?", options: [
+          ["Innovator", "Redesigning the thing so the unsafe option isn't possible"],
+          ["Citizen",   "Telling them more clearly"],
+          ["Solver",    "Making the safe option the easy one"],
+          ["Seeker",    "Understanding why they break it"] ] },
+        { q: "If you could add one exhibit to this gallery, it would:", options: [
+          ["Solver",    "Let people practise a decision under time pressure"],
+          ["Seeker",    "Show what happens inside the body in a crash"],
+          ["Citizen",   "Explain the rules better"],
+          ["Innovator", "Take a real junction near your home and let people redesign it"] ] },
+        { q: "The ideas in this room \u2014 where else do they apply?", options: [
+          ["Citizen",   "Only on roads"],
+          ["Innovator", "A place nobody treats as a safety problem yet", true],
+          ["Seeker",    "I'd like to know where else risk works this way"],
+          ["Solver",    "School corridors, staircases, crowds"] ] }
+      ]}
+    ]
+  }
+};
+
+let pick = null;   // { set, track, i, counts, fields } while a pick round is running
+
+function startPickRound(zid){
+  pick = { set: PICK_ROUNDS[zid], track: null, i: 0, counts: {}, fields: [] };
+  const z = ZONES.find(z => z.id === zid);
+  $('zoneName').textContent = z ? z.name : '';
+  setHost(zid);
+  show('quiz');
+  renderPick();
+}
+
+function pickButton(text, cls, onClick){
+  const b = document.createElement('button');
+  b.className = 'opt' + (cls ? ' ' + cls : '');
+  b.textContent = text;
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+function renderPick(){
+  clearTimers(); locked = false;
+  const total = 1 + pick.set.tracks[0].questions.length;
+  const step = pick.track ? pick.i + 1 : 0;
+  $('count').textContent = `Question ${step + 1} of ${total}`;
+  $('fill').style.width = (step / total * 100) + '%';
+  $('feedback').classList.remove('on');
+  $('nextBtn').style.visibility = 'hidden';
+  const box = $('opts');
+  box.className = 'opts'; box.innerHTML = '';
+
+  if(!pick.track){
+    $('question').textContent = pick.set.ask;
+    pick.set.tracks.forEach(t => box.appendChild(pickButton(t.label, '', () => {
+      pick.track = t;
+      pick.fields.push(['Visited before', t.label]);
+      renderPick();
+    })));
+    return;
+  }
+
+  const item = pick.track.questions[pick.i];
+  $('question').textContent = item.q;
+  item.options.forEach(([stage, text, nameIt]) => box.appendChild(pickButton(
+    nameIt ? `${text} \u2014 name it` : text, '',
+    () => nameIt ? pickWrite(`Name it: ${text.toLowerCase()}`, v => pickDone(v ? `${text}: ${v}` : text, stage), false)
+                 : pickDone(text, stage))));
+  box.appendChild(pickButton('Or write your own \u2192', 'alt', () =>
+    pickWrite('Write your own answer.', v => pickDone(`Own answer: ${v}`, null), true)));
+  box.appendChild(pickButton('Skip', 'alt', () => pickDone('Skipped', null)));
+}
+
+/* Swaps the options for a text box. required: an empty box can't be submitted. */
+function pickWrite(note, done, required){
+  const box = $('opts');
+  box.innerHTML = '';
+  const n = document.createElement('div');
+  n.className = 'c2i-note'; n.textContent = note;
+  const field = document.createElement('textarea');
+  field.id = 'textAnswer'; field.rows = 4; field.maxLength = 1000;
+  field.placeholder = 'Type here...';
+  const actions = document.createElement('div');
+  actions.className = 'c2i-actions';
+  actions.appendChild(pickButton('Submit', '', () => {
+    const v = field.value.trim();
+    if(required && !v){ say('Please type an answer before submitting.', 2600); return; }
+    done(v);
+  }));
+  actions.appendChild(pickButton('Back', 'alt', renderPick));
+  box.append(n, field, actions);
+  field.focus({preventScroll:true});
+}
+
+function pickDone(value, stage){
+  pick.fields.push([`Question ${pick.i + 1}`, stage ? `${value} (${stage})` : value]);
+  if(stage){ pick.counts[stage] = (pick.counts[stage] || 0) + 1; react(true); }
+  pick.i++;
+  if(pick.i < pick.track.questions.length) return renderPick();
+
+  // Most-picked stage wins; checking the highest stage first means a tie goes upward.
+  const order = ['Innovator', 'Solver', 'Seeker', 'Citizen'];
+  const best = order.reduce((a, b) => (pick.counts[b] || 0) > (pick.counts[a] || 0) ? b : a);
+  c2iReached = (pick.counts[best] || 0) ? best : 'Citizen';
+  c2iFields = pick.fields;
+  pick = null;
+  finish();
+}
 
 function isTextQuestion(item){ return item && item.type === 'text'; }
 
@@ -664,20 +812,21 @@ function react(good){
 
 /* zone picker — only these galleries are offered for now. Add a zone id back in
    here once its Citizen→Innovator cascade has been written, the way Cymatics's was. */
-const ACTIVE_ZONES = ['cymatics'];
+const ACTIVE_ZONES = ['cymatics', 'road'];
 
 (function(){
   const wrap = $('zones');
   ZONES.forEach(z => {
     if(!ACTIVE_ZONES.includes(z.id)) return;
-    if(!QUESTIONS.some(q => q.zone === z.id) && !C2I_ROUNDS[z.id]) return;
+    if(!QUESTIONS.some(q => q.zone === z.id) && !C2I_ROUNDS[z.id] && !PICK_ROUNDS[z.id]) return;
     const b = document.createElement('button');
     b.className = 'zone';
     b.innerHTML = `<b>${z.name}</b><i>${z.tag}</i>`;
     b.addEventListener('click', () => startRound(z.id));
     wrap.appendChild(b);
   });
-  if(ACTIVE_ZONES.length > 1){
+  // The old scored "mix of everything" quiz stays off while galleries use stages instead.
+  if(false){
     const all = document.createElement('button');
     all.className = 'zone all';
     all.innerHTML = `<b>Mix of everything</b><i>Questions from across the floor</i>`;
@@ -701,6 +850,9 @@ function startRound(zid){
   zoneId = zid;
   c2iReached = null;
   c2iAnswers = {};
+  c2iFields = null;
+
+  if(PICK_ROUNDS[zid]) return startPickRound(zid);
 
   if(C2I_ROUNDS[zid]){
     round = C2I_ROUNDS[zid].map(q => ({...q}));
@@ -997,7 +1149,8 @@ function finish(){
   try{
     if(window.google && google.script && google.script.run){
       google.script.run.withFailureHandler(() => {})
-        .logResult({ name: player, zone: z ? z.name : 'Mixed', stage: c2iReached || '', answers: c2iAnswers });
+        .logResult({ name: player, zone: z ? z.name : 'Mixed', stage: c2iReached || '',
+          fields: c2iFields || ['Innovator','Solver','Seeker','Citizen'].map(s => [`${s} answer`, c2iAnswers[s] || '']) });
     }
   }catch(e){}
 

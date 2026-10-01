@@ -61,8 +61,10 @@ const REPORT_TZ     = 'Asia/Kolkata';
 const REPORT_FOLDER = 'Zinia Lab Daily Reports';
 const STAGES        = ['Citizen', 'Seeker', 'Solver', 'Innovator'];
 const ANSWER_STAGES = ['Innovator', 'Solver', 'Seeker', 'Citizen'];   // the order the cascade asks them
-const LOG_HEADERS   = ['Date', 'Time', 'Name', 'Gallery', 'Stage reached']
-  .concat(ANSWER_STAGES.map(s => `${s} answer`));
+// Every gallery tab starts with these; the columns after them depend on the gallery
+// (Cymatics: one per cascade stage; Traffic: one per question).
+const BASE_HEADERS  = ['Date', 'Time', 'Name', 'Gallery', 'Stage reached'];
+const LOG_HEADERS   = BASE_HEADERS.concat(ANSWER_STAGES.map(s => `${s} answer`));   // Cymatics
 
 /** The project's results spreadsheet: one tab per gallery (Cymatics, Rain Stick, …),
  *  one row per visitor. The account that owns this script needs edit access to it. */
@@ -72,25 +74,24 @@ function logBook_() {
   return SpreadsheetApp.openById(LOG_SHEET_ID);
 }
 
-/** The tab for one gallery, made (with its header row) the first time that gallery is played. */
-function galleryTab_(ss, gallery) {
+/** The tab for one gallery, made (with its header row) the first time that gallery is played.
+ *  Any of `headers` the tab doesn't have yet are added as new columns on the right. */
+function galleryTab_(ss, gallery, headers) {
   // Sheet tab names can't hold : \ / ? * [ ] and are capped at 100 characters.
   let name = (String(gallery || 'Other').replace(/[:\\/?*\[\]]/g, ' ').trim() || 'Other').slice(0, 100);
   let tab = ss.getSheetByName(name);
   // A same-named tab that wasn't made here (has content, first cell isn't "Date") is left alone.
-  if (tab && tab.getLastRow() > 0 && tab.getRange(1, 1).getDisplayValue() !== LOG_HEADERS[0]) {
+  if (tab && tab.getLastRow() > 0 && tab.getRange(1, 1).getDisplayValue() !== BASE_HEADERS[0]) {
     name = `${name} (quiz)`.slice(0, 100);
     tab = ss.getSheetByName(name);
   }
-  if (tab && tab.getLastRow() > 0) return tab;
-
   if (!tab) {
     // Before tabs were per gallery, every row went into one "Results" tab. If all of its rows
     // are this gallery's, it simply becomes this gallery's tab, keeping those rows together.
     const old = ss.getSheetByName('Results');
-    if (old && old.getRange(1, 1).getDisplayValue() === LOG_HEADERS[0]) {
+    if (old && old.getRange(1, 1).getDisplayValue() === BASE_HEADERS[0]) {
       const galleries = old.getDataRange().getDisplayValues().slice(1).map(r => r[3]);
-      if (galleries.every(g => g === name)) return old.setName(name);
+      if (galleries.every(g => g === name)) tab = old.setName(name);
     }
   }
   if (!tab) {
@@ -98,10 +99,13 @@ function galleryTab_(ss, gallery) {
     const blank = ss.getSheets().find(t => t.getName() === 'Sheet1' && t.getLastRow() === 0);
     tab = blank ? blank.setName(name) : ss.insertSheet(name);
   }
-  tab.appendRow(LOG_HEADERS);
-  tab.setFrozenRows(1);
-  tab.getRange(1, 1, 1, LOG_HEADERS.length).setFontWeight('bold');
-  return tab;
+  const have = tab.getLastRow() ? tab.getRange(1, 1, 1, tab.getLastColumn()).getDisplayValues()[0] : [];
+  const missing = headers.filter(h => have.indexOf(h) < 0);
+  if (missing.length) {
+    tab.getRange(1, have.length + 1, 1, missing.length).setValues([missing]).setFontWeight('bold');
+    tab.setFrozenRows(1);
+  }
+  return { tab: tab, headers: have.concat(missing) };
 }
 
 /** Every visitor row across all gallery tabs (any tab whose header starts with Date). */
@@ -118,26 +122,39 @@ function reportFolder_() {
 }
 
 /** Called from the kiosk (google.script.run) when a quiz round finishes.
- *  Adds one row to that gallery's tab in the results Sheet and one row to the "Zinian Data" Doc. */
+ *  Adds one row to that gallery's tab in the results Sheet and one row to the "Zinian Data" Doc.
+ *  entry.fields is a list of [column header, value] for the gallery's own questions. */
 function logResult(entry) {
   if (!entry || typeof entry !== 'object') return;
   const clean = (v, max) => String(v == null ? '' : v).slice(0, max || 80);
-  const answers = (entry.answers && typeof entry.answers === 'object') ? entry.answers : {};
+  let fields = Array.isArray(entry.fields) ? entry.fields : null;
+  if (!fields) {
+    // Older kiosk pages sent { answers: { Innovator: … } } for the Cymatics cascade.
+    const answers = (entry.answers && typeof entry.answers === 'object') ? entry.answers : {};
+    fields = ANSWER_STAGES.map(st => [`${st} answer`, answers[st]]);
+  }
+  fields = fields.filter(f => Array.isArray(f) && f[0]).slice(0, 20)
+    .map(f => [clean(f[0], 100), clean(f[1], 1000)]);
+
   const now = new Date();
-  const row = [
-    Utilities.formatDate(now, REPORT_TZ, 'yyyy-MM-dd'),
-    Utilities.formatDate(now, REPORT_TZ, 'HH:mm'),
-    clean(entry.name),
-    clean(entry.zone),
-    STAGES.indexOf(entry.stage) >= 0 ? entry.stage : ''
-  ].concat(ANSWER_STAGES.map(s => clean(answers[s], 1000)));
+  const values = {
+    'Date': Utilities.formatDate(now, REPORT_TZ, 'yyyy-MM-dd'),
+    'Time': Utilities.formatDate(now, REPORT_TZ, 'HH:mm'),
+    'Name': clean(entry.name),
+    'Gallery': clean(entry.zone),
+    'Stage reached': STAGES.indexOf(entry.stage) >= 0 ? entry.stage : ''
+  };
+  fields.forEach(f => values[f[0]] = f[1]);
+  const headers = BASE_HEADERS.concat(fields.map(f => f[0]));
 
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
+    const t = galleryTab_(logBook_(), values['Gallery'], headers);
     // Leading = + - @ would make Sheets treat a visitor's text as a formula; the ' keeps it plain text.
-    galleryTab_(logBook_(), row[3]).appendRow(row.map(v => v.replace(/^[=+\-@]/, "'$&")));
-    try { appendToDataDoc_(row); } catch (e) { console.error('Zinian Data doc: ' + e); }
+    t.tab.appendRow(t.headers.map(h => String(values[h] || '').replace(/^[=+\-@]/, "'$&")));
+    try { appendToDataDoc_(headers, headers.map(h => values[h] || '')); }
+    catch (e) { console.error('Zinian Data doc: ' + e); }
   } finally {
     lock.releaseLock();
   }
@@ -146,21 +163,30 @@ function logResult(entry) {
 /** The running record in the "Zinian Data" Google Doc: one table, one row per visitor. */
 const DATA_DOC_ID = '1LURjSxi0QpdKldZpUpJqf6w2_mcYYEAkF1L_2bF-cGw';
 
-function appendToDataDoc_(row) {
+function appendToDataDoc_(headers, row) {
   const doc = DocumentApp.openById(DATA_DOC_ID);
   const body = doc.getBody();
-  let table = body.getTables().find(t => t.getNumRows() && t.getCell(0, 0).getText() === LOG_HEADERS[0]);
+  const key = headers.join('|');
+  const headerOf = t => {
+    if (!t.getNumRows()) return '';
+    const r = t.getRow(0), out = [];
+    for (let c = 0; c < r.getNumCells(); c++) out.push(r.getCell(c).getText());
+    return out.join('|');
+  };
+  let table = body.getTables().find(t => headerOf(t) === key);
   if (!table) {
-    // Table first, so a visitor row can always be written; the title and layout are extras.
-    table = body.appendTable([LOG_HEADERS]);
+    // Table first, so a visitor row can always be written; the headings and layout are extras.
+    table = body.appendTable([headers]);
     try {
       table.getRow(0).editAsText().setBold(true);
-      const hasTitle = body.getParagraphs().some(p => p.getText() === 'Zinia Experimental Lab — Gallery Quiz Data');
-      if (!hasTitle) {
-        body.insertParagraph(0, 'Zinia Experimental Lab — Gallery Quiz Data').setHeading(DocumentApp.ParagraphHeading.TITLE);
+      const title = 'Zinia Experimental Lab — Gallery Quiz Data';
+      if (!body.getParagraphs().some(p => p.getText() === title)) {
+        body.insertParagraph(0, title).setHeading(DocumentApp.ParagraphHeading.TITLE);
+        body.insertParagraph(1, 'PARSEC Whitefield · one row per visitor, added automatically by the kiosk.');
       }
-      body.insertParagraph(body.getChildIndex(table), 'PARSEC Whitefield · one row per visitor, added automatically by the kiosk.');
-      body.setPageWidth(842).setPageHeight(595);   // A4 landscape, so the nine columns fit
+      body.insertParagraph(body.getChildIndex(table), row[3] || 'Gallery')
+        .setHeading(DocumentApp.ParagraphHeading.HEADING1);
+      body.setPageWidth(842).setPageHeight(595);   // A4 landscape, so the columns fit
     } catch (e) { console.error('Zinian Data doc layout: ' + e); }
   }
   // Show the date the Foundation way (DD MMM YYYY) in the Doc; the Sheet keeps yyyy-MM-dd for filtering.
@@ -176,7 +202,7 @@ function appendToDataDoc_(row) {
 function testDataDoc() {
   const today = Utilities.formatDate(new Date(), REPORT_TZ, 'yyyy-MM-dd');
   const now = Utilities.formatDate(new Date(), REPORT_TZ, 'HH:mm');
-  appendToDataDoc_([today, now, 'TEST ROW', 'Cymatics', 'Solver', '', '', 'Test — delete me', '']);
+  appendToDataDoc_(LOG_HEADERS, [today, now, 'TEST ROW', 'Water Cymatics', 'Solver', '', '', 'Test — delete me', '']);
 }
 
 /** Builds today's report as a Google Doc and emails it as a PDF. Run daily by the trigger. */
