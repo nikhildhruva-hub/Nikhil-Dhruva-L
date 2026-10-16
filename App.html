@@ -2447,6 +2447,7 @@ let cymFreq = .35;                     // 0..1 from the slider
 let cymRings = [], cymAliens = [], cymBits = [], cymFloats = [];
 let cymScore = 0, cymLivesLeft = CYM_LIVES, cymTime = 0, cymSpawnIn = 0, cymEmitIn = 0;
 let cymPower = 1, cymOverload = 0, cymHurt = 0;
+let cymVoice = false;                  // true while the microphone drives the frequency
 
 const cymHz   = () => Math.round(CYM_HZ_MIN * Math.pow(CYM_HZ_MAX / CYM_HZ_MIN, cymFreq));
 const cymRate = () => 1.2 + cymFreq * 9;                        // rings a second
@@ -2487,7 +2488,36 @@ function cymStart(){
   cymRaf = requestAnimationFrame(cymLoop);
 }
 
-function cymLeave(){ cymLive = false; cancelAnimationFrame(cymRaf); }
+function cymLeave(){
+  cymLive = false; cancelAnimationFrame(cymRaf);
+  if(cymVoice){ stopMic(); cymVoice = false; cymVoiceUi(''); }
+}
+
+/* Turns the microphone on or off for the game, reusing Scream Lab's mic code. */
+async function cymToggleVoice(){
+  if(cymVoice){ stopMic(); cymVoice = false; cymVoiceUi(''); return; }
+  cymVoiceUi('Listening to the room — stay quiet for a second…');
+  $('cymVoiceBtn').disabled = true;
+  const ok = await initMic();
+  $('cymVoiceBtn').disabled = false;
+  if(ok){
+    cymVoice = true;
+    cymVoiceUi('Voice on: shout to raise the frequency. Nothing is recorded — only how loud it is.');
+  }else{
+    cymVoiceUi(!window.isSecureContext || !navigator.mediaDevices
+      ? 'This screen cannot use the microphone — use the slider instead.'
+      : 'The microphone was blocked or not found — use the slider instead.');
+  }
+}
+function cymVoiceUi(note){
+  const b = $('cymVoiceBtn');
+  b.classList.toggle('on', cymVoice);
+  b.textContent = cymVoice ? 'Voice on' : 'Use my voice';
+  b.setAttribute('aria-pressed', cymVoice ? 'true' : 'false');
+  $('cymVoiceNote').textContent = note;
+  $('cymFreq').disabled = cymVoice;
+}
+
 
 function cymShowBest(){
   const best = Number(store(KEY_CYM, 0)) || 0;
@@ -2543,6 +2573,12 @@ function cymLoop(now){
 
 function cymStep(dt){
   cymTime += dt;
+  // Voice: how loud you are (relative to the room) becomes the frequency. It climbs
+  // fast when you shout and drifts back down when you stop, so a scream is a blast.
+  if(cymVoice && micOn){
+    const target = level();
+    cymSetFreq(cymFreq + (target - cymFreq) * Math.min(1, dt * (target > cymFreq ? 9 : 1.8)));
+  }
   cymHurt = Math.max(0, cymHurt - dt);
   const E = cymEmitter();
 
@@ -2717,8 +2753,10 @@ function cymDrawFrame(){
 
 (function(){
   $('cymFreq').addEventListener('input', e => cymSetFreq(Number(e.target.value) / 100));
+  $('cymVoiceBtn').addEventListener('click', cymToggleVoice);
   document.addEventListener('keydown', e => {
     if(!$('cym').classList.contains('on')) return;
+    if(cymVoice) return;
     if(e.key === 'ArrowUp' || e.key === 'ArrowRight'){ cymSetFreq(cymFreq + .05); e.preventDefault(); }
     if(e.key === 'ArrowDown' || e.key === 'ArrowLeft'){ cymSetFreq(cymFreq - .05); e.preventDefault(); }
   });

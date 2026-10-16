@@ -301,7 +301,7 @@
         <h3>Cymatics</h3>
         <p>Aliens are closing in. Your emitter sends out rings of sound &mdash; turn the frequency up and they push harder.</p>
         <p class="cymkey"><b class="lo">Low: they creep closer</b> <b class="hi">High: they're driven back</b></p>
-        <p class="cymsci">High frequency drains power. Run out and you overload &mdash; ease off to recharge.</p>
+        <p class="cymsci">High frequency drains power. Run out and you overload &mdash; ease off to recharge. Tap <b>Use my voice</b> and the louder you shout, the higher it goes.</p>
         <div class="btnrow">
           <button class="big-btn" id="cymGo">Start</button>
           <button class="ghost" id="cymBack" style="align-self:auto">Back</button>
@@ -322,8 +322,9 @@
       <input type="range" id="cymFreq" min="0" max="100" value="35" aria-label="Frequency">
       <span class="flab hi">HIGH</span>
       <div class="freqread"><b id="cymHz">440 Hz</b><span>frequency</span></div>
+      <button class="voicebtn" id="cymVoiceBtn" aria-pressed="false">Use my voice</button>
     </div>
-    <p class="gnote">Slide to change the frequency &middot; keyboard: &uarr; &darr; <span id="cymBest"></span></p>
+    <p class="gnote"><span id="cymVoiceNote"></span> Slide to change the frequency, or tap <b>Use my voice</b> and shout &middot; keyboard: &uarr; &darr; <span id="cymBest"></span></p>
   </section>
 
   <!-- THANK YOU -->
