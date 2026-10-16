@@ -499,4 +499,19 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 .verdict-line{text-align:center;color:var(--mute);font-size:clamp(14px,1.9vw,20px);max-width:52ch;margin:0 auto;line-height:1.5}
 
 @media (max-width:640px){.opts.visits{grid-template-columns:1fr}.visit{min-height:120px}}
+/* ---- Cymatics game ---- */
+#cymCanvas{display:block;width:100%;height:clamp(260px,50vh,500px);touch-action:none}
+.cymlives{color:var(--coral);font-size:clamp(18px,2.6vw,28px);letter-spacing:.12em;text-shadow:0 2px 10px rgba(0,0,0,.5)}
+.freqrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(8px,1.4vw,14px)}
+.freqbtn{--fc:var(--accent);display:flex;align-items:center;justify-content:center;gap:10px;border-radius:18px;
+  padding:clamp(12px,2vh,18px) 10px;background:var(--panel);border:2px solid var(--fc);color:var(--fc);
+  font-family:var(--display);font-weight:800;font-size:clamp(16px,2.2vw,22px);letter-spacing:.06em;
+  touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform .08s,background .12s,color .12s}
+.freqbtn canvas{width:34px;height:34px;flex:0 0 auto}
+.freqbtn:active,.freqbtn.fired{background:var(--fc);color:var(--on-accent);transform:scale(.97)}
+.freqbtn.low{--fc:#FF8C1A} .freqbtn.mid{--fc:#3FEDE0} .freqbtn.high{--fc:#D9FF35}
+.cymkey{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.cymkey .lo{color:#FF8C1A} .cymkey .mi{color:#3FEDE0} .cymkey .hi{color:#D9FF35}
+.cymsci{font-size:clamp(12px,1.5vw,15px)!important;max-width:52ch!important}
+#cymBest{color:var(--accent);margin-left:8px}
 </style>

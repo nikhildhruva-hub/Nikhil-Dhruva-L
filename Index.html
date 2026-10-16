@@ -100,6 +100,12 @@
         <span>A Zinion has come apart into sliding pieces. Put them back together.</span>
         <!-- <img src="" alt="" id="modePuzzleImg"> -->
       </button>
+      <button class="mode" id="modeCym">
+        <span class="age">Quick play</span>
+        <b>Cymatics</b>
+        <span>Aliens are landing. Throw the right sound to shake them apart.</span>
+        <img src="" alt="" id="modeCymImg">
+      </button>
       <button class="mode" id="modeBulbs">
         <span class="age">Quick play</span>
         <b>Zinion Bulbs</b>
@@ -278,6 +284,41 @@
       <button class="ghost" id="bulbBack" style="align-self:auto">Back</button>
     </div>
     <p class="footnote">Each bulb belongs to a Zinion. Repeat the order they light in.</p>
+  </section>
+
+  <!-- CYMATICS GAME -->
+  <section id="cym" class="screen">
+    <div class="gamewrap">
+      <canvas id="cymCanvas" aria-label="Cymatics game: Argon throws sound waves at aliens"></canvas>
+      <div class="ghud">
+        <div><div class="gscore" id="cymScore">0</div><div class="gbest" id="cymWave">Wave 1</div></div>
+        <div class="cymlives" id="cymLives" aria-label="Lives"></div>
+      </div>
+      <div class="gover" id="cymIntro">
+        <h3>Cymatics</h3>
+        <p>Aliens are landing! Each one shakes apart at just one frequency. Read the pattern on its body and throw the matching sound.</p>
+        <p class="cymkey"><b class="lo">Rings = LOW</b> <b class="mi">4 petals = MID</b> <b class="hi">8 petals = HIGH</b></p>
+        <div class="btnrow">
+          <button class="big-btn" id="cymGo">Start</button>
+          <button class="ghost" id="cymBack" style="align-self:auto">Back</button>
+        </div>
+      </div>
+      <div class="gover" id="cymOver">
+        <h3 id="cymOverTitle">The aliens got through</h3>
+        <p id="cymOverScore"></p>
+        <p class="cymsci">That is resonance: everything has a natural frequency, and pushing at exactly that frequency makes it shake hardest. It is why the water at the Cymatics exhibit forms patterns.</p>
+        <div class="btnrow">
+          <button class="big-btn" id="cymAgain">Play again</button>
+          <button class="ghost" id="cymBack2" style="align-self:auto">Back</button>
+        </div>
+      </div>
+    </div>
+    <div class="freqrow">
+      <button class="freqbtn low" aria-label="Throw a low frequency"><canvas></canvas>LOW</button>
+      <button class="freqbtn mid" aria-label="Throw a mid frequency"><canvas></canvas>MID</button>
+      <button class="freqbtn high" aria-label="Throw a high frequency"><canvas></canvas>HIGH</button>
+    </div>
+    <p class="gnote">Drag on the screen to move Argon &middot; tap a frequency to throw it &middot; keyboard: &larr; &rarr; and 1 2 3 <span id="cymBest"></span></p>
   </section>
 
   <!-- THANK YOU -->

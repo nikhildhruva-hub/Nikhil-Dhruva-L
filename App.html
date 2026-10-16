@@ -972,6 +972,7 @@ function store(key, fallback){
       localStorage.removeItem(KEY_MISSES);
       localStorage.removeItem(KEY_GAME);
       localStorage.removeItem(KEY_BULB);
+      localStorage.removeItem(KEY_CYM);
       localStorage.removeItem(KEY_PUZ);
       localStorage.removeItem(KEY_PUZ_LB);
       localStorage.removeItem(KEY_WIND);
@@ -989,13 +990,14 @@ let player='', zoneId=null, advanceTimer=null, tickTimer=null;
 
 function clearTimers(){ clearTimeout(advanceTimer); advanceTimer=null; clearInterval(tickTimer); tickTimer=null; }
 function show(n){
-  ['start','mode','pick','quiz','game','bulbs','puzzle','wind','end','thanks','dash'].forEach(s => $(s).classList.toggle('on', s===n));
+  ['start','mode','pick','quiz','game','bulbs','puzzle','wind','cym','end','thanks','dash'].forEach(s => $(s).classList.toggle('on', s===n));
   $('hostwrap').classList.toggle('hide', n !== 'quiz' && n !== 'end');
   $('clock').classList.toggle('hide', n !== 'quiz' || TIMER_MODE === 'off');
   $('drift').style.opacity = (n === 'start' || n === 'mode' || n === 'pick' || n === 'thanks') ? '1' : '0';
   if(n !== 'bulbs' && typeof bulbClearTimers === 'function') bulbClearTimers();
   if(n !== 'game' && typeof leaveGame === 'function') leaveGame();
   if(n !== 'wind' && typeof windLeave === 'function') windLeave();
+  if(n !== 'cym' && typeof cymLeave === 'function') cymLeave();
 }
 function shuffle(a){ const b=a.slice(); for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];} return b; }
 function clean(s){ return s.replace(/[<>]/g,'').trim().slice(0,18); }
@@ -2423,6 +2425,321 @@ function windLeave(){ wRunning = false; cancelAnimationFrame(wRaf); wHold = fals
 document.addEventListener('keydown', e => { if(e.key === ' ' && $('wind').classList.contains('on')) wHold = true; });
 document.addEventListener('keyup',   e => { if(e.key === ' ') wHold = false; });
 window.addEventListener('resize', () => { if($('wind').classList.contains('on')) windFit(); });
+
+/* =====================================================================
+   CYMATICS — Argon throws sound at the aliens
+   Every alien wears a cymatic pattern that shows the one frequency it resonates
+   at: rings = LOW, four petals = MID, eight petals = HIGH. A wave at that
+   frequency shakes it apart; any other frequency just bounces off. Aliens that
+   reach the ground cost a life. Same idea as the water plate in the gallery:
+   push something at its natural frequency and it shakes hardest.
+   ===================================================================== */
+const KEY_CYM = 'parsec_wf_cym_best';
+const CYM_FREQS = [
+  { name:'LOW',  color:'#FF8C1A', speed:380, width:76, petals:0 },   // rings
+  { name:'MID',  color:'#3FEDE0', speed:520, width:56, petals:4 },
+  { name:'HIGH', color:'#D9FF35', speed:700, width:40, petals:8 }
+];
+const CYM_LIVES = 3, CYM_PER_WAVE = 10, CYM_COOLDOWN = 260;
+
+let cymCtx = null, cymW = 0, cymH = 0, cymRaf = 0, cymLast = 0, cymLive = false;
+let cymX = 0, cymTargetX = 0, cymKeys = {}, cymSprite = null;
+let cymShots = [], cymAliens = [], cymBits = [], cymFloats = [];
+let cymScore = 0, cymLivesLeft = CYM_LIVES, cymWave = 1, cymDowned = 0, cymCombo = 0;
+let cymSpawnIn = 0, cymCool = 0;
+
+function cymFit(){
+  const c = $('cymCanvas'), r = c.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr);
+  cymW = r.width; cymH = r.height;
+  cymCtx = c.getContext('2d');
+  cymCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if(!cymX) cymX = cymTargetX = cymW / 2;
+}
+
+function openCym(){
+  show('cym');
+  if(!cymSprite){ cymSprite = new Image(); cymSprite.src = MASCOT.argon; }
+  cymFit();
+  cymX = cymTargetX = cymW / 2;
+  cymShowBest();
+  $('cymOver').classList.remove('on');
+  $('cymIntro').classList.add('on');
+  cymLive = false;
+  cymDrawFrame();
+}
+
+function cymStart(){
+  cymScore = 0; cymLivesLeft = CYM_LIVES; cymWave = 1; cymDowned = 0; cymCombo = 0;
+  cymShots = []; cymAliens = []; cymBits = []; cymFloats = [];
+  cymSpawnIn = 0.6; cymCool = 0;
+  $('cymIntro').classList.remove('on');
+  $('cymOver').classList.remove('on');
+  cymPaintHud();
+  cymLive = true;
+  cymLast = performance.now();
+  cancelAnimationFrame(cymRaf);
+  cymRaf = requestAnimationFrame(cymLoop);
+}
+
+function cymLeave(){ cymLive = false; cancelAnimationFrame(cymRaf); cymKeys = {}; }
+
+function cymShowBest(){
+  const best = Number(store(KEY_CYM, 0)) || 0;
+  $('cymBest').textContent = best ? `Today's best: ${best}` : '';
+}
+
+function cymPaintHud(){
+  $('cymScore').textContent = cymScore;
+  $('cymWave').textContent = `Wave ${cymWave}`;
+  $('cymLives').textContent = '♥'.repeat(cymLivesLeft) + '♡'.repeat(CYM_LIVES - cymLivesLeft);
+}
+
+function cymFire(f){
+  if(!cymLive || cymCool > 0) return;
+  cymCool = CYM_COOLDOWN / 1000;
+  cymShots.push({ f, x: cymX, y: cymH - 92, r: 0 });
+  document.querySelectorAll('.freqbtn').forEach((b, i) => b.classList.toggle('fired', i === f));
+  setTimeout(() => { const b = document.querySelectorAll('.freqbtn')[f]; if(b) b.classList.remove('fired'); }, 140);
+}
+
+function cymSpawn(){
+  // Later waves bring faster aliens, more of them, and more HIGH ones.
+  const speed = 34 + cymWave * 9 + Math.random() * 14;
+  const f = Math.floor(Math.random() * 3);
+  const r = Math.max(22, Math.min(34, cymW / 22));
+  cymAliens.push({ f, x: r + Math.random() * (cymW - 2 * r), y: -r, r, speed,
+                   phase: Math.random() * 6.28, spin: (Math.random() - .5) * 1.2, wobble: 0 });
+}
+
+function cymBurst(a){
+  const F = CYM_FREQS[a.f];
+  for(let i = 0; i < 22; i++){
+    const ang = (i / 22) * Math.PI * 2, v = 90 + Math.random() * 160;
+    cymBits.push({ x: a.x, y: a.y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, life: .7, color: F.color });
+  }
+}
+
+function cymFloat(x, y, text, color){ cymFloats.push({ x, y, text, color, life: 1 }); }
+
+function cymLoop(now){
+  const dt = Math.min(.05, (now - cymLast) / 1000);
+  cymLast = now;
+  cymStep(dt);
+  cymDrawFrame();
+  if(cymLive) cymRaf = requestAnimationFrame(cymLoop);
+}
+
+function cymStep(dt){
+  cymCool = Math.max(0, cymCool - dt);
+  if(cymKeys.ArrowLeft)  cymTargetX -= 520 * dt;
+  if(cymKeys.ArrowRight) cymTargetX += 520 * dt;
+  cymTargetX = Math.max(30, Math.min(cymW - 30, cymTargetX));
+  cymX += (cymTargetX - cymX) * Math.min(1, dt * 12);
+
+  cymSpawnIn -= dt;
+  if(cymSpawnIn <= 0){
+    cymSpawn();
+    cymSpawnIn = Math.max(.55, 1.9 - cymWave * .13) * (.75 + Math.random() * .5);
+  }
+
+  cymShots.forEach(s => { s.y -= CYM_FREQS[s.f].speed * dt; s.r += dt; });
+  cymAliens.forEach(a => {
+    a.y += a.speed * dt;
+    a.phase += dt * 2;
+    a.x += Math.sin(a.phase) * 18 * dt;
+    a.wobble = Math.max(0, a.wobble - dt);
+  });
+
+  // Hits: a shot is a wide arc, so it catches anything within its half-width.
+  for(const s of cymShots){
+    const F = CYM_FREQS[s.f];
+    for(const a of cymAliens){
+      if(a.dead || s.used) continue;
+      if(Math.abs(a.y - s.y) < a.r + 10 && Math.abs(a.x - s.x) < F.width / 2 + a.r * .6){
+        s.used = true;
+        if(s.f === a.f){
+          a.dead = true;
+          cymCombo++;
+          const pts = 10 * Math.min(cymCombo, 5);
+          cymScore += pts;
+          cymDowned++;
+          cymBurst(a);
+          cymFloat(a.x, a.y, `+${pts}`, F.color);
+          if(cymDowned % CYM_PER_WAVE === 0){
+            cymWave++;
+            cymFloat(cymW / 2, cymH * .4, `Wave ${cymWave}`, '#F5F6FF');
+          }
+        }else{
+          a.wobble = .35;
+          cymCombo = 0;
+          cymFloat(a.x, a.y - a.r - 8, `needs ${CYM_FREQS[a.f].name}`, CYM_FREQS[a.f].color);
+        }
+      }
+    }
+  }
+
+  const ground = cymH - 70;
+  for(const a of cymAliens){
+    if(!a.dead && a.y - a.r > ground){
+      a.dead = true;
+      cymLivesLeft--;
+      cymCombo = 0;
+      cymFloat(a.x, ground - 10, 'got through!', '#FF8A8A');
+    }
+  }
+  cymShots = cymShots.filter(s => !s.used && s.y > -40);
+  cymAliens = cymAliens.filter(a => !a.dead);
+  cymBits.forEach(b => { b.x += b.vx * dt; b.y += b.vy * dt; b.vx *= .96; b.vy *= .96; b.life -= dt; });
+  cymBits = cymBits.filter(b => b.life > 0);
+  cymFloats.forEach(f => { f.y -= 34 * dt; f.life -= dt * .9; });
+  cymFloats = cymFloats.filter(f => f.life > 0);
+  cymPaintHud();
+  if(cymLivesLeft <= 0) cymOver();
+}
+
+function cymOver(){
+  cymLive = false;
+  cancelAnimationFrame(cymRaf);
+  const best = Number(store(KEY_CYM, 0)) || 0;
+  const newBest = cymScore > best;
+  if(newBest) save(KEY_CYM, cymScore);
+  $('cymOverTitle').textContent = newBest && cymScore ? 'New best today!' : 'The aliens got through';
+  $('cymOverScore').textContent = `${player ? player + ', you' : 'You'} scored ${cymScore} and reached wave ${cymWave}.`;
+  cymShowBest();
+  $('cymOver').classList.add('on');
+}
+
+/* A cymatic pattern: rings for LOW, a rose of `petals` lobes for MID and HIGH. */
+function cymPattern(c, x, y, r, f, rot, color){
+  const F = CYM_FREQS[f];
+  c.save();
+  c.translate(x, y); c.rotate(rot);
+  c.strokeStyle = color || F.color; c.lineWidth = 2;
+  if(!F.petals){
+    [1, .66, .33].forEach(k => { c.beginPath(); c.arc(0, 0, r * k, 0, Math.PI * 2); c.stroke(); });
+  }else{
+    const k = F.petals / 2;
+    c.beginPath();
+    for(let t = 0; t <= Math.PI * 2 + .01; t += .04){
+      const rr = r * Math.abs(Math.cos(k * t));
+      c.lineTo(rr * Math.cos(t), rr * Math.sin(t));
+    }
+    c.stroke();
+    c.beginPath(); c.arc(0, 0, r * .18, 0, Math.PI * 2); c.stroke();
+  }
+  c.restore();
+}
+
+function cymDrawAlien(c, a){
+  const shake = a.wobble ? Math.sin(a.wobble * 80) * 4 : 0;
+  const x = a.x + shake, y = a.y, r = a.r, F = CYM_FREQS[a.f];
+  c.save();
+  // antennae
+  c.strokeStyle = '#B9BCEB'; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(x - r * .4, y - r * .8); c.lineTo(x - r * .7, y - r * 1.35);
+  c.moveTo(x + r * .4, y - r * .8); c.lineTo(x + r * .7, y - r * 1.35); c.stroke();
+  c.fillStyle = F.color;
+  c.beginPath(); c.arc(x - r * .7, y - r * 1.35, 3.5, 0, 7); c.arc(x + r * .7, y - r * 1.35, 3.5, 0, 7); c.fill();
+  // body with a glow in its frequency's colour
+  c.shadowColor = F.color; c.shadowBlur = 16;
+  c.fillStyle = '#2A2E9C';
+  c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+  c.shadowBlur = 0;
+  c.lineWidth = 2.5; c.strokeStyle = F.color; c.stroke();
+  cymPattern(c, x, y, r * .72, a.f, a.phase * a.spin);
+  // eyes
+  c.fillStyle = '#F5F6FF';
+  c.beginPath(); c.arc(x - r * .32, y - r * .2, r * .17, 0, 7); c.arc(x + r * .32, y - r * .2, r * .17, 0, 7); c.fill();
+  c.fillStyle = '#0B1020';
+  c.beginPath(); c.arc(x - r * .3, y - r * .17, r * .08, 0, 7); c.arc(x + r * .34, y - r * .17, r * .08, 0, 7); c.fill();
+  c.restore();
+}
+
+function cymDrawFrame(){
+  const c = cymCtx; if(!c) return;
+  const w = cymW, h = cymH, ground = h - 70;
+  const g = c.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#0E1050'); g.addColorStop(1, '#1F2280');
+  c.fillStyle = g; c.fillRect(0, 0, w, h);
+  // stars
+  c.fillStyle = 'rgba(245,246,255,.5)';
+  for(let i = 0; i < 40; i++){ c.fillRect((i * 97) % w, (i * 53) % (ground - 20), 1.5, 1.5); }
+  // the water plate Argon stands on
+  c.fillStyle = '#191C6E'; c.fillRect(0, ground, w, h - ground);
+  c.strokeStyle = '#3B40B4'; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(0, ground); c.lineTo(w, ground); c.stroke();
+  const t = performance.now() / 1000;
+  c.strokeStyle = 'rgba(63,237,224,.35)';
+  c.beginPath();
+  for(let x = 0; x <= w; x += 6) c.lineTo(x, ground + 8 + Math.sin(x / 18 + t * 4) * 2.5);
+  c.stroke();
+
+  cymShots.forEach(s => {
+    const F = CYM_FREQS[s.f];
+    c.save(); c.strokeStyle = F.color; c.shadowColor = F.color; c.shadowBlur = 12;
+    for(let k = 0; k < 3; k++){
+      c.globalAlpha = 1 - k * .3; c.lineWidth = 3 - k * .6;
+      c.beginPath(); c.arc(s.x, s.y + k * 9, F.width / 2, Math.PI * 1.15, Math.PI * 1.85); c.stroke();
+    }
+    c.restore();
+  });
+  cymAliens.forEach(a => cymDrawAlien(c, a));
+  cymBits.forEach(b => { c.globalAlpha = Math.max(0, b.life / .7); c.fillStyle = b.color; c.fillRect(b.x - 2, b.y - 2, 4, 4); });
+  c.globalAlpha = 1;
+
+  // Argon
+  const sw = 74, sh = 74;
+  if(cymSprite && cymSprite.complete && cymSprite.naturalWidth){
+    c.drawImage(cymSprite, cymX - sw / 2, ground - sh + 10, sw, sh);
+  }else{
+    c.fillStyle = '#D9FF35'; c.beginPath(); c.arc(cymX, ground - 24, 22, 0, 7); c.fill();
+  }
+
+  c.textAlign = 'center';
+  cymFloats.forEach(f => {
+    c.globalAlpha = Math.max(0, f.life); c.fillStyle = f.color;
+    c.font = "700 16px 'Baloo 2', system-ui, sans-serif";
+    c.fillText(f.text, f.x, f.y);
+  });
+  c.globalAlpha = 1;
+}
+
+/* Small pattern icons on the three frequency buttons, drawn once. */
+function cymIcons(){
+  document.querySelectorAll('.freqbtn canvas').forEach((cv, i) => {
+    const dpr = window.devicePixelRatio || 1, s = 34;
+    cv.width = s * dpr; cv.height = s * dpr;
+    const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cymPattern(c, s / 2, s / 2, s / 2 - 3, i, 0);
+  });
+}
+
+(function(){
+  const cv = $('cymCanvas');
+  const aim = e => {
+    const r = cv.getBoundingClientRect();
+    cymTargetX = Math.max(30, Math.min(cymW - 30, e.clientX - r.left));
+  };
+  cv.addEventListener('pointerdown', aim);
+  cv.addEventListener('pointermove', e => { if(e.buttons || e.pointerType === 'mouse') aim(e); });
+  document.querySelectorAll('.freqbtn').forEach((b, i) => b.addEventListener('pointerdown', e => { e.preventDefault(); cymFire(i); }));
+  document.addEventListener('keydown', e => {
+    if(!$('cym').classList.contains('on')) return;
+    if(e.key === 'ArrowLeft' || e.key === 'ArrowRight'){ cymKeys[e.key] = true; e.preventDefault(); }
+    const k = { '1':0, a:0, A:0, '2':1, s:1, S:1, '3':2, d:2, D:2 }[e.key];
+    if(k !== undefined) cymFire(k);
+  });
+  document.addEventListener('keyup', e => { cymKeys[e.key] = false; });
+  window.addEventListener('resize', () => { if($('cym').classList.contains('on')){ cymFit(); cymDrawFrame(); } });
+  $('cymGo').addEventListener('click', cymStart);
+  $('cymAgain').addEventListener('click', cymStart);
+  $('cymBack').addEventListener('click', () => show('mode'));
+  $('cymBack2').addEventListener('click', () => show('mode'));
+  $('modeCym').addEventListener('click', openCym);
+  $('modeCymImg').src = MASCOT.argon || '';
+  cymIcons();
+})();
 
 /* ---------- idle reset ---------- */
 let idleTimer;
