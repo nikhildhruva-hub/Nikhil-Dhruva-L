@@ -100,11 +100,6 @@
         <span>A Zinion has come apart into sliding pieces. Put them back together.</span>
         <!-- <img src="" alt="" id="modePuzzleImg"> -->
       </button>
-      <button class="mode" id="modeCym">
-        <span class="age">Quick play</span>
-        <b>Cymatics</b>
-        <span>Aliens are closing in. Turn up the frequency and push them back with rings of sound.</span>
-      </button>
       <button class="mode" id="modeBulbs">
         <span class="age">Quick play</span>
         <b>Zinion Bulbs</b>
@@ -283,48 +278,6 @@
       <button class="ghost" id="bulbBack" style="align-self:auto">Back</button>
     </div>
     <p class="footnote">Each bulb belongs to a Zinion. Repeat the order they light in.</p>
-  </section>
-
-  <!-- CYMATICS GAME -->
-  <section id="cym" class="screen">
-    <div class="gamewrap">
-      <canvas id="cymCanvas" aria-label="Cymatics game: push the aliens back with rings of sound"></canvas>
-      <div class="ghud">
-        <div><div class="gscore" id="cymScore">0</div><div class="gbest" id="cymWave">Wave 1</div></div>
-        <div class="cymright">
-          <div class="cymlives" id="cymLives" aria-label="Lives"></div>
-          <div class="gbest" id="cymPowerLab">Power</div>
-          <div class="meter cympower"><i id="cymPower"></i></div>
-        </div>
-      </div>
-      <div class="gover" id="cymIntro">
-        <h3>Cymatics</h3>
-        <p>Aliens are closing in. Your emitter sends out rings of sound &mdash; turn the frequency up and they push harder.</p>
-        <p class="cymkey"><b class="lo">Low: they creep closer</b> <b class="hi">High: they're driven back</b></p>
-        <p class="cymsci">High frequency drains power. Run out and you overload &mdash; ease off to recharge. Tap <b>Use my voice</b> and the louder you shout, the higher it goes.</p>
-        <div class="btnrow">
-          <button class="big-btn" id="cymGo">Start</button>
-          <button class="ghost" id="cymBack" style="align-self:auto">Back</button>
-        </div>
-      </div>
-      <div class="gover" id="cymOver">
-        <h3 id="cymOverTitle">The aliens got through</h3>
-        <p id="cymOverScore"></p>
-        <p class="cymsci">Higher frequency means more waves every second, packed closer together &mdash; a shorter wavelength. More waves arriving means more push, the same vibration that throws the water at the Cymatics exhibit into patterns.</p>
-        <div class="btnrow">
-          <button class="big-btn" id="cymAgain">Play again</button>
-          <button class="ghost" id="cymBack2" style="align-self:auto">Back</button>
-        </div>
-      </div>
-    </div>
-    <div class="freqctl">
-      <span class="flab lo">LOW</span>
-      <input type="range" id="cymFreq" min="0" max="100" value="35" aria-label="Frequency">
-      <span class="flab hi">HIGH</span>
-      <div class="freqread"><b id="cymHz">440 Hz</b><span>frequency</span></div>
-      <button class="voicebtn" id="cymVoiceBtn" aria-pressed="false">Use my voice</button>
-    </div>
-    <p class="gnote"><span id="cymVoiceNote"></span> Slide to change the frequency, or tap <b>Use my voice</b> and shout &middot; keyboard: &uarr; &darr; <span id="cymBest"></span></p>
   </section>
 
   <!-- THANK YOU -->
