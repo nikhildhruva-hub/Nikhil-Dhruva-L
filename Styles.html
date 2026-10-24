@@ -234,6 +234,36 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 .peekeye[aria-expanded="true"] svg{stroke:var(--accent)}
 .peekeye[aria-expanded="true"] .slash{display:none}
 .peekhint{color:var(--mute);font-size:clamp(11px,1.3vw,13px)}
+/* Argon's secret door and the stats screen behind it */
+.lock{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:rgba(8,10,40,.72);padding:16px}
+.lock[hidden]{display:none}
+.lockbox{background:var(--deep-2);border:2px solid var(--line);border-radius:24px;padding:24px;width:min(100%,360px);display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.lockbox b{font-family:var(--display);font-size:clamp(18px,2.4vw,22px)}
+.lockimg{width:96px;height:auto}
+#lockPw{width:100%;background:var(--panel);border:2px solid var(--line);border-radius:999px;color:var(--pale);font-size:17px;padding:12px 18px;text-align:center}
+#lockPw:focus{outline:none;border-color:var(--accent)}
+.lockerr{min-height:1.3em;color:var(--coral);font-size:14px}
+.st-take{text-align:left;margin:0}
+.st-split{display:flex;height:30px;border-radius:10px;overflow:hidden;gap:2px}
+.st-split:empty{display:none}
+.st-seg{display:flex;align-items:center;justify-content:center;color:var(--on-accent);font-weight:700;font-size:13px;min-width:0;overflow:hidden}
+.st-key{display:flex;flex-wrap:wrap;gap:16px;color:var(--mute);font-size:13px}
+.st-key span{display:flex;align-items:center;gap:6px}
+.st-sw{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+.st-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:clamp(8px,1.3vw,13px)}
+.st-card{background:var(--panel);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.st-card > b{font-family:var(--display);font-size:clamp(15px,1.8vw,18px)}
+.st-rows{display:flex;flex-direction:column;gap:10px}
+.st-row{display:flex;flex-direction:column;gap:4px}
+.st-lab{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--mute)}
+.st-lab span:first-child{color:var(--pale)}
+.st-row .st-split{height:16px;border-radius:5px}
+.st-cols{display:flex;align-items:flex-end;gap:8px;height:170px;border-bottom:1px solid var(--line);overflow-x:auto}
+.st-col{flex:1 0 34px;max-width:52px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px}
+.st-col i{font-style:normal;font-size:12px;color:var(--pale)}
+.st-col em{font-style:normal;font-size:11px;color:var(--mute);white-space:nowrap}
+.st-stack{width:100%;display:flex;flex-direction:column-reverse;gap:2px;border-radius:5px 5px 0 0;overflow:hidden}
+.st-none{color:var(--mute);font-size:14px}
 .peekpass{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .peekpass[hidden]{display:none}
 #peekPw{background:var(--panel);border:2px solid var(--line);border-radius:999px;color:var(--pale);font-size:16px;padding:10px 18px;width:min(100%,240px)}

@@ -1005,7 +1005,9 @@ let player='', zoneId=null, advanceTimer=null, tickTimer=null;
 
 function clearTimers(){ clearTimeout(advanceTimer); advanceTimer=null; clearInterval(tickTimer); tickTimer=null; }
 function show(n){
-  ['start','mode','pick','quiz','game','bulbs','puzzle','award','wind','end','thanks','dash'].forEach(s => $(s).classList.toggle('on', s===n));
+  ['start','mode','pick','quiz','game','bulbs','puzzle','award','wind','end','thanks','dash','stats'].forEach(s => $(s).classList.toggle('on', s===n));
+  if(n !== 'stats') stClear();   // the totals don't linger once the screen is left
+  lockClose();
   $('hostwrap').classList.toggle('hide', n !== 'quiz' && n !== 'end');
   $('clock').classList.toggle('hide', n !== 'quiz' || TIMER_MODE === 'off');
   $('drift').style.opacity = (n === 'start' || n === 'mode' || n === 'pick' || n === 'thanks') ? '1' : '0';
@@ -1026,6 +1028,7 @@ function clean(s){ return s.replace(/[<>]/g,'').trim().slice(0,18); }
   ['tropido','niki','harsh','argon','stephen'].forEach(k => {
     const i = document.createElement('img');
     i.src = MASCOT[k]; i.alt = '';
+    i.dataset.k = k;
     d.appendChild(i);
   });
 })();
@@ -2967,6 +2970,143 @@ async function peekCheck(){
   $('peekErr').textContent = 'That password isn’t right.';
   $('peekPw').select();
 }
+/* ---------- Argon's secret door ----------
+   Double-tap Argon on the start screen, give the password, and the stats screen
+   opens. Argon floats in the background under the page, so a tap is matched to
+   Argon by where it lands rather than by a click on the image. The server checks
+   the password (getStageStats) and sends back totals only, never names. */
+const ST_STAGES = ['Citizen', 'Seeker', 'Solver', 'Innovator'];
+const ST_COLOUR = { Citizen:'var(--mute)', Seeker:'var(--seeker)', Solver:'var(--solver)', Innovator:'var(--innov)' };
+let argonLast = 0;
+document.addEventListener('pointerdown', e => {
+  if(!$('start').classList.contains('on') || !$('lock').hidden) return;
+  if(e.target.closest('input,button')) return;
+  const argon = $('drift').querySelector('[data-k="argon"]');
+  const r = argon && argon.getBoundingClientRect();
+  if(!r || e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+  const now = Date.now();
+  if(now - argonLast < 450){ argonLast = 0; lockOpen(); }
+  else argonLast = now;
+});
+
+function lockOpen(){
+  $('lockImg').src = MASCOT.argon;
+  $('lockPw').value = ''; $('lockErr').textContent = '';
+  $('lock').hidden = false;
+  $('lockPw').focus();
+}
+function lockClose(){ $('lock').hidden = true; $('lockPw').value = ''; }
+function lockTry(){
+  const pw = $('lockPw').value;
+  if(!pw){ $('lockPw').focus(); return; }
+  if(!(window.google && google.script && google.script.run)){
+    $('lockErr').textContent = 'This only works on the live kiosk link.'; return;
+  }
+  $('lockGo').disabled = true;
+  $('lockErr').textContent = 'Checking…';
+  google.script.run
+    .withSuccessHandler(rows => { $('lockGo').disabled = false; show('stats'); renderStats(rows || []); })
+    .withFailureHandler(err => {
+      $('lockGo').disabled = false;
+      $('lockErr').textContent = String((err && err.message) || 'Could not check the password.').replace(/^(Exception|Error):\s*/, '');
+      $('lockPw').select();
+    })
+    .getStageStats(pw);
+}
+$('lockGo').addEventListener('click', lockTry);
+$('lockPw').addEventListener('keydown', e => { if(e.key === 'Enter') lockTry(); });
+$('lockCancel').addEventListener('click', lockClose);
+$('stBack').addEventListener('click', () => show('start'));
+
+function stClear(){
+  ['stRange','stTake','stTiles','stSplit','stKey','stGallery','stDays','stVisit'].forEach(id => $(id).replaceChildren());
+}
+function stDay(iso, withYear){
+  const d = new Date(iso + 'T00:00:00');
+  return isNaN(d) ? iso : d.toLocaleDateString('en-IN', withYear ? {day:'2-digit', month:'short', year:'numeric'} : {day:'2-digit', month:'short'});
+}
+// rows grouped by one field, each group counted by stage
+function stGroup(rows, key){
+  const m = new Map();
+  rows.forEach(r => {
+    const label = r[key] || '—';
+    const g = m.get(label) || { label, visitors:0, Citizen:0, Seeker:0, Solver:0, Innovator:0 };
+    g.visitors++; g[r.stage]++;
+    m.set(label, g);
+  });
+  return [...m.values()];
+}
+function stBar(g, total, withText){
+  const bar = el('div', 'st-split');
+  ST_STAGES.forEach(s => {
+    if(!g[s]) return;
+    const seg = el('div', 'st-seg', withText ? g[s] : null);
+    seg.style.background = ST_COLOUR[s];
+    seg.style.flex = `${g[s] / total} 1 0`;
+    seg.title = `${s}: ${g[s]}`;
+    bar.appendChild(seg);
+  });
+  if(total > g.visitors){ const rest = el('div'); rest.style.flex = `${(total - g.visitors) / total} 1 0`; bar.appendChild(rest); }
+  return bar;
+}
+function stRows(box, groups){
+  const max = Math.max(1, ...groups.map(g => g.visitors));
+  groups.forEach(g => {
+    const row = el('div', 'st-row'), lab = el('div', 'st-lab');
+    lab.append(el('span', '', g.label), el('span', '', `${g.visitors}`));
+    row.append(lab, stBar(g, max, false));
+    box.appendChild(row);
+  });
+}
+
+function renderStats(rows){
+  stClear();
+  const total = rows.length;
+  const all = stGroup(rows.map(r => Object.assign({}, r, { all:'all' })), 'all')[0]
+    || { visitors:0, Citizen:0, Seeker:0, Solver:0, Innovator:0 };
+  const days = [...new Set(rows.map(r => r.day))].sort();
+
+  if(!total){
+    $('stTake').textContent = 'Nobody has finished the Zinion Quiz yet.';
+    return;
+  }
+  const top = ST_STAGES.reduce((a, b) => all[b] > all[a] ? b : a);
+  $('stRange').textContent = days.length > 1 ? `${stDay(days[0], true)} – ${stDay(days[days.length - 1], true)}` : stDay(days[0], true);
+  $('stTake').textContent = `${total} visitor${total === 1 ? '' : 's'} finished the Zinion Quiz. Most of them reached ${top}.`;
+
+  ST_STAGES.forEach(s => {
+    const t = el('div', 'stat');
+    t.append(el('b', '', all[s]), el('span', '', `${s} · ${Math.round(all[s] / total * 100)}%`));
+    $('stTiles').appendChild(t);
+    const k = el('span'), sw = el('span', 'st-sw');
+    sw.style.background = ST_COLOUR[s];
+    k.append(sw, s);
+    $('stKey').appendChild(k);
+  });
+  $('stSplit').replaceChildren(...stBar(all, total, true).childNodes);
+
+  stRows($('stGallery'), stGroup(rows, 'gallery').sort((a, b) => b.visitors - a.visitors || a.label.localeCompare(b.label)));
+  stRows($('stVisit'), stGroup(rows, 'visited').sort((a, b) => a.label.localeCompare(b.label)));
+
+  // the last two weeks, oldest on the left
+  const perDay = stGroup(rows, 'day').sort((a, b) => a.label.localeCompare(b.label)).slice(-14);
+  const maxDay = Math.max(1, ...perDay.map(g => g.visitors));
+  perDay.forEach(g => {
+    const col = el('div', 'st-col'), stack = el('div', 'st-stack');
+    stack.style.height = `calc((100% - 40px) * ${g.visitors / maxDay})`;
+    ST_STAGES.forEach(s => {
+      if(!g[s]) return;
+      const seg = el('div');
+      seg.style.background = ST_COLOUR[s];
+      seg.style.flex = `${g[s]} 1 0`;
+      seg.title = `${s}: ${g[s]}`;
+      stack.appendChild(seg);
+    });
+    col.append(el('i', '', g.visitors), stack, el('em', '', stDay(g.label, false)));
+    $('stDays').appendChild(col);
+  });
+}
+
 $('peekGo').addEventListener('click', peekCheck);
 $('peekPw').addEventListener('keydown', e => { if(e.key === 'Enter') peekCheck(); });
 

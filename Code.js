@@ -149,6 +149,32 @@ function getDashData() {
   return out;
 }
 
+/* The hidden stats screen on the kiosk (double-tap Argon, then the password).
+ * It is asked for from the public link, so it checks the password here and sends
+ * back only day, gallery, stage and visit for each finished quiz: never a name.
+ * Only the password's SHA-256 is kept. */
+const STATS_PASS_HASH = 'a25ef4e636a84f16d0df491e2c265438b2e99859313e0601eb1716f5cdfd8a64';
+
+function getStageStats(password) {
+  const hash = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(password || ''), Utilities.Charset.UTF_8)
+    .map(b => ((b + 256) % 256).toString(16).padStart(2, '0')).join('');
+  if (hash !== STATS_PASS_HASH) throw new Error('That password isn’t right.');
+  const out = [];
+  logBook_().getSheets().forEach(t => {
+    const v = t.getDataRange().getDisplayValues();
+    if (!v.length || v[0][0] !== BASE_HEADERS[0]) return;
+    const col = {};
+    v[0].forEach((h, i) => col[h] = i);
+    const cell = (r, h) => col[h] === undefined ? '' : r[col[h]];
+    v.slice(1).forEach(r => {
+      const stage = cell(r, 'Stage reached');
+      if (STAGES.indexOf(stage) < 0) return;
+      out.push({ day: cell(r, 'Date'), gallery: cell(r, 'Gallery'), stage: stage, visited: cell(r, 'Visited before') });
+    });
+  });
+  return out;
+}
+
 function reportFolder_() {
   const it = DriveApp.getFoldersByName(REPORT_FOLDER);
   return it.hasNext() ? it.next() : DriveApp.createFolder(REPORT_FOLDER);

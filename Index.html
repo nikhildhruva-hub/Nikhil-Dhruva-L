@@ -17,6 +17,19 @@
   <div class="hostsay" id="hostsay"></div>
   <img class="mascot" id="hostimg" alt="">
 </div>
+<!-- Argon's secret door: double-tap Argon on the start screen to open -->
+<div class="lock" id="lock" hidden>
+  <div class="lockbox" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
+    <img class="lockimg" id="lockImg" alt="">
+    <b id="lockTitle">Argon's secret door</b>
+    <input id="lockPw" type="password" autocomplete="off" placeholder="Password" aria-label="Password">
+    <span class="lockerr" id="lockErr"></span>
+    <div class="btnrow">
+      <button class="big-btn" id="lockGo" style="align-self:auto">Open</button>
+      <button class="ghost" id="lockCancel" style="align-self:auto">Cancel</button>
+    </div>
+  </div>
+</div>
 <!-- start-screen demo: a Zinion shows passers-by how to begin -->
 <div class="demozin" id="demoZin" aria-hidden="true">
   <div class="hostsay" id="demoSay"></div>
@@ -333,6 +346,25 @@
       <button class="big-btn" id="thanksHome">Back to home</button>
     </div>
     <p class="footnote">Now go and ask a Science Communicator what you are still wondering about.</p>
+  </section>
+
+  <!-- STATS: totals only, opened through Argon's secret door -->
+  <section id="stats" class="screen scrollable">
+    <div class="dashhead">
+      <h2 class="title">Curiosity levels</h2>
+      <div class="daystamp" id="stRange"></div>
+    </div>
+    <p class="sub st-take" id="stTake"></p>
+    <div class="stats" id="stTiles"></div>
+    <div class="st-split" id="stSplit"></div>
+    <div class="st-key" id="stKey"></div>
+    <div class="st-grid">
+      <div class="st-card"><b>Stage mix by gallery</b><div class="st-rows" id="stGallery"></div></div>
+      <div class="st-card"><b>Visitors per day</b><div class="st-cols" id="stDays"></div></div>
+      <div class="st-card"><b>Before or after the gallery</b><div class="st-rows" id="stVisit"></div></div>
+    </div>
+    <div class="btnrow"><button class="big-btn" id="stBack">Close</button></div>
+    <p class="footnote">Totals only. Visitor names never reach this screen.</p>
   </section>
 
   <!-- DASHBOARD -->
