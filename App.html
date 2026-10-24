@@ -1156,9 +1156,8 @@ function showAward({key, game, zin, line, again}){
   $('awardText').textContent = n === 1
     ? `You are the first person to complete the ${game} today!`
     : `You are the ${ordinal(n)} person to complete the ${game} today.`;
-  const [q, who] = AWARD_QUOTES[Math.floor(Math.random() * AWARD_QUOTES.length)];
+  const [q] = AWARD_QUOTES[Math.floor(Math.random() * AWARD_QUOTES.length)];   // quote only, no name shown
   $('awardQuote').textContent = `“${q}”`;
-  $('awardWho').textContent = `— ${who}`;
   awardAgain = again;
   show('award');
 }
