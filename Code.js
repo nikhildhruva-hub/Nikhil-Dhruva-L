@@ -33,8 +33,13 @@
  *   GitHub Pages, or a local server on the kiosk machine.
  */
 
-function doGet() {
-  return HtmlService.createTemplateFromFile('Index')
+/* ?view=dash opens straight onto "Today's board", filled from the results Sheet.
+ * Only the private "Dashboard" deployment (Who has access: Only myself) can fill
+ * it — see DASH_ENABLED. */
+function doGet(e) {
+  const t = HtmlService.createTemplateFromFile('Index');
+  t.view = (e && e.parameter && e.parameter.view === 'dash') ? 'dash' : '';
+  return t
     .evaluate()
     .setTitle('Zinia Experimental Lab')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1')
@@ -65,6 +70,12 @@ const ANSWER_STAGES = ['Innovator', 'Solver', 'Seeker', 'Citizen'];   // the ord
 // (Cymatics: one per cascade stage; Traffic: one per question).
 const BASE_HEADERS  = ['Date', 'Time', 'Name', 'Gallery', 'Stage reached'];
 const LOG_HEADERS   = BASE_HEADERS.concat(ANSWER_STAGES.map(s => `${s} answer`));   // Cymatics
+const SCORE_HEADERS = ['Score', 'Right', 'Wrong'];   // always the last columns of a gallery tab
+/* The dashboard's data feed. false in every public version, so the kiosk link can
+ * never hand out visitor names. To update the private "Dashboard" deployment: set
+ * this true and appsscript.json "access" to "MYSELF", push, redeploy that deployment
+ * only, then put both back and push before touching the public deployment. */
+const DASH_ENABLED  = false;
 
 /** The project's results spreadsheet: one tab per gallery (Cymatics, Rain Stick, …),
  *  one row per visitor. The account that owns this script needs edit access to it. */
@@ -116,6 +127,28 @@ function allRows_() {
     .reduce((all, v) => all.concat(v.slice(1)), []);
 }
 
+/** Today's visitors from every gallery tab, for "Today's board". Owner only:
+ *  visitor names must not reach anyone who opens the public kiosk link. */
+function getDashData() {
+  if (!DASH_ENABLED) throw new Error('The dashboard only opens from its private link.');
+  const day = Utilities.formatDate(new Date(), REPORT_TZ, 'yyyy-MM-dd');
+  const out = [];
+  logBook_().getSheets().forEach(t => {
+    const v = t.getDataRange().getDisplayValues();
+    if (!v.length || v[0][0] !== BASE_HEADERS[0]) return;
+    const col = {};
+    v[0].forEach((h, i) => col[h] = i);
+    const cell = (r, h) => col[h] === undefined ? '' : r[col[h]];
+    const num = (r, h) => cell(r, h) === '' ? null : Number(cell(r, h));
+    v.slice(1).filter(r => r[0] === day).forEach(r => out.push({
+      name: cell(r, 'Name'), zone: cell(r, 'Gallery'), at: cell(r, 'Time'),
+      c2iStage: cell(r, 'Stage reached'),
+      score: num(r, 'Score'), right: num(r, 'Right'), wrong: num(r, 'Wrong')
+    }));
+  });
+  return out;
+}
+
 function reportFolder_() {
   const it = DriveApp.getFoldersByName(REPORT_FOLDER);
   return it.hasNext() ? it.next() : DriveApp.createFolder(REPORT_FOLDER);
@@ -145,7 +178,13 @@ function logResult(entry) {
     'Stage reached': STAGES.indexOf(entry.stage) >= 0 ? entry.stage : ''
   };
   fields.forEach(f => values[f[0]] = f[1]);
-  const headers = BASE_HEADERS.concat(fields.map(f => f[0]));
+  const docHeaders = BASE_HEADERS.concat(fields.map(f => f[0]));
+  // the dashboard's points and accuracy; Sheet only, so the Doc's tables keep their columns
+  const num = v => (v === '' || v == null || isNaN(Number(v))) ? '' : String(Number(v));
+  values['Score'] = num(entry.score);
+  values['Right'] = num(entry.right);
+  values['Wrong'] = num(entry.wrong);
+  const headers = docHeaders.concat(SCORE_HEADERS);
 
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -153,7 +192,7 @@ function logResult(entry) {
     const t = galleryTab_(logBook_(), values['Gallery'], headers);
     // Leading = + - @ would make Sheets treat a visitor's text as a formula; the ' keeps it plain text.
     t.tab.appendRow(t.headers.map(h => String(values[h] || '').replace(/^[=+\-@]/, "'$&")));
-    try { appendToDataDoc_(headers, headers.map(h => values[h] || '')); }
+    try { appendToDataDoc_(docHeaders, docHeaders.map(h => values[h] || '')); }
     catch (e) { console.error('Zinian Data doc: ' + e); }
   } finally {
     lock.releaseLock();

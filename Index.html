@@ -97,7 +97,7 @@
       <button class="mode" id="modePuzzle">
         <span class="age">Take your time</span>
         <b>Zinion Puzzle</b>
-        <span>A Zinion has come apart into sliding pieces. Put them back together.</span>
+        <span>A Zinion has come apart into jigsaw pieces. Put them back together.</span>
         <!-- <img src="" alt="" id="modePuzzleImg"> -->
       </button>
       <button class="mode" id="modeBulbs">
@@ -110,7 +110,7 @@
       <button class="mode" id="modeGame" hidden>
         <span class="age">Best for younger visitors</span>
         <b>Scream Lab</b>
-        <span>Shout to make Niki fly. The louder you are, the higher she goes. Dodge the rocks.</span>
+        <span>Shout to make Axon fly. The louder you are, the higher she goes. Dodge the rocks.</span>
         <img src="" alt="" id="modeGameImg">
       </button>
     </div>
@@ -161,7 +161,7 @@
       </div>
       <div class="gover on" id="gOver">
         <h3 id="gOverTitle">Scream Lab</h3>
-        <p id="gOverText">Make some noise and Niki lifts off. Stop and she drops. Get her through the gaps.</p>
+        <p id="gOverText">Make some noise and Axon lifts off. Stop and she drops. Get her through the gaps.</p>
         <button class="big-btn" id="gStart">Start</button>
         <button class="ghost" id="gMicBtn" style="align-self:auto">Turn on the microphone</button>
         <p class="gnote" id="gMicState" style="margin-top:2px"></p>
@@ -188,13 +188,17 @@
         <div class="puzpick" id="puzPick"></div>
       </div>
       <div class="puzmain">
+        <div class="puzmodes" id="puzModes">
+          <button class="puzmode on" data-m="swap">Swap</button>
+          <button class="puzmode" data-m="slide">Slide</button>
+        </div>
         <div class="puzstage" id="puzStage">Level 1 of 4 &middot; 2&times;2</div>
         <div class="puzboard" id="puzBoard"></div>
         <div class="puzstat">
           <span>Moves <b id="puzMoves">0</b></span>
           <span>Best today <b id="puzBest">&mdash;</b></span>
         </div>
-        <p class="puzsay" id="puzSay">Slide the pieces until the Zinion is whole again.</p>
+        <p class="puzsay" id="puzSay">Tap two pieces to swap them until the Zinion is whole again.</p>
       </div>
       <div class="puzdash">
         <b>Fewest moves today</b>
@@ -203,12 +207,14 @@
     </div>
     <div class="btnrow">
       <button class="big-btn" id="puzShuffle">Shuffle</button>
+      <button class="ghost" id="puzHint" style="align-self:auto">Hint</button>
       <button class="ghost" id="puzBack" style="align-self:auto">Back</button>
     </div>
   </section>
 
   <!-- ZINION BULBS -->
   <section id="bulbs" class="screen">
+    <div class="bulbwrap">
     <div class="bulbstage">
       <div class="bulbhead">
         <div class="bulbround" id="bulbRound">Round 1</div>
@@ -273,14 +279,48 @@
       </div>
       <p class="bulbsay" id="bulbSay">Watch which bulbs light up.</p>
     </div>
+    <div class="puzdash">
+      <b>Most rounds today</b>
+      <div class="puzdashlist" id="bulbDashList"></div>
+    </div>
+    </div>
     <div class="btnrow">
       <button class="big-btn" id="bulbStart">Start</button>
       <button class="ghost" id="bulbBack" style="align-self:auto">Back</button>
     </div>
-    <p class="footnote">Each bulb belongs to a Zinion. Repeat the order they light in.</p>
+    <div class="howto">
+      <b class="howto-title">How to play</b>
+      <div class="rules">
+        <div class="rule step"><b>1</b><span>Press Start and watch the bulbs light up</span></div>
+        <div class="rule step"><b>2</b><span>Tap the bulbs in the same order</span></div>
+        <div class="rule step"><b>3</b><span>Each round adds one more bulb</span></div>
+        <div class="rule step"><b>4</b><span>Clear all 20 rounds to win</span></div>
+      </div>
+      <p class="footnote">One wrong tap ends the game &mdash; press Go again to try once more.</p>
+    </div>
   </section>
 
   <!-- THANK YOU -->
+  <!-- AWARD: shown when someone finishes the puzzle or the bulbs -->
+  <section id="award" class="screen">
+    <div class="confetti" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <img class="mascot thanksimg" id="awardImg" alt="">
+    <h1 id="awardTitle">Congratulations!</h1>
+    <p class="sub" id="awardLine"></p>
+    <div class="awardbadge">
+      <span class="medal" id="awardRank">1st</span>
+      <b id="awardText"></b>
+    </div>
+    <blockquote class="awardquote">
+      <p id="awardQuote"></p>
+      <cite id="awardWho"></cite>
+    </blockquote>
+    <div class="btnrow">
+      <button class="big-btn" id="awardAgain">Play again</button>
+      <button class="ghost" id="awardHome" style="align-self:auto">Try another game</button>
+    </div>
+  </section>
+
   <section id="thanks" class="screen">
     <img class="mascot thanksimg" id="thanksImg" alt="">
     <h1 id="thanksTitle">Thank you!</h1>
@@ -321,6 +361,7 @@
 <?!= include('Zin3'); ?>
 <?!= include('Zin4'); ?>
 <?!= include('Zin5'); ?>
+<script>window.ZIN_VIEW = '<?= view ?>';</script>
 <?!= include('App'); ?>
 </body>
 </html>
