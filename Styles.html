@@ -92,6 +92,20 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
   color:var(--pale);font-size:clamp(17px,2.2vw,22px);padding:16px 20px;
 }
 #nameInput::placeholder{color:var(--mute)}
+
+/* start-screen demo Zinion */
+.demozin{position:fixed;left:0;top:0;width:clamp(80px,9vw,130px);z-index:4;pointer-events:none;opacity:0;transition:transform 1.8s ease-in-out,opacity .4s}
+.demozin.on{opacity:1}
+.demozin img{display:block;width:100%;height:auto;filter:drop-shadow(0 14px 22px rgba(0,0,0,.45))}
+.demozin.walk img{animation:waddle .45s ease-in-out infinite}
+.demozin.cheer img{animation:cheer .85s ease-out}
+@keyframes waddle{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-9px) rotate(5deg)}}
+#nameInput.demo{border-color:var(--accent);color:var(--pale)}
+#nameInput.demo::placeholder{color:var(--pale)}
+#nameGo.demo-press{animation:press .55s ease-out}
+@keyframes press{35%{transform:scale(.88)}100%{transform:scale(1)}}
+@media (max-width:760px){.demozin{width:72px}}
+@media (prefers-reduced-motion:reduce){.demozin{transition:opacity .4s}.demozin img,#nameGo.demo-press{animation:none!important}}
 .tiny{text-align:center;color:var(--mute);font-size:clamp(11px,1.3vw,14px);max-width:52ch;margin:0 auto;line-height:1.5}
 
 /* zones */
