@@ -217,6 +217,29 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 /* stat strip */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:clamp(8px,1.3vw,13px)}
 .stat{background:var(--panel);border-radius:16px;padding:15px 18px}
+.stats[hidden]{display:none}
+
+/* eye that hides the curiosity levels until it is double-tapped */
+.peek{display:flex;align-items:center;gap:14px}
+.peek .sectitle{margin-top:0}
+.peekeye{
+  width:52px;height:52px;flex:0 0 auto;border-radius:50%;border:2px solid var(--line);
+  background:var(--panel);display:grid;place-items:center;cursor:pointer;transition:border-color .2s,transform .12s;
+  touch-action:manipulation;
+}
+.peekeye:active{transform:scale(.94)}
+.peekeye:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.peekeye svg{width:26px;height:26px;fill:none;stroke:var(--mute);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.peekeye[aria-expanded="true"]{border-color:var(--accent)}
+.peekeye[aria-expanded="true"] svg{stroke:var(--accent)}
+.peekeye[aria-expanded="true"] .slash{display:none}
+.peekhint{color:var(--mute);font-size:clamp(11px,1.3vw,13px)}
+.peekpass{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.peekpass[hidden]{display:none}
+#peekPw{background:var(--panel);border:2px solid var(--line);border-radius:999px;color:var(--pale);font-size:16px;padding:10px 18px;width:min(100%,240px)}
+#peekPw:focus{outline:none;border-color:var(--accent)}
+.peekpass .ghost{align-self:auto;padding:9px 20px}
+#peekErr{color:var(--coral)}
 .stat b{display:block;font-size:clamp(24px,3.6vw,34px);font-weight:700;line-height:1}
 .stat span{color:var(--mute);font-size:clamp(11px,1.4vw,14px);line-height:1.3;display:block;margin-top:5px}
 

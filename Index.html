@@ -341,12 +341,26 @@
       <h2 class="title">Today's board</h2>
       <div class="daystamp" id="daystamp"></div>
     </div>
+    <!-- curiosity levels stay hidden until the eye is double-tapped -->
+    <div class="peek" id="peek">
+      <button class="peekeye" id="peekEye" aria-expanded="false" aria-controls="c2iStats" aria-label="Double-tap to show curiosity levels">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><line class="slash" x1="3" y1="3" x2="21" y2="21"/></svg>
+      </button>
+      <div>
+        <div class="sectitle">Curiosity levels reached today</div>
+        <span class="peekhint" id="peekHint">Double-tap the eye to show</span>
+      </div>
+    </div>
+    <div class="peekpass" id="peekPass" hidden>
+      <input id="peekPw" type="password" autocomplete="off" placeholder="Password" aria-label="Password">
+      <button class="ghost" id="peekGo">Show</button>
+      <span class="peekhint" id="peekErr"></span>
+    </div>
+    <div class="stats" id="c2iStats" hidden></div>
     <div id="heroSlot"></div>
     <div class="stats" id="stats"></div>
     <div class="sectitle">Across the galleries</div>
     <div class="gcards" id="gcards"></div>
-    <div class="sectitle">Curiosity levels reached today</div>
-    <div class="stats" id="c2iStats"></div>
     <div class="sectitle">Everyone who played</div>
     <div class="board" id="board"></div>
     <div id="scPanel"></div>

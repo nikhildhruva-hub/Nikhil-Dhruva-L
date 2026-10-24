@@ -1666,6 +1666,7 @@ function renderDash(rows){
   $('c2iStats').innerHTML = ['Citizen','Seeker','Solver','Innovator'].map(s =>
     `<div class="stat"><b>${c2iCounts[s]}</b><span>${s}</span></div>`
   ).join('');
+  peekSet(false);   // hidden again every time the board opens
 
   /* full list */
   board.innerHTML = '';
@@ -2935,6 +2936,39 @@ $('doneBtn').addEventListener('click', showThanks);
 $('thanksHome').addEventListener('click', () => show('mode'));
 $('againBtn').addEventListener('click', () => show('mode'));
 $('dashBack').addEventListener('click', () => { player=''; $('nameInput').value=''; show('start'); });
+
+/* The curiosity levels sit behind the eye: two taps close together ask for the
+   password, and the right one shows them; two more taps hide them again. Taps are
+   counted by hand, as touch screens don't all fire dblclick. Only the password's
+   SHA-256 is kept here, so it can't be read straight out of the page source. */
+const PEEK_HASH = 'a25ef4e636a84f16d0df491e2c265438b2e99859313e0601eb1716f5cdfd8a64';
+function peekSet(open){
+  $('c2iStats').hidden = !open;
+  $('peekPass').hidden = true;
+  $('peekPw').value = ''; $('peekErr').textContent = '';
+  $('peekEye').setAttribute('aria-expanded', String(open));
+  $('peekEye').setAttribute('aria-label', `Double-tap to ${open ? 'hide' : 'show'} curiosity levels`);
+  $('peekHint').textContent = `Double-tap the eye to ${open ? 'hide' : 'show'}`;
+}
+let peekLast = 0;
+$('peekEye').addEventListener('click', () => {
+  const now = Date.now();
+  if(now - peekLast >= 450){ peekLast = now; return; }
+  peekLast = 0;
+  if(!$('c2iStats').hidden) return peekSet(false);
+  const box = $('peekPass');
+  box.hidden = !box.hidden;
+  if(!box.hidden) $('peekPw').focus();
+});
+async function peekCheck(){
+  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode($('peekPw').value));
+  const hex = [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, '0')).join('');
+  if(hex === PEEK_HASH) return peekSet(true);
+  $('peekErr').textContent = 'That password isn’t right.';
+  $('peekPw').select();
+}
+$('peekGo').addEventListener('click', peekCheck);
+$('peekPw').addEventListener('keydown', e => { if(e.key === 'Enter') peekCheck(); });
 
 /* The private dashboard link: open on "Today's board", with every gallery's
    rows from the results Sheet rather than this device's. */
