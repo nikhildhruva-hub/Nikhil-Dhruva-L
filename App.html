@@ -2359,7 +2359,7 @@ async function puzBuild(shuffle){
     d.className = 'ptile' + (isBlank ? ' blank' : '') + (jig && pos === puzSel ? ' sel' : '');
     if(!jig && complete && tile === total - 1) d.classList.add('lastpiece');
     if(jig && src){
-      d.innerHTML = puzPieceSvg(tile, n, src) + `<span>${tile+1}</span>`;
+      d.innerHTML = puzPieceSvg(tile, n, src);
     }else if(!isBlank && src){
       const r = Math.floor(tile / n), c = tile % n;
       d.style.backgroundImage = `url(${src})`;
