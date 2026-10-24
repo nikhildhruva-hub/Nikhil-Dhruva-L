@@ -877,7 +877,10 @@ const NOTED = ['Noted.', 'Interesting.', 'Got it.', 'Good thinking.', 'Hmm, nice
 function answerPick(card, value, tag){
   locked = true;
   const stage = STAGE_BY_TAG[tag] || null;
-  pick.fields.push([`Question ${pick.i + 1}`, stage ? `${value} (${stage})` : value]);
+  // the wording too, since it depends on the branch; new column names so rows from
+  // before, where "Question N" held the answer, don't get mixed up with these
+  pick.fields.push([`Question ${pick.i + 1} asked`, C2I_BANK[pick.zid][pick.branch][pick.i][0]]);
+  pick.fields.push([`Question ${pick.i + 1} answer`, stage ? `${value} (${stage})` : value]);
   if(stage) pick.counts[stage] = (pick.counts[stage] || 0) + 1;
 
   const box = $('opts');

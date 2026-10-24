@@ -31,15 +31,15 @@ h1,.hero-name,.final{font-weight:800}
 .drift img:nth-child(5){width:10vmin;top:44%;right:26%;--tilt:3deg;animation-duration:6s;animation-delay:-4s}
 
 /* the host who stands with you through a round */
-.hostwrap{position:fixed;right:clamp(6px,1.6vw,26px);bottom:clamp(6px,1.6vh,24px);width:clamp(64px,8.5vw,120px);z-index:5;pointer-events:none}
+.hostwrap{position:fixed;right:clamp(6px,1.6vw,26px);bottom:clamp(6px,1.6vh,24px);width:clamp(110px,16vw,230px);z-index:5;pointer-events:none}
 .hostwrap.hide{display:none}
 .hostsay{
   background:var(--pale);color:var(--on-accent);font-family:var(--display);font-weight:700;
-  font-size:clamp(10px,1.2vw,13px);border-radius:12px;padding:6px 10px;text-align:center;
+  font-size:clamp(11px,1.5vw,16px);border-radius:12px;padding:6px 10px;text-align:center;
   margin-bottom:9px;opacity:0;transition:opacity .25s;line-height:1.25;
 }
 .hostsay.on{opacity:1}
-@media (max-width:760px){.hostwrap{width:58px;right:4px;bottom:4px;opacity:.85}}
+@media (max-width:760px){.hostwrap{width:96px;right:4px;bottom:4px;opacity:.85}}
 
 @media (prefers-reduced-motion:reduce){.mascot,.drift img{animation:none!important}}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
