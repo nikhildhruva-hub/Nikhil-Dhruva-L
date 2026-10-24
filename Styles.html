@@ -393,6 +393,10 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 .puzboard.jig{gap:0;padding:10px}
 .puzboard.jig .ptile{border-radius:0;background:none}
 .puzboard.jig .ptile svg{position:absolute;left:-25%;top:-25%;width:150%;height:150%;overflow:visible;pointer-events:none}
+.puzboard.jig .ptile span{   /* placed clear of the neighbours' tabs */
+  left:22%;top:20%;z-index:3;font-size:clamp(14px,1.9vw,20px);padding:1px 8px;border-radius:8px;
+  color:var(--on-accent);background:var(--accent);box-shadow:0 2px 6px rgba(0,0,0,.35);
+}
 .pedge{fill:none;stroke:rgba(255,255,255,.5);stroke-width:.014}
 .puzboard.jig .ptile.sel,.puzboard.jig .ptile.hint{z-index:2;box-shadow:none}
 .puzboard.jig .ptile.sel svg{filter:drop-shadow(0 0 8px var(--accent));transform:scale(1.06)}
