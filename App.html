@@ -3019,7 +3019,9 @@ $('lockCancel').addEventListener('click', lockClose);
 $('stBack').addEventListener('click', () => show('start'));
 
 function stClear(){
-  ['stRange','stTake','stTiles','stSplit','stKey','stGallery','stDays','stVisit'].forEach(id => $(id).replaceChildren());
+  ['stRange','stTake','stTiles','stSplit','stKey','stGallery','stDays','stVisit','stInnovDays','stInnovGal',
+   'stInnov','stLeft','stGoalNote'].forEach(id => $(id).replaceChildren());
+  $('stGoal').hidden = true;
 }
 function stDay(iso, withYear){
   const d = new Date(iso + 'T00:00:00');
@@ -3104,6 +3106,44 @@ function renderStats(rows){
     });
     col.append(el('i', '', g.visitors), stack, el('em', '', stDay(g.label, false)));
     $('stDays').appendChild(col);
+  });
+
+  /* the road to 1 billion innovators */
+  const GOAL = 1e9;
+  const pctOf = (n, d) => d ? Math.round(n / d * 100) : 0;
+  const share = all.Innovator / GOAL * 100;
+  $('stGoal').hidden = false;
+  $('stInnov').textContent = all.Innovator.toLocaleString('en-IN');
+  $('stLeft').textContent = Math.max(0, GOAL - all.Innovator).toLocaleString('en-IN');
+  $('stGoalFill').style.width = `${share}%`;   // tiny for now; the bar keeps a sliver showing
+  $('stGoalNote').textContent =
+    `Out of 1 billion (100 crore), that is ${new Intl.NumberFormat('en-IN', {maximumSignificantDigits: 2}).format(share)}% of the way. ` +
+    `${pctOf(all.Innovator, total)}% of visitors here reach Innovator, and ` +
+    `${all.Solver} more reached Solver, one step away.`;
+
+  // what share of each day's visitors reached Innovator
+  perDay.forEach(g => {
+    const p = pctOf(g.Innovator, g.visitors);
+    const col = el('div', 'st-col'), bar = el('div', 'st-pct');
+    bar.style.height = `calc((100% - 40px) * ${p / 100})`;
+    bar.title = `${g.Innovator} of ${g.visitors}`;
+    col.append(el('i', '', `${p}%`), bar, el('em', '', stDay(g.label, false)));
+    $('stInnovDays').appendChild(col);
+  });
+
+  // galleries ranked by their share of innovators
+  const ranked = stGroup(rows, 'gallery')
+    .sort((a, b) => b.Innovator / b.visitors - a.Innovator / a.visitors || b.visitors - a.visitors);
+  ranked.forEach(g => {
+    const row = el('div', 'st-row'), lab = el('div', 'st-lab');
+    lab.append(el('span', '', g.label), el('span', '', `${g.Innovator} of ${g.visitors} · ${pctOf(g.Innovator, g.visitors)}%`));
+    const bar = el('div', 'st-split'), fill = el('div', 'st-seg');
+    fill.style.background = ST_COLOUR.Innovator;
+    fill.style.flex = `${g.Innovator / g.visitors} 1 0`;
+    const rest = el('div'); rest.style.flex = `${1 - g.Innovator / g.visitors} 1 0`;
+    bar.append(fill, rest);
+    row.append(lab, bar);
+    $('stInnovGal').appendChild(row);
   });
 }
 
