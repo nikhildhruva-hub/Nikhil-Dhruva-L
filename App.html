@@ -534,7 +534,9 @@ let c2iFields = null;
    an even split takes the LOWER stage (an unearned label is worse than a modest one).
    Written answers and skips are recorded but never scored — a Science Communicator
    reads and tags them. Option: [tag, text] or [tag, text, 1] for "name it" options.
-   Branches: [notVisitedYet, alreadyVisited]; question: [text, options]. */
+   Branches: [notVisitedYet, alreadyVisited]; question: [text, options] or
+   [text, options, 1] when it follows on from the question before it. Question order
+   is shuffled per round too; a follow-on question stays right after its lead-in. */
 const STAGE_BY_TAG = [null, 'Citizen', 'Seeker', 'Solver', 'Innovator'];
 const BRANCHES = [
   { label: 'Not visited yet', hint: "I'm about to go in" },
@@ -546,7 +548,7 @@ const C2I_BANK = {
       ["Something in your house makes a noise it never used to make. You:", [[1,"Ignore it until somebody else notices"], [2,"Listen carefully to work out what has changed"], [3,"Open it up and find the loose part"], [4,"Think: that noise is information — something should be reading it"]]],
       ["Sound is a vibration. What would you most want to do with that fact?", [[2,"Understand why different sounds vibrate differently"], [4,"Build something that uses vibration for a job it isn't used for"], [1,"Have somebody show me what it means"], [3,"Use it to detect a problem early"]]],
       ["You are told a machine can turn sound into a picture. Your first reaction:", [[3,"What could it diagnose?"], [1,"Show me"], [4,"What could it make that doesn't exist yet?"], [2,"How does it do that?"]]],
-      ["What would you put into such a machine?", [[4,"Something nobody would think to try",1], [2,"Different sounds, to compare them"], [3,"A sound from something that is broken"], [1,"Whatever is already set up"]]]
+      ["What would you put into such a machine?", [[4,"Something nobody would think to try",1], [2,"Different sounds, to compare them"], [3,"A sound from something that is broken"], [1,"Whatever is already set up"]], 1]
     ],
     [
       ["Standing at the water plate, what were you actually doing?", [[1,"Watching, waiting to see what it did next"], [2,"Trying to work out what was causing the pattern"], [3,"Changing the dial to get one particular pattern I wanted"], [4,"Wondering what else I could put on that plate instead of water"]]],
@@ -767,10 +769,17 @@ const C2I_BANK = {
   ]
 };
 
-let pick = null;   // { zid, branch, i, counts, fields, order } while a round is running
+let pick = null;   // { zid, branch, qs, i, counts, fields } while a round is running
+
+/* The branch's questions in a fresh order, follow-on questions kept with their lead-in. */
+function shuffleQuestions(qs){
+  const groups = [];
+  qs.forEach(q => q[2] && groups.length ? groups[groups.length - 1].push(q) : groups.push([q]));
+  return shuffle(groups).flat();
+}
 
 function startPickRound(zid){
-  pick = { zid, branch: null, i: 0, counts: {}, fields: [] };
+  pick = { zid, branch: null, qs: null, i: 0, counts: {}, fields: [] };
   const z = ZONES.find(z => z.id === zid);
   $('zoneName').textContent = z ? z.name : '';
   setHost(zid);
@@ -787,7 +796,7 @@ function el(tag, cls, text){
 
 function renderPick(){
   clearTimers(); locked = false;
-  const qs = pick.branch == null ? null : C2I_BANK[pick.zid][pick.branch];
+  const qs = pick.qs;
   const total = C2I_BANK[pick.zid][0].length;
   $('count').textContent = qs ? `Question ${pick.i + 1} of ${total}` : 'Before you start';
   $('fill').style.width = (qs ? (pick.i + 1) / total * 100 : 0) + '%';
@@ -805,6 +814,7 @@ function renderPick(){
       card.append(el('span', 'visit-ico ' + (n ? 'done' : 'ahead')), el('b', '', b.label), el('span', 'visit-hint', b.hint));
       card.addEventListener('click', () => {
         pick.branch = n;
+        pick.qs = shuffleQuestions(C2I_BANK[pick.zid][n]);
         pick.fields.push(['Visited before', b.label]);
         renderPick();
       });
@@ -879,7 +889,7 @@ function answerPick(card, value, tag){
   const stage = STAGE_BY_TAG[tag] || null;
   // the wording too, since it depends on the branch; new column names so rows from
   // before, where "Question N" held the answer, don't get mixed up with these
-  pick.fields.push([`Question ${pick.i + 1} asked`, C2I_BANK[pick.zid][pick.branch][pick.i][0]]);
+  pick.fields.push([`Question ${pick.i + 1} asked`, pick.qs[pick.i][0]]);
   pick.fields.push([`Question ${pick.i + 1} answer`, stage ? `${value} (${stage})` : value]);
   if(stage) pick.counts[stage] = (pick.counts[stage] || 0) + 1;
 
@@ -892,7 +902,7 @@ function answerPick(card, value, tag){
 
   advanceTimer = setTimeout(() => {
     pick.i++;
-    if(pick.i < C2I_BANK[pick.zid][pick.branch].length) return renderPick();
+    if(pick.i < pick.qs.length) return renderPick();
     // Most frequent stage; walking up from Citizen and only moving on a strictly higher
     // count means an even split stays on the lower stage. Nothing scored → Citizen.
     const order = ['Citizen', 'Seeker', 'Solver', 'Innovator'];
