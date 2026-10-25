@@ -2961,25 +2961,42 @@ const ST_COLOUR = { Citizen:'var(--mute)', Seeker:'var(--seeker)', Solver:'var(-
 const DOORS = { argon: "Argon's secret door", stephen: "Zetta's secret door" };
 const DOOR_PAD = 36;      // fingers miss a faint, bobbing Zinion, so its tap area reaches past the picture
 const DOOR_GAP_MS = 650; // longest pause between the two taps
-let doorLast = 0, doorLastKey = '', lockDoor = 'argon';
-function doorTap(x, y, target){
-  if(!$('start').classList.contains('on') || !$('lock').hidden) return;
-  if(target && target.closest && target.closest('input,button')) return;
-  const k = Object.keys(DOORS).find(k => {
+const DOOR_HOLD_MS = 1000; // holding a finger on the Zinion this long opens the door too
+let doorLast = 0, doorLastKey = '', lockDoor = 'argon', doorHold = null, doorAt = null;
+function doorAtPoint(x, y, target){
+  if(!$('start').classList.contains('on') || !$('lock').hidden) return null;
+  if(target && target.closest && target.closest('input,button')) return null;
+  return Object.keys(DOORS).find(k => {
     const z = $('drift').querySelector(`[data-k="${k}"]`);
     const r = z && z.getBoundingClientRect();
     return r && x >= r.left - DOOR_PAD && x <= r.right + DOOR_PAD && y >= r.top - DOOR_PAD && y <= r.bottom + DOOR_PAD;
-  });
+  }) || null;
+}
+function doorDown(x, y, target){
+  const k = doorAtPoint(x, y, target);
   if(!k) return;
+  // the Zinion lights up for a moment, so it's clear the tap landed on it
+  const z = $('drift').querySelector(`[data-k="${k}"]`);
+  z.classList.remove('knock'); void z.offsetWidth; z.classList.add('knock');
+  clearTimeout(doorHold);
+  doorAt = {x, y};
+  doorHold = setTimeout(() => { doorHold = null; doorLast = 0; lockOpen(k); }, DOOR_HOLD_MS);
   const now = Date.now();
-  if(k === doorLastKey && now - doorLast < DOOR_GAP_MS){ doorLast = 0; lockOpen(k); }
+  if(k === doorLastKey && now - doorLast < DOOR_GAP_MS){ doorLast = 0; clearTimeout(doorHold); doorHold = null; lockOpen(k); }
   else { doorLast = now; doorLastKey = k; }
 }
+function doorUp(){ clearTimeout(doorHold); doorHold = null; }
+function doorMove(x, y){ if(doorHold && doorAt && Math.hypot(x - doorAt.x, y - doorAt.y) > 24) doorUp(); }
 // older kiosk tablets have no pointer events, so fall back to touch and mouse
-if(window.PointerEvent) document.addEventListener('pointerdown', e => doorTap(e.clientX, e.clientY, e.target));
-else {
-  document.addEventListener('touchstart', e => { const t = e.touches[0]; if(t) doorTap(t.clientX, t.clientY, e.target); }, {passive:true});
-  document.addEventListener('mousedown', e => doorTap(e.clientX, e.clientY, e.target));
+if(window.PointerEvent){
+  document.addEventListener('pointerdown', e => doorDown(e.clientX, e.clientY, e.target));
+  document.addEventListener('pointermove', e => doorMove(e.clientX, e.clientY));
+  ['pointerup','pointercancel'].forEach(t => document.addEventListener(t, doorUp));
+}else{
+  document.addEventListener('touchstart', e => { const t = e.touches[0]; if(t) doorDown(t.clientX, t.clientY, e.target); }, {passive:true});
+  document.addEventListener('touchmove', e => { const t = e.touches[0]; if(t) doorMove(t.clientX, t.clientY); }, {passive:true});
+  ['touchend','touchcancel','mouseup'].forEach(t => document.addEventListener(t, doorUp));
+  document.addEventListener('mousedown', e => doorDown(e.clientX, e.clientY, e.target));
 }
 
 function lockOpen(k){

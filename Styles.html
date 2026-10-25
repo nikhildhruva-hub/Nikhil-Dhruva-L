@@ -336,6 +336,8 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 @keyframes trypop{0%,4%{opacity:0;transform:scale(.4)}9%,30%{opacity:1;transform:scale(1)}36%,100%{opacity:0;transform:scale(.4)}}
 @media (prefers-reduced-motion:reduce){.trybubble{animation:none;opacity:1}}
 .drift.bright img{opacity:.32}
+.drift img.knock{animation:knock .6s ease-out,bob 7s ease-in-out infinite}
+@keyframes knock{0%{opacity:.7}100%{opacity:.16}}
 
 /* ---- scream game ---- */
 .gamewrap{position:relative;border-radius:24px;overflow:hidden;background:#191C6E;border:2px solid var(--line)}
