@@ -1016,8 +1016,7 @@ function show(n){
   $('drift').style.opacity = (n === 'start' || n === 'mode' || n === 'pick' || n === 'thanks') ? '1' : '0';
   $('drift').classList.toggle('bright', n === 'mode');
   if(n === 'mode') modeMascots();
-  demoStop();
-  if(n === 'start') demoQueue(DEMO_IDLE_MS);
+  if(n === 'start') $('nameCall').classList.toggle('gone', !!$('nameInput').value);
   if(n !== 'bulbs' && typeof bulbClearTimers === 'function') bulbClearTimers();
   if(n !== 'game' && typeof leaveGame === 'function') leaveGame();
   if(n !== 'wind' && typeof windLeave === 'function') windLeave();
@@ -1036,95 +1035,6 @@ function clean(s){ return s.replace(/[<>]/g,'').trim().slice(0,18); }
   });
 })();
 
-/* ---------- start-screen demo ----------
-   While nobody is using the kiosk, a Zinion walks up to the name box, "types" its
-   own name, reaches for Go and walks off again, so passers-by can see how to begin.
-   It only animates the placeholder and never presses anything; any touch or key
-   stops it at once, and it comes back after the screen has been quiet a while. */
-const DEMO_IDLE_MS = 6000;   // quiet time on the start screen before the first demo
-const DEMO_GAP_MS  = 5000;   // pause between one Zinion leaving and the next arriving
-const DEMO_SAY = ['Watch me!', 'My turn first!', 'Easy, look:', 'Like this!'];
-let demoRun = 0, demoTimer = null, demoLast = null;
-
-function demoStop(){
-  demoRun++;
-  clearTimeout(demoTimer); demoTimer = null;
-  $('demoZin').className = 'demozin';
-  $('demoSay').classList.remove('on');
-  $('nameInput').placeholder = 'Your name';
-  $('nameInput').classList.remove('demo');
-  $('nameGo').classList.remove('demo-press');
-}
-function demoQueue(ms){
-  clearTimeout(demoTimer);
-  demoTimer = setTimeout(demoPlay, ms);
-}
-
-async function demoPlay(){
-  if(!$('start').classList.contains('on') || window.ZIN_VIEW === 'dash') return;
-  // someone is already typing: try again later
-  if($('nameInput').value || document.activeElement === $('nameInput')) return demoQueue(DEMO_GAP_MS);
-
-  const run = ++demoRun, live = () => run === demoRun;
-  const wait = ms => new Promise(r => setTimeout(r, ms));
-  const who = shuffle(Object.keys(HOST_NAME)).find(k => k !== demoLast);
-  demoLast = who;
-
-  const box = $('demoZin'), input = $('nameInput'), say = $('demoSay');
-  $('demoImg').src = MASCOT[who];
-  box.style.transition = 'none';
-  box.classList.add('on');
-  // stand just left of the name box, feet level with its bottom; on a narrow screen
-  // there is no room beside it, so stand above its left end instead
-  const row = input.getBoundingClientRect(), w = box.offsetWidth, h = box.offsetHeight;
-  let x = row.left - w - 16, y = row.bottom - h;
-  if(x < 8){ x = 8; y = row.top - h - 6; }
-  const off = -w - 40;
-  box.style.transform = `translate(${off}px,${y}px)`;
-  void box.offsetWidth;
-  box.style.transition = '';
-
-  box.classList.add('walk');
-  box.style.transform = `translate(${x}px,${y}px)`;
-  await wait(1900); if(!live()) return;
-  box.classList.remove('walk');
-  say.textContent = DEMO_SAY[Math.floor(Math.random() * DEMO_SAY.length)];
-  say.classList.add('on');
-  await wait(900); if(!live()) return;
-
-  input.classList.add('demo');
-  const name = HOST_NAME[who];
-  for(let n = 1; n <= name.length; n++){
-    input.placeholder = name.slice(0, n);
-    await wait(170); if(!live()) return;
-  }
-  await wait(500); if(!live()) return;
-
-  $('nameGo').classList.add('demo-press');
-  box.classList.add('cheer');
-  say.textContent = 'Now you try!';
-  await wait(2200); if(!live()) return;
-
-  say.classList.remove('on');
-  $('nameGo').classList.remove('demo-press');
-  box.classList.remove('cheer');
-  for(let n = name.length - 1; n >= 0; n--){
-    input.placeholder = name.slice(0, n) || 'Your name';
-    await wait(60); if(!live()) return;
-  }
-  input.classList.remove('demo');
-  box.classList.add('walk');
-  box.style.transform = `translate(${off}px,${y}px)`;
-  await wait(1900); if(!live()) return;
-  box.className = 'demozin';
-  demoQueue(DEMO_GAP_MS);
-}
-
-// a real visitor takes over the moment they touch anything
-['pointerdown','touchstart','keydown'].forEach(e => document.addEventListener(e, () => {
-  demoStop();
-  if($('start').classList.contains('on')) demoQueue(DEMO_IDLE_MS);
-}, {passive:true}));
 
 /* =====================================================================
    AWARD PAGE — shown when someone finishes the puzzle or the bulbs.
@@ -2935,6 +2845,8 @@ resetIdle();
 /* ---------- wiring ---------- */
 $('nameGo').addEventListener('click', goPick);
 $('nameInput').addEventListener('keydown', e => { if(e.key === 'Enter') goPick(); });
+// the "type your name" prompt steps aside once someone starts typing
+$('nameInput').addEventListener('input', () => $('nameCall').classList.toggle('gone', !!$('nameInput').value));
 $('nameInput').addEventListener('focus', () => document.body.classList.add('typing'));
 $('nameInput').addEventListener('blur', () => document.body.classList.remove('typing'));
 $('backName').addEventListener('click', () => show('mode'));
@@ -3220,6 +3132,5 @@ function openSheetDash(){
     .getDashData();
 }
 if(window.ZIN_VIEW === 'dash') openSheetDash();
-else demoQueue(DEMO_IDLE_MS);
 
 </script>
