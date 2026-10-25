@@ -3032,7 +3032,7 @@ function renderLeaders(){
 }
 
 function stClear(){
-  ['stRange','stTake','stTiles','stSplit','stKey','stGallery','stDays','stVisit','stInnovDays','stInnovGal','stByDate']
+  ['stRange','stTake','stTiles','stSplit','stKey','stGallery','stDays','stVisit','stInnovDays','stInnovGal','stByDate','stTrend','stInnovCount']
     .forEach(id => $(id).replaceChildren());
 }
 function stDay(iso, withYear){
@@ -3164,6 +3164,34 @@ function renderStats(rows){
     table.appendChild(tr);
   });
   $('stByDate').appendChild(table);
+
+  // innovators per day, each bar coloured by whether it beat the day before
+  const maxInnov = Math.max(1, ...perDay.map(g => g.Innovator));
+  perDay.forEach((g, i) => {
+    const prev = i ? perDay[i - 1].Innovator : null;
+    const col = el('div', 'st-col'), bar = el('div', 'st-pct');
+    bar.style.height = `calc((100% - 40px) * ${g.Innovator / maxInnov})`;
+    bar.style.background = prev === null || g.Innovator === prev ? 'var(--mute)'
+      : g.Innovator > prev ? 'var(--innov)' : 'var(--coral)';
+    bar.title = prev === null ? `${g.Innovator}` : `${g.Innovator} (${g.Innovator - prev >= 0 ? '+' : ''}${g.Innovator - prev} on the day before)`;
+    col.append(el('i', '', g.Innovator), bar, el('em', '', stDay(g.label, false)));
+    $('stInnovCount').appendChild(col);
+  });
+  const sum = list => list.reduce((n, g) => n + g.Innovator, 0);
+  const last = perDay[perDay.length - 1], before = perDay[perDay.length - 2];
+  const recent = sum(perDay.slice(-7)), earlier = sum(perDay.slice(-14, -7));
+  const trend = $('stTrend');
+  if(!before){
+    trend.textContent = 'Only one day so far. Come back tomorrow to see the trend.';
+  }else{
+    const dir = (a, b) => a > b ? 'up' : a < b ? 'down' : 'level';
+    const d = dir(last.Innovator, before.Innovator);
+    let text = `${dayName(last.label)}: ${last.Innovator} innovator${last.Innovator === 1 ? '' : 's'}, ` +
+      (d === 'level' ? `the same as ${dayName(before.label).toLowerCase()}.` : `${d} from ${before.Innovator} on ${dayName(before.label).replace(/^Y/, 'y')}.`);
+    if(perDay.length > 7) text += ` Last 7 playing days: ${recent}, ${dir(recent, earlier) === 'level' ? 'level with' : dir(recent, earlier) + ' from'} ${earlier} the 7 before.`;
+    trend.textContent = text;
+    trend.className = 'st-trend ' + d;
+  }
 }
 
 $('peekGo').addEventListener('click', peekCheck);
