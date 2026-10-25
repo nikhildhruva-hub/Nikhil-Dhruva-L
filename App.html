@@ -2084,7 +2084,7 @@ const KEY_BULB = 'parsec_wf_bulb_best';
 const KEY_BULB_LB = 'parsec_wf_bulb_leaderboard';
 const BULB_LB_SIZE = 8;
 const BULB_ZIN = ['tropido','niki','stephen','argon','harsh'];
-const BULB_MAX = 20;   // clear this many rounds to win
+const BULB_MAX = 10;   // clear this many rounds to win
 let bulbSeq = [], bulbStep = 0, bulbRound = 0, bulbBusy = false, bulbTimers = [];
 
 function bulbEls(){ return [...document.querySelectorAll('#bulbRow .bulb')]; }
@@ -2181,9 +2181,18 @@ function bulbOver(i){
   bulbLater(() => { bulbBusy = false; $('bulbStart').hidden = false; }, 900);
 }
 
+/* One row per name, keeping that player's best — so replays don't fill the board
+   with the same person. `better(a, b)` is true when a beats b. */
+function lbBestPerName(list, better){
+  const best = new Map();
+  list.forEach(r => { const had = best.get(r.name); if(!had || better(r, had)) best.set(r.name, r); });
+  return [...best.values()];
+}
+
 /* Today's leaderboard, most rounds first. */
 function bulbRenderDash(){
-  const list = store(KEY_BULB_LB, []);
+  const list = lbBestPerName(store(KEY_BULB_LB, []), (a, b) => a.rounds > b.rounds)
+    .sort((a, b) => b.rounds - a.rounds);
   $('bulbDashList').innerHTML = !list.length
     ? '<p class="puzdashempty">No games yet today — be the first!</p>'
     : list.slice(0, BULB_LB_SIZE).map((r, i) => `
@@ -2193,8 +2202,8 @@ function bulbRenderDash(){
 }
 
 function bulbRecordScore(rounds){
-  const list = store(KEY_BULB_LB, []);
-  list.push({ name: player || 'Guest', rounds });
+  const list = lbBestPerName([...store(KEY_BULB_LB, []), { name: player || 'Guest', rounds }],
+                             (a, b) => a.rounds > b.rounds);
   list.sort((a, b) => b.rounds - a.rounds);
   save(KEY_BULB_LB, list.slice(0, BULB_LB_SIZE));
   bulbRenderDash();
@@ -2282,7 +2291,8 @@ function puzRenderDash(){
   const el = $('puzDashList');
   if(!el) return;
   const all = store(KEY_PUZ_LB, {});
-  const list = all[puzBestKey()] || [];
+  const list = lbBestPerName(all[puzBestKey()] || [], (a, b) => a.moves < b.moves)
+    .sort((a, b) => a.moves - b.moves);
   if(!list.length){
     el.innerHTML = '<p class="puzdashempty">No finishes yet on this puzzle \u2014 be the first!</p>';
     return;
@@ -2297,8 +2307,8 @@ function puzRenderDash(){
 function puzRecordScore(){
   const all = store(KEY_PUZ_LB, {});
   const k = puzBestKey();
-  const list = all[k] || [];
-  list.push({ name: player || 'Guest', moves: puzMoves });
+  const list = lbBestPerName([...(all[k] || []), { name: player || 'Guest', moves: puzMoves }],
+                             (a, b) => a.moves < b.moves);
   list.sort((a, b) => a.moves - b.moves);
   all[k] = list.slice(0, PUZ_LB_SIZE);
   save(KEY_PUZ_LB, all);
