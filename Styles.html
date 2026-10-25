@@ -93,20 +93,11 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 }
 #nameInput::placeholder{color:var(--mute)}
 
-/* start screen: point visitors at the name box */
-.namecall{
-  display:flex;flex-direction:column;align-items:center;gap:2px;margin:0 auto -8px;text-align:center;
-  font-family:var(--display);font-weight:700;color:var(--accent);font-size:clamp(16px,2.4vw,24px);
-  animation:callglow 2.4s ease-in-out infinite;transition:opacity .3s
-}
-.namecall.gone{opacity:0}
-.namearrow{font-size:1.3em;line-height:1;animation:callbob 1.2s ease-in-out infinite}
-@keyframes callbob{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
-@keyframes callglow{0%,100%{opacity:.75}50%{opacity:1}}
+/* start screen: a soft pulse draws the eye to the name box */
 #start #nameInput{animation:inputpulse 2.4s ease-in-out infinite}
 #start #nameInput:focus{animation:none}
 @keyframes inputpulse{0%,100%{box-shadow:0 0 0 0 rgba(217,255,53,0)}50%{box-shadow:0 0 0 6px rgba(217,255,53,.22)}}
-@media (prefers-reduced-motion:reduce){.namecall,.namearrow,#start #nameInput{animation:none}}
+@media (prefers-reduced-motion:reduce){#start #nameInput{animation:none}}
 .tiny{text-align:center;color:var(--mute);font-size:clamp(11px,1.3vw,14px);max-width:52ch;margin:0 auto;line-height:1.5}
 
 /* zones */

@@ -1016,7 +1016,6 @@ function show(n){
   $('drift').style.opacity = (n === 'start' || n === 'mode' || n === 'pick' || n === 'thanks') ? '1' : '0';
   $('drift').classList.toggle('bright', n === 'mode');
   if(n === 'mode') modeMascots();
-  if(n === 'start') $('nameCall').classList.toggle('gone', !!$('nameInput').value);
   if(n !== 'bulbs' && typeof bulbClearTimers === 'function') bulbClearTimers();
   if(n !== 'game' && typeof leaveGame === 'function') leaveGame();
   if(n !== 'wind' && typeof windLeave === 'function') windLeave();
@@ -2845,8 +2844,6 @@ resetIdle();
 /* ---------- wiring ---------- */
 $('nameGo').addEventListener('click', goPick);
 $('nameInput').addEventListener('keydown', e => { if(e.key === 'Enter') goPick(); });
-// the "type your name" prompt steps aside once someone starts typing
-$('nameInput').addEventListener('input', () => $('nameCall').classList.toggle('gone', !!$('nameInput').value));
 $('nameInput').addEventListener('focus', () => document.body.classList.add('typing'));
 $('nameInput').addEventListener('blur', () => document.body.classList.remove('typing'));
 $('backName').addEventListener('click', () => show('mode'));
