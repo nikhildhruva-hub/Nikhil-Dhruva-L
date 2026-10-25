@@ -168,6 +168,35 @@ function checkLeadersPassword(password) {
   return true;
 }
 
+/* Axon's secret door (double-tap or hold Axon): every visit's questions and answers,
+ * with day, time, gallery and stage. Same password; names are never sent. */
+function getAnswers(password) {
+  checkPassword_(password);
+  const out = [];
+  logBook_().getSheets().forEach(t => {
+    const v = t.getDataRange().getDisplayValues();
+    if (!v.length || v[0][0] !== BASE_HEADERS[0]) return;
+    const head = v[0];
+    const col = {};
+    head.forEach((h, i) => col[h] = i);
+    const cell = (r, h) => col[h] === undefined ? '' : r[col[h]];
+    // "Question N asked" + "Question N answer" pairs; older columns are just "<something> answer"
+    const pairs = [];
+    if (col['Visited before'] !== undefined) pairs.push({ q: 'Visited before?', a: col['Visited before'] });
+    head.forEach((h, i) => {
+      const m = /^Question (\d+) asked$/.exec(h);
+      if (m && col[`Question ${m[1]} answer`] !== undefined) pairs.push({ qCol: i, a: col[`Question ${m[1]} answer`] });
+      else if (/ answer$/.test(h) && !/^Question \d+ answer$/.test(h)) pairs.push({ q: h.replace(/ answer$/, ''), a: i });
+    });
+    v.slice(1).forEach(r => {
+      const qa = pairs.map(p => [p.q || r[p.qCol], r[p.a]]).filter(x => x[0] && x[1]);
+      if (!qa.length) return;
+      out.push({ day: cell(r, 'Date'), time: cell(r, 'Time'), gallery: cell(r, 'Gallery'), stage: cell(r, 'Stage reached'), qa: qa });
+    });
+  });
+  return out;
+}
+
 function getStageStats(password) {
   checkPassword_(password);
   const out = [];

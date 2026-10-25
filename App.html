@@ -1008,7 +1008,7 @@ let player='', zoneId=null, advanceTimer=null, tickTimer=null;
 
 function clearTimers(){ clearTimeout(advanceTimer); advanceTimer=null; clearInterval(tickTimer); tickTimer=null; }
 function show(n){
-  ['start','mode','pick','quiz','game','bulbs','puzzle','award','wind','end','thanks','dash','stats','leaders'].forEach(s => $(s).classList.toggle('on', s===n));
+  ['start','mode','pick','quiz','game','bulbs','puzzle','award','wind','end','thanks','dash','stats','leaders','answers','levels'].forEach(s => $(s).classList.toggle('on', s===n));
   if(n !== 'stats') stClear();   // the totals don't linger once the screen is left
   lockClose();
   $('hostwrap').classList.toggle('hide', n !== 'quiz' && n !== 'end');
@@ -2958,7 +2958,7 @@ async function peekCheck(){
 const ST_STAGES = ['Citizen', 'Seeker', 'Solver', 'Innovator'];
 const ST_COLOUR = { Citizen:'var(--mute)', Seeker:'var(--seeker)', Solver:'var(--solver)', Innovator:'var(--innov)' };
 /* Zetta has a door too: same double tap and password, opening today's game leaders. */
-const DOORS = { argon: "Argon's secret door", stephen: "Zetta's secret door" };
+const DOORS = { argon: "Argon's secret door", stephen: "Zetta's secret door", niki: "Axon's secret door", tropido: "Entropy's secret door" };
 const DOOR_PAD = 36;      // fingers miss a faint, bobbing Zinion, so its tap area reaches past the picture
 const DOOR_GAP_MS = 650; // longest pause between the two taps
 const DOOR_HOLD_MS = 1000; // holding a finger on the Zinion this long opens the door too
@@ -3020,6 +3020,8 @@ function lockTry(){
     .withSuccessHandler(rows => {
       $('lockGo').disabled = false;
       if(lockDoor === 'stephen'){ show('leaders'); renderLeaders(); }
+      else if(lockDoor === 'niki'){ show('answers'); qaOpen(rows || []); }
+      else if(lockDoor === 'tropido'){ show('levels'); lvOpen(rows || []); }
       else { show('stats'); renderStats(rows || []); }
     })
     .withFailureHandler(err => {
@@ -3028,6 +3030,7 @@ function lockTry(){
       $('lockPw').select();
     });
   if(lockDoor === 'stephen') runner.checkLeadersPassword(pw);
+  else if(lockDoor === 'niki' || lockDoor === 'tropido') runner.getAnswers(pw);
   else runner.getStageStats(pw);
 }
 $('lockGo').addEventListener('click', lockTry);
@@ -3035,6 +3038,133 @@ $('lockPw').addEventListener('keydown', e => { if(e.key === 'Enter') lockTry(); 
 $('lockCancel').addEventListener('click', lockClose);
 $('stBack').addEventListener('click', () => show('start'));
 $('ldBack').addEventListener('click', () => show('start'));
+$('qaBack').addEventListener('click', () => show('start'));
+
+/* ---------- Axon's secret door: questions and answers ----------
+   Every visit's questions and answers from the results Sheet, filtered by gallery
+   and date: how many picked each answer, then the visits themselves. */
+let qaRows = [];
+function qaOpen(rows){
+  qaRows = rows;
+  const fill = (id, label, values) => {
+    const sel = $(id);
+    sel.replaceChildren(el('option', '', label));
+    sel.firstChild.value = '';
+    values.forEach(v => { const o = el('option', '', v.text); o.value = v.value; sel.appendChild(o); });
+  };
+  fill('qaGallery', 'All galleries', [...new Set(rows.map(r => r.gallery))].sort().map(g => ({ value: g, text: g || '—' })));
+  fill('qaDay', 'All dates', [...new Set(rows.map(r => r.day))].sort().reverse().map(d => ({ value: d, text: stDay(d, true) })));
+  const days = [...new Set(rows.map(r => r.day))].sort();
+  $('qaRange').textContent = !days.length ? '' : days.length > 1 ? `${stDay(days[0], true)} – ${stDay(days[days.length - 1], true)}` : stDay(days[0], true);
+  qaRender();
+}
+function qaRender(){
+  const g = $('qaGallery').value, d = $('qaDay').value;
+  const rows = qaRows.filter(r => (!g || r.gallery === g) && (!d || r.day === d));
+  $('qaQuestions').replaceChildren(); $('qaVisits').replaceChildren();
+  if(!rows.length){ $('qaTake').textContent = 'No answers for this choice yet.'; return; }
+  $('qaTake').textContent = `${rows.length} visit${rows.length === 1 ? '' : 's'} answered the questions.`;
+
+  // each question with how many picked each answer, most asked questions first
+  const qs = new Map();
+  rows.forEach(r => r.qa.forEach(([q, a]) => {
+    const key = (g ? '' : r.gallery + '\u0000') + q;
+    const e = qs.get(key) || { q, gallery: r.gallery, n: 0, answers: new Map() };
+    e.n++; e.answers.set(a, (e.answers.get(a) || 0) + 1);
+    qs.set(key, e);
+  }));
+  [...qs.values()].sort((a, b) => b.n - a.n).forEach(e => {
+    const card = el('div', 'st-card');
+    card.appendChild(el('b', '', e.q));
+    if(!g) card.appendChild(el('span', 'qa-gal', e.gallery));
+    const box = el('div', 'st-rows');
+    [...e.answers].sort((a, b) => b[1] - a[1]).forEach(([a, n]) => {
+      const row = el('div', 'st-row'), lab = el('div', 'st-lab');
+      lab.append(el('span', '', a), el('span', '', `${n} · ${Math.round(n / e.n * 100)}%`));
+      const bar = el('div', 'st-split'), fill = el('div', 'st-seg'), rest = el('div');
+      fill.style.background = 'var(--accent)';
+      fill.style.flex = `${n / e.n} 1 0`; rest.style.flex = `${1 - n / e.n} 1 0`;
+      bar.append(fill, rest);
+      row.append(lab, bar);
+      box.appendChild(row);
+    });
+    card.appendChild(box);
+    $('qaQuestions').appendChild(card);
+  });
+
+  // the visits themselves, newest first
+  rows.slice().sort((a, b) => (b.day + b.time).localeCompare(a.day + a.time)).slice(0, 200).forEach(r => {
+    const v = el('div', 'qa-visit');
+    v.appendChild(el('div', 'qa-when', [stDay(r.day, false), r.time, r.gallery, r.stage].filter(Boolean).join(' · ')));
+    r.qa.forEach(([q, a]) => {
+      const line = el('div', 'qa-line');
+      line.append(el('span', '', q), el('b', '', a));
+      v.appendChild(line);
+    });
+    $('qaVisits').appendChild(v);
+  });
+}
+$('qaGallery').addEventListener('change', qaRender);
+$('qaDay').addEventListener('change', qaRender);
+
+/* ---------- Entropy's secret door: answers by level ----------
+   Every answer option carries a hidden level tag, saved with the answer as
+   "Read the boards (Citizen)". A tab per level lists the answers visitors chose
+   that carry that tag, question by question, with what the level means. */
+const LV_WHY = {
+  Citizen:   ['Citizen: comes to look',
+              'These answers watch, read or wait for someone else to show the way. The visitor takes in what is there but does not yet question it or try it for themselves.'],
+  Seeker:    ['Seeker: asks why',
+              'These answers wonder how or why something works and look for the reason behind it. Curiosity has started, but the visitor has not yet tested an idea with their own hands.'],
+  Solver:    ['Solver: tries it out',
+              'These answers get hands-on: trying, adjusting and measuring until something works. The visitor solves the problem in front of them.'],
+  Innovator: ['Innovator: imagines something new',
+              'These answers go beyond the exhibit: using it in a way it was not made for, changing the rules, or designing something of their own.']
+};
+let lvRows = [], lvStage = 'Citizen';
+function lvOpen(rows){
+  lvRows = rows;
+  const days = [...new Set(rows.map(r => r.day))].sort();
+  $('lvRange').textContent = !days.length ? '' : days.length > 1 ? `${stDay(days[0], true)} – ${stDay(days[days.length - 1], true)}` : stDay(days[0], true);
+  lvShow(lvStage);
+}
+function lvShow(stage){
+  lvStage = stage;
+  document.querySelectorAll('#lvTabs .lv-tab').forEach(b => b.classList.toggle('on', b.dataset.s === stage));
+  $('lvWhyHead').textContent = LV_WHY[stage][0];
+  $('lvWhyHead').style.color = ST_COLOUR[stage];
+  $('lvWhy').textContent = LV_WHY[stage][1];
+  $('lvList').replaceChildren();
+  const tag = ` (${stage})`;
+  const qs = new Map();
+  let picks = 0;
+  lvRows.forEach(r => r.qa.forEach(([q, a]) => {
+    if(!a.endsWith(tag)) return;
+    picks++;
+    const key = r.gallery + '\u0000' + q;
+    const e = qs.get(key) || { q, gallery: r.gallery, n: 0, answers: new Map() };
+    const ans = a.slice(0, -tag.length);
+    e.n++; e.answers.set(ans, (e.answers.get(ans) || 0) + 1);
+    qs.set(key, e);
+  }));
+  const reached = lvRows.filter(r => r.stage === stage).length;
+  $('lvTake').textContent = !picks ? `No ${stage} answers yet.`
+    : `${picks} ${stage} answer${picks === 1 ? '' : 's'} picked. ${reached} visitor${reached === 1 ? '' : 's'} ended the quiz at ${stage}.`;
+  [...qs.values()].sort((a, b) => b.n - a.n).forEach(e => {
+    const card = el('div', 'st-card');
+    card.append(el('b', '', e.q), el('span', 'qa-gal', e.gallery));
+    const box = el('div', 'st-rows');
+    [...e.answers].sort((a, b) => b[1] - a[1]).forEach(([a, n]) => {
+      const row = el('div', 'st-lab lv-ans');
+      row.append(el('span', '', `\u201c${a}\u201d`), el('span', '', `${n} visitor${n === 1 ? '' : 's'}`));
+      box.appendChild(row);
+    });
+    card.appendChild(box);
+    $('lvList').appendChild(card);
+  });
+}
+document.querySelectorAll('#lvTabs .lv-tab').forEach(b => b.addEventListener('click', () => lvShow(b.dataset.s)));
+$('lvBack').addEventListener('click', () => show('start'));
 
 /* Today's leaders on this kiosk: whole puzzle runs by fewest moves, cleared bulb games by fewest tries */
 function renderLeaders(){

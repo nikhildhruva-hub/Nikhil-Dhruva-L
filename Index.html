@@ -350,6 +350,40 @@
     <p class="footnote">Scores played on this kiosk today.</p>
   </section>
 
+  <section id="answers" class="screen scrollable">
+    <div class="dashhead">
+      <h2 class="title">Questions &amp; answers</h2>
+      <div class="daystamp" id="qaRange"></div>
+    </div>
+    <div class="qa-filters">
+      <label>Gallery <select id="qaGallery"></select></label>
+      <label>Date <select id="qaDay"></select></label>
+    </div>
+    <p class="sub st-take" id="qaTake"></p>
+    <div class="st-grid" id="qaQuestions"></div>
+    <div class="st-card"><b>Each visit, newest first</b><div class="qa-visits" id="qaVisits"></div></div>
+    <div class="btnrow"><button class="big-btn" id="qaBack">Close</button></div>
+    <p class="footnote">Answers only. Visitor names never reach this screen.</p>
+  </section>
+
+  <section id="levels" class="screen scrollable">
+    <div class="dashhead">
+      <h2 class="title">Answers by level</h2>
+      <div class="daystamp" id="lvRange"></div>
+    </div>
+    <div class="lv-tabs" id="lvTabs">
+      <button class="lv-tab on" data-s="Citizen">Citizen</button>
+      <button class="lv-tab" data-s="Seeker">Seeker</button>
+      <button class="lv-tab" data-s="Solver">Solver</button>
+      <button class="lv-tab" data-s="Innovator">Innovator</button>
+    </div>
+    <div class="st-card lv-why"><b id="lvWhyHead"></b><span id="lvWhy"></span></div>
+    <p class="sub st-take" id="lvTake"></p>
+    <div class="st-grid" id="lvList"></div>
+    <div class="btnrow"><button class="big-btn" id="lvBack">Close</button></div>
+    <p class="footnote">Answers only. Visitor names never reach this screen.</p>
+  </section>
+
   <section id="thanks" class="screen">
     <img class="mascot thanksimg" id="thanksImg" alt="">
     <h1 id="thanksTitle">Thank you!</h1>
