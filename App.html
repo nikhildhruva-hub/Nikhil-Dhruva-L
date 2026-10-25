@@ -2257,12 +2257,13 @@ let puzStage = 1, puzChar = 'tropido', puzTiles = [], puzBlank = 0, puzMoves = 0
 let puzTrail = [], puzHintPath = [];   // blank's past positions (undoing them always solves) and the planned hint route
 /* 'swap' = jigsaw pieces, tap two to trade places; 'slide' = the classic sliding puzzle */
 let puzMode = 'swap', puzSel = -1, puzEdgeH = [], puzEdgeV = [];
+let puzRunMoves = 0;   // moves across every level of this run, for the finish page
 const PUZ_SQUARE = {};   // square versions of each mascot, made once
-/* The visitor picks Easy, Medium or Hard; size and shuffle strength grow together.
-   puzStage is the chosen level, 1–3. */
+/* Size and shuffle strength grow together as one automatic sequence —
+   no manual size or difficulty picking, solving one stage opens the next. */
 const PUZ_STAGE_N     = [2, 3, 4];
 const PUZ_STAGE_STEPS = [12, 40, 90];
-const PUZ_LEVEL_NAME  = ['Easy', 'Medium', 'Hard'];
+const PUZ_MAX_STAGE   = PUZ_STAGE_N.length;
 function puzGridN(){ return PUZ_STAGE_N[puzStage - 1]; }
 
 /* the artwork is tall and transparent, so square it off first
@@ -2291,13 +2292,13 @@ function squareUp(key){
   });
 }
 
-function puzBestKey(){ return `level:${puzStage}`; }   // the Zinion is random, so scores go by level only
+function puzBestKey(){ return `${puzChar}:${puzStage}` + (puzMode === 'swap' ? ':swap' : ''); }
 function puzShowBest(){
   const all = store(KEY_PUZ, {});
   const b = all[puzBestKey()];
   $('puzBest').textContent = b ? b + ' moves' : '\u2014';
   const n = puzGridN();
-  $('puzStage').textContent = `${PUZ_LEVEL_NAME[puzStage - 1]} \u00b7 ${n}\u00d7${n}`;
+  $('puzStage').textContent = `Level ${puzStage} of ${PUZ_MAX_STAGE} \u00b7 ${n}\u00d7${n}`;
   puzRenderDash();
 }
 
@@ -2477,10 +2478,10 @@ function puzSwapHint(){
   $('puzSay').className = 'puzsay';
 }
 
-function puzSetLevel(l){
-  puzStage = l;
-  document.querySelectorAll('#puzLevels .puzmode').forEach(b => b.classList.toggle('on', Number(b.dataset.l) === l));
-  clearTimeout(puzAdvanceTimer);
+function puzSetMode(m){
+  puzMode = m;
+  document.querySelectorAll('#puzModes .puzmode').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+  puzRestart();
   puzBuild(true);
 }
 
@@ -2618,32 +2619,65 @@ function puzWin(){
   const isBest = !all[k] || puzMoves < all[k];
   if(isBest){ all[k] = puzMoves; save(KEY_PUZ, all); }
   puzRecordScore();
+  puzRunMoves += puzMoves;
   puzShowBest();
   $('puzSay').textContent = isBest
     ? `Back together in ${puzMoves} moves \u2014 best today!`
     : `Back together in ${puzMoves} moves.`;
   $('puzSay').className = 'puzsay win';
   say(`${HOST_NAME[puzChar]} is whole again!`, 4000);
-  // let the whole picture sit a moment, then celebrate
-  puzAdvanceTimer = setTimeout(() => {
-    if(!$('puzzle').classList.contains('on')) return;
-    puzShowDone();
-  }, 1800);
+  if(puzStage < PUZ_MAX_STAGE){
+    // Give the solved board a brief moment, then move to the next, larger stage.
+    puzAdvanceTimer = setTimeout(() => {
+      if(!$('puzzle').classList.contains('on')) return;
+      puzStage++;
+      puzBuild(true);
+    }, 1100);
+  } else {
+    // Finished the hardest stage — let the whole picture sit a moment, then celebrate.
+    $('puzSay').textContent += ' You finished every level!';
+    puzAdvanceTimer = setTimeout(() => {
+      if(!$('puzzle').classList.contains('on')) return;
+      puzShowDone();
+    }, 1800);
+  }
 }
 
 function puzShowDone(){
   showAward({
     key: KEY_PUZ_DONE, game: 'Zinion Puzzle', zin: puzChar, again: puzOpen,
-    line: `You completed the ${PUZ_LEVEL_NAME[puzStage - 1]} Zinion Puzzle! ${HOST_NAME[puzChar]} is whole again ` +
-          `on the ${puzGridN()}×${puzGridN()} board, in ${puzMoves} moves.`
+    line: `You completed the Zinion Puzzle! ${HOST_NAME[puzChar]} is whole again at every level, ` +
+          `from 2×2 all the way to ${PUZ_STAGE_N[PUZ_MAX_STAGE - 1]}×${PUZ_STAGE_N[PUZ_MAX_STAGE - 1]}, ` +
+          `in ${puzRunMoves} moves.`
   });
 }
 
-/* a fresh Zinion each time, on whichever level was picked last */
+/* back to level 1 with a fresh run */
+function puzRestart(){
+  clearTimeout(puzAdvanceTimer);
+  puzStage = 1;
+  puzRunMoves = 0;
+}
+
 function puzOpen(){
   show('puzzle');
-  puzChar = PUZ_KEYS[Math.floor(Math.random() * PUZ_KEYS.length)];
-  puzSetLevel(puzStage);
+  puzRestart();
+  const pick = $('puzPick');
+  pick.innerHTML = '';
+  PUZ_KEYS.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'puzchar' + (k === puzChar ? ' on' : '');
+    b.innerHTML = `<img src="${MASCOT[k]}" alt="${HOST_NAME[k]}">`;
+    b.addEventListener('click', () => {
+      puzChar = k;
+      [...pick.children].forEach(c => c.classList.remove('on'));
+      b.classList.add('on');
+      puzRestart();
+      puzBuild(true);
+    });
+    pick.appendChild(b);
+  });
+  puzBuild(true);
 }
 
 
@@ -2917,8 +2951,8 @@ $('puzShuffle').addEventListener('click', () => puzBuild(true));
 $('puzHint').addEventListener('click', puzHint);
 $('awardAgain').addEventListener('click', () => awardAgain());
 $('awardHome').addEventListener('click', () => show('mode'));
-document.querySelectorAll('#puzLevels .puzmode').forEach(b =>
-  b.addEventListener('click', () => puzSetLevel(Number(b.dataset.l))));
+document.querySelectorAll('#puzModes .puzmode').forEach(b =>
+  b.addEventListener('click', () => puzSetMode(b.dataset.m)));
 $('puzBack').addEventListener('click', () => show('mode'));
 $('bulbStart').addEventListener('click', bulbBegin);
 $('bulbBack').addEventListener('click', () => show('mode'));
