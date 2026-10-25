@@ -3032,7 +3032,7 @@ function renderLeaders(){
 }
 
 function stClear(){
-  ['stRange','stTake','stTiles','stSplit','stKey','stGallery','stDays','stVisit','stInnovDays','stInnovGal']
+  ['stRange','stTake','stTiles','stSplit','stKey','stGallery','stDays','stVisit','stInnovDays','stInnovGal','stByDate']
     .forEach(id => $(id).replaceChildren());
 }
 function stDay(iso, withYear){
@@ -3145,6 +3145,25 @@ function renderStats(rows){
     row.append(lab, bar);
     $('stInnovGal').appendChild(row);
   });
+
+  // every day's count at each stage, newest first
+  const iso = d => d.toLocaleDateString('en-CA');   // YYYY-MM-DD, like the Sheet's dates
+  const now = new Date(), yest = new Date(now); yest.setDate(now.getDate() - 1);
+  const dayName = d => d === iso(now) ? 'Today' : d === iso(yest) ? 'Yesterday' : stDay(d, false);
+  const table = el('table');
+  const head = el('tr');
+  head.appendChild(el('th', '', 'Date'));
+  ST_STAGES.forEach(s => { const th = el('th', '', s); th.style.color = ST_COLOUR[s]; head.appendChild(th); });
+  head.appendChild(el('th', '', 'Total'));
+  table.appendChild(head);
+  stGroup(rows, 'day').sort((a, b) => b.label.localeCompare(a.label)).forEach(g => {
+    const tr = el('tr');
+    tr.appendChild(el('td', '', dayName(g.label)));
+    ST_STAGES.forEach(s => tr.appendChild(el('td', '', g[s])));
+    tr.appendChild(el('td', '', g.visitors));
+    table.appendChild(tr);
+  });
+  $('stByDate').appendChild(table);
 }
 
 $('peekGo').addEventListener('click', peekCheck);
