@@ -3149,7 +3149,7 @@ function lvShow(stage){
   }));
   const reached = lvRows.filter(r => r.stage === stage).length;
   $('lvTake').textContent = !picks ? `No ${stage} answers yet.`
-    : `${picks} ${stage} answer${picks === 1 ? '' : 's'} picked. ${reached} visitor${reached === 1 ? '' : 's'} ended the quiz at ${stage}.`;
+    : `${reached} visitor${reached === 1 ? '' : 's'} reached ${stage}. ${stage} answers were picked ${picks} time${picks === 1 ? '' : 's'} in all, including by visitors who ended at another level.`;
   [...qs.values()].sort((a, b) => b.n - a.n).forEach(e => {
     const card = el('div', 'st-card');
     card.append(el('b', '', e.q), el('span', 'qa-gal', e.gallery));
