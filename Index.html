@@ -21,7 +21,7 @@
 <div class="lock" id="lock" hidden>
   <div class="lockbox" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
     <img class="lockimg" id="lockImg" alt="">
-    <b id="lockTitle">Argon's secret door</b>
+    <b id="lockTitle"></b>
     <input id="lockPw" type="password" autocomplete="off" placeholder="Password" aria-label="Password">
     <span class="lockerr" id="lockErr"></span>
     <div class="btnrow">
@@ -340,6 +340,19 @@
       <button class="big-btn" id="awardAgain">Play again</button>
       <button class="ghost" id="awardHome" style="align-self:auto">Try another game</button>
     </div>
+  </section>
+
+  <section id="leaders" class="screen scrollable">
+    <div class="dashhead">
+      <h2 class="title">Today's leaders</h2>
+      <div class="daystamp" id="ldDay"></div>
+    </div>
+    <div class="st-grid">
+      <div class="st-card"><b>Zinion Puzzle</b><span class="puzdashempty">Finished all 3 levels, fewest moves first</span><div class="puzdashlist" id="ldPuz"></div></div>
+      <div class="st-card"><b>Zinion Bulbs</b><span class="puzdashempty">Cleared all 10 rounds, fewest tries first</span><div class="puzdashlist" id="ldBulb"></div></div>
+    </div>
+    <div class="btnrow"><button class="big-btn" id="ldBack">Close</button></div>
+    <p class="footnote">Scores played on this kiosk today.</p>
   </section>
 
   <section id="thanks" class="screen">

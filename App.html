@@ -986,6 +986,9 @@ function store(key, fallback){
       localStorage.removeItem(KEY_GAME);
       localStorage.removeItem(KEY_BULB);
       localStorage.removeItem(KEY_BULB_LB);
+      localStorage.removeItem(KEY_BULB_WIN_LB);
+      localStorage.removeItem(KEY_BULB_TRIES);
+      localStorage.removeItem(KEY_PUZ_RUN_LB);
       localStorage.removeItem(KEY_BULB_DONE);
       localStorage.removeItem(KEY_PUZ_DONE);
       localStorage.removeItem(KEY_PUZ);
@@ -1005,7 +1008,7 @@ let player='', zoneId=null, advanceTimer=null, tickTimer=null;
 
 function clearTimers(){ clearTimeout(advanceTimer); advanceTimer=null; clearInterval(tickTimer); tickTimer=null; }
 function show(n){
-  ['start','mode','pick','quiz','game','bulbs','puzzle','award','wind','end','thanks','dash','stats'].forEach(s => $(s).classList.toggle('on', s===n));
+  ['start','mode','pick','quiz','game','bulbs','puzzle','award','wind','end','thanks','dash','stats','leaders'].forEach(s => $(s).classList.toggle('on', s===n));
   if(n !== 'stats') stClear();   // the totals don't linger once the screen is left
   lockClose();
   $('hostwrap').classList.toggle('hide', n !== 'quiz' && n !== 'end');
@@ -2082,6 +2085,8 @@ window.addEventListener('resize', () => { if($('game').classList.contains('on'))
    ===================================================================== */
 const KEY_BULB = 'parsec_wf_bulb_best';
 const KEY_BULB_LB = 'parsec_wf_bulb_leaderboard';
+const KEY_BULB_WIN_LB = 'parsec_wf_bulb_win_leaderboard';   // cleared all rounds: {name, tries}
+const KEY_BULB_TRIES = 'parsec_wf_bulb_tries';              // games started per name since their last clear
 const BULB_LB_SIZE = 8;
 const BULB_ZIN = ['tropido','niki','stephen','argon','harsh'];
 const BULB_MAX = 10;   // clear this many rounds to win
@@ -2224,6 +2229,11 @@ function bulbRecordScore(rounds){
 function bulbWin(){
   save(KEY_BULB, BULB_MAX);
   bulbRecordScore(BULB_MAX);
+  const name = player || 'Guest', tries = store(KEY_BULB_TRIES, {});
+  save(KEY_BULB_WIN_LB, lbBestPerName([...store(KEY_BULB_WIN_LB, []), { name, tries: tries[name] || 1 }],
+                                      (a, b) => a.tries < b.tries));
+  delete tries[name];   // the next clear counts its own tries
+  save(KEY_BULB_TRIES, tries);
   $('bulbBest').textContent = `Best today: round ${BULB_MAX}`;
   bulbSay(`Congratulations${player ? ', ' + player : ''}! You cleared all ${BULB_MAX} rounds — every Zinion is cheering!`, 'go');
   say(`Congratulations${player ? ', ' + player : ''}! All the Zinions are lit up for you!`, 4000);
@@ -2241,7 +2251,12 @@ function openBulbs(){
   $('bulbHostYou').querySelector('img').src = MASCOT[BULB_HOST_YOU];
   show('bulbs'); bulbReset(); bulbRenderDash();
 }
-function bulbBegin(){ bulbReset(); $('bulbStart').hidden = true; bulbLater(bulbNextRound, 300); }
+function bulbBegin(){
+  const tries = store(KEY_BULB_TRIES, {}), name = player || 'Guest';
+  tries[name] = (tries[name] || 0) + 1;
+  save(KEY_BULB_TRIES, tries);
+  bulbReset(); $('bulbStart').hidden = true; bulbLater(bulbNextRound, 300);
+}
 
 
 
@@ -2251,6 +2266,7 @@ function bulbBegin(){ bulbReset(); $('bulbStart').hidden = true; bulbLater(bulbN
    ===================================================================== */
 const KEY_PUZ = 'parsec_wf_puzzle_best';
 const KEY_PUZ_LB = 'parsec_wf_puzzle_leaderboard';
+const KEY_PUZ_RUN_LB = 'parsec_wf_puzzle_run_leaderboard';   // finished every level: {name, moves}
 const PUZ_LB_SIZE = 8;
 const PUZ_KEYS = ['tropido','niki','stephen','argon','harsh'];
 let puzStage = 1, puzChar = 'tropido', puzTiles = [], puzBlank = 0, puzMoves = 0, puzLive = false, puzTry = 0, puzAdvanceTimer = null;
@@ -2636,6 +2652,8 @@ function puzWin(){
   } else {
     // Finished the hardest stage — let the whole picture sit a moment, then celebrate.
     $('puzSay').textContent += ' You finished every level!';
+    save(KEY_PUZ_RUN_LB, lbBestPerName([...store(KEY_PUZ_RUN_LB, []), { name: player || 'Guest', moves: puzRunMoves }],
+                                       (a, b) => a.moves < b.moves));
     puzAdvanceTimer = setTimeout(() => {
       if(!$('puzzle').classList.contains('on')) return;
       puzShowDone();
@@ -3003,20 +3021,27 @@ async function peekCheck(){
    the password (getStageStats) and sends back totals only, never names. */
 const ST_STAGES = ['Citizen', 'Seeker', 'Solver', 'Innovator'];
 const ST_COLOUR = { Citizen:'var(--mute)', Seeker:'var(--seeker)', Solver:'var(--solver)', Innovator:'var(--innov)' };
-let argonLast = 0;
+/* Zetta has a door too: same double tap and password, opening today's game leaders. */
+const DOORS = { argon: "Argon's secret door", stephen: "Zetta's secret door" };
+let doorLast = 0, doorLastKey = '', lockDoor = 'argon';
 document.addEventListener('pointerdown', e => {
   if(!$('start').classList.contains('on') || !$('lock').hidden) return;
   if(e.target.closest('input,button')) return;
-  const argon = $('drift').querySelector('[data-k="argon"]');
-  const r = argon && argon.getBoundingClientRect();
-  if(!r || e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+  const k = Object.keys(DOORS).find(k => {
+    const z = $('drift').querySelector(`[data-k="${k}"]`);
+    const r = z && z.getBoundingClientRect();
+    return r && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+  });
+  if(!k) return;
   const now = Date.now();
-  if(now - argonLast < 450){ argonLast = 0; lockOpen(); }
-  else argonLast = now;
+  if(k === doorLastKey && now - doorLast < 450){ doorLast = 0; lockOpen(k); }
+  else { doorLast = now; doorLastKey = k; }
 });
 
-function lockOpen(){
-  $('lockImg').src = MASCOT.argon;
+function lockOpen(k){
+  lockDoor = k;
+  $('lockTitle').textContent = DOORS[k];
+  $('lockImg').src = MASCOT[k];
   $('lockPw').value = ''; $('lockErr').textContent = '';
   $('lock').hidden = false;
   $('lockPw').focus();
@@ -3030,19 +3055,37 @@ function lockTry(){
   }
   $('lockGo').disabled = true;
   $('lockErr').textContent = 'Checking…';
-  google.script.run
-    .withSuccessHandler(rows => { $('lockGo').disabled = false; show('stats'); renderStats(rows || []); })
+  const runner = google.script.run
+    .withSuccessHandler(rows => {
+      $('lockGo').disabled = false;
+      if(lockDoor === 'stephen'){ show('leaders'); renderLeaders(); }
+      else { show('stats'); renderStats(rows || []); }
+    })
     .withFailureHandler(err => {
       $('lockGo').disabled = false;
       $('lockErr').textContent = String((err && err.message) || 'Could not check the password.').replace(/^(Exception|Error):\s*/, '');
       $('lockPw').select();
-    })
-    .getStageStats(pw);
+    });
+  if(lockDoor === 'stephen') runner.checkLeadersPassword(pw);
+  else runner.getStageStats(pw);
 }
 $('lockGo').addEventListener('click', lockTry);
 $('lockPw').addEventListener('keydown', e => { if(e.key === 'Enter') lockTry(); });
 $('lockCancel').addEventListener('click', lockClose);
 $('stBack').addEventListener('click', () => show('start'));
+$('ldBack').addEventListener('click', () => show('start'));
+
+/* Today's leaders on this kiosk: whole puzzle runs by fewest moves, cleared bulb games by fewest tries */
+function renderLeaders(){
+  $('ldDay').textContent = new Date().toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+  const fill = (id, list, key, unit, empty) => {
+    $(id).innerHTML = !list.length ? `<p class="puzdashempty">${empty}</p>`
+      : list.sort((a, b) => a[key] - b[key]).slice(0, 10).map((r, i) => `
+        <div class="puzdashrow"><span>${i+1}. ${r.name}</span><b>${r[key]} ${unit(r[key])}</b></div>`).join('');
+  };
+  fill('ldPuz', store(KEY_PUZ_RUN_LB, []), 'moves', n => n === 1 ? 'move' : 'moves', 'Nobody has finished all 3 levels yet today.');
+  fill('ldBulb', store(KEY_BULB_WIN_LB, []), 'tries', n => n === 1 ? 'try' : 'tries', 'Nobody has cleared all 10 rounds yet today.');
+}
 
 function stClear(){
   ['stRange','stTake','stTiles','stSplit','stKey','stGallery','stDays','stVisit','stInnovDays','stInnovGal']

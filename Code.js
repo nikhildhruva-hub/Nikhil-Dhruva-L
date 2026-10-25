@@ -155,10 +155,21 @@ function getDashData() {
  * Only the password's SHA-256 is kept. */
 const STATS_PASS_HASH = 'a25ef4e636a84f16d0df491e2c265438b2e99859313e0601eb1716f5cdfd8a64';
 
-function getStageStats(password) {
+function checkPassword_(password) {
   const hash = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(password || ''), Utilities.Charset.UTF_8)
     .map(b => ((b + 256) % 256).toString(16).padStart(2, '0')).join('');
   if (hash !== STATS_PASS_HASH) throw new Error('That password isn’t right.');
+}
+
+/* Zetta's secret door (double-tap Zetta): the same password opens today's game
+ * leaders. The leaders live on the kiosk itself, so this only checks the password. */
+function checkLeadersPassword(password) {
+  checkPassword_(password);
+  return true;
+}
+
+function getStageStats(password) {
+  checkPassword_(password);
   const out = [];
   logBook_().getSheets().forEach(t => {
     const v = t.getDataRange().getDisplayValues();
