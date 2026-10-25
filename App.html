@@ -2267,7 +2267,7 @@ async function puzBuild(shuffle){
         [puzTiles[i], puzTiles[j]] = [puzTiles[j], puzTiles[i]];
       }
     }while(puzSolved());
-    puzBlank = -1; puzSel = -1;
+    puzBlank = -1; puzSel = -1; puzTeach = 0;
     puzMakeEdges(n);
     puzMoves = 0;
     $('puzMoves').textContent = '0';
@@ -2376,8 +2376,31 @@ function puzPieceSvg(tile, n, src){
 }
 
 /* Swap mode: first tap picks a piece up, second tap trades the two. */
+/* A practice swap the first time each player opens the puzzle: two pieces glow and
+   the line underneath walks them through tapping one, then the other. */
+let puzTeach = 0, puzTeachFrom = -1, puzTeachTo = -1, puzTaught = null;
+function puzTeachStart(){
+  if(puzMode !== 'swap' || !puzLive || puzTaught === player) return;
+  puzTeachTo = puzTiles.findIndex((t, i) => t !== i);
+  if(puzTeachTo < 0) return;
+  puzTeachFrom = puzTiles.indexOf(puzTeachTo);
+  puzTeach = 1;
+  [...$('puzBoard').children].forEach((c, i) => c.classList.toggle('hint', i === puzTeachFrom));
+  $('puzSay').textContent = 'Let\u2019s practise! Tap the glowing piece.';
+  $('puzSay').className = 'puzsay win';
+}
+
 async function puzSwapTap(pos){
   const board = $('puzBoard');
+  if(puzTeach === 1){
+    if(pos !== puzTeachFrom) return;   // only the glowing piece during the practice
+    puzTeach = 2;
+    board.children[pos].classList.remove('hint');
+    board.children[puzTeachTo].classList.add('hint');
+    $('puzSay').textContent = 'Now tap the other glowing piece to swap them.';
+  }else if(puzTeach === 2 && pos !== puzTeachTo) return;
+  const practised = puzTeach === 2 && pos === puzTeachTo;
+  if(practised){ puzTeach = 0; puzTaught = player; }
   if(puzSel < 0){ puzSel = pos; board.children[pos].classList.add('sel'); return; }
   if(puzSel === pos){ puzSel = -1; board.children[pos].classList.remove('sel'); return; }
   [puzTiles[puzSel], puzTiles[pos]] = [puzTiles[pos], puzTiles[puzSel]];
@@ -2388,6 +2411,10 @@ async function puzSwapTap(pos){
   if(won) puzLive = false;
   await puzBuild(false);
   if(won) puzWin();
+  else if(practised){
+    $('puzSay').textContent = 'That\u2019s how you swap! Now put the rest back yourself.';
+    $('puzSay').className = 'puzsay win';
+  }
 }
 
 /* Swap-mode hint: the first wrong spot and the piece that belongs there —
@@ -2604,7 +2631,7 @@ function puzOpen(){
     });
     pick.appendChild(b);
   });
-  puzBuild(true);
+  puzBuild(true).then(puzTeachStart);
 }
 
 
@@ -2932,20 +2959,28 @@ const ST_STAGES = ['Citizen', 'Seeker', 'Solver', 'Innovator'];
 const ST_COLOUR = { Citizen:'var(--mute)', Seeker:'var(--seeker)', Solver:'var(--solver)', Innovator:'var(--innov)' };
 /* Zetta has a door too: same double tap and password, opening today's game leaders. */
 const DOORS = { argon: "Argon's secret door", stephen: "Zetta's secret door" };
+const DOOR_PAD = 36;      // fingers miss a faint, bobbing Zinion, so its tap area reaches past the picture
+const DOOR_GAP_MS = 650; // longest pause between the two taps
 let doorLast = 0, doorLastKey = '', lockDoor = 'argon';
-document.addEventListener('pointerdown', e => {
+function doorTap(x, y, target){
   if(!$('start').classList.contains('on') || !$('lock').hidden) return;
-  if(e.target.closest('input,button')) return;
+  if(target && target.closest && target.closest('input,button')) return;
   const k = Object.keys(DOORS).find(k => {
     const z = $('drift').querySelector(`[data-k="${k}"]`);
     const r = z && z.getBoundingClientRect();
-    return r && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    return r && x >= r.left - DOOR_PAD && x <= r.right + DOOR_PAD && y >= r.top - DOOR_PAD && y <= r.bottom + DOOR_PAD;
   });
   if(!k) return;
   const now = Date.now();
-  if(k === doorLastKey && now - doorLast < 450){ doorLast = 0; lockOpen(k); }
+  if(k === doorLastKey && now - doorLast < DOOR_GAP_MS){ doorLast = 0; lockOpen(k); }
   else { doorLast = now; doorLastKey = k; }
-});
+}
+// older kiosk tablets have no pointer events, so fall back to touch and mouse
+if(window.PointerEvent) document.addEventListener('pointerdown', e => doorTap(e.clientX, e.clientY, e.target));
+else {
+  document.addEventListener('touchstart', e => { const t = e.touches[0]; if(t) doorTap(t.clientX, t.clientY, e.target); }, {passive:true});
+  document.addEventListener('mousedown', e => doorTap(e.clientX, e.clientY, e.target));
+}
 
 function lockOpen(k){
   lockDoor = k;
