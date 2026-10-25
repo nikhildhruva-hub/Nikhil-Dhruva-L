@@ -400,6 +400,21 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
   font-size:clamp(15px,2.2vw,22px);min-height:1.6em;margin-top:4px;
 }
 .bulbsay.go{color:var(--accent)}
+.bulbhosts{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-top:6px}
+.bulbhosts .bulbsay{flex:1;margin:0 0 10px}
+.bulbhost{position:relative;width:clamp(64px,10vw,110px);flex-shrink:0;opacity:.35;transition:opacity .25s,transform .25s}
+.bulbhost img{width:100%;height:auto;display:block}
+.bulbhost.talk{opacity:1;transform:translateY(-4px)}
+.bulbbubble{
+  position:absolute;bottom:100%;left:0;margin-bottom:6px;
+  background:var(--accent);color:var(--on-accent);font-weight:700;font-size:clamp(12px,1.5vw,15px);
+  padding:6px 12px;border-radius:14px;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none;
+}
+.bulbbubble::after{content:"";position:absolute;left:24px;bottom:-7px;border:7px solid transparent;border-bottom:0;border-top-color:var(--accent)}
+.bulbhost.talk .bulbbubble{opacity:1}
+#bulbHostYou .bulbbubble{left:auto;right:0}
+#bulbHostYou .bulbbubble::after{left:auto;right:24px}
+@media (prefers-reduced-motion:reduce){.bulbhost,.bulbbubble{transition:none}.bulbhost.talk{transform:none}}
 .bulbsay.bad{color:var(--coral)}
 
 

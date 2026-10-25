@@ -2085,6 +2085,7 @@ const KEY_BULB_LB = 'parsec_wf_bulb_leaderboard';
 const BULB_LB_SIZE = 8;
 const BULB_ZIN = ['tropido','niki','stephen','argon','harsh'];
 const BULB_MAX = 10;   // clear this many rounds to win
+const BULB_HOST_ME = 'argon', BULB_HOST_YOU = 'stephen';   // who plays the bulbs, who hands over to the visitor
 let bulbSeq = [], bulbStep = 0, bulbRound = 0, bulbBusy = false, bulbTimers = [];
 
 function bulbEls(){ return [...document.querySelectorAll('#bulbRow .bulb')]; }
@@ -2098,6 +2099,12 @@ function bulbFlash(i, cls, on, off){
   bulbLater(() => el.classList.remove(cls || 'lit'), off);
 }
 
+/* 'me' while the bulbs play, 'you' when it's the visitor's go, nothing otherwise */
+function bulbHost(who){
+  $('bulbHostMe').classList.toggle('talk', who === 'me');
+  $('bulbHostYou').classList.toggle('talk', who === 'you');
+}
+
 function bulbSay(text, tone){
   const el = $('bulbSay');
   el.textContent = text;
@@ -2109,6 +2116,7 @@ function bulbReset(){
   bulbEls().forEach(el => el.classList.remove('lit','wrong','dead'));
   $('bulbRow').classList.remove('bulbs-lock');
   bulbSeq = []; bulbStep = 0; bulbRound = 0; bulbBusy = false;
+  bulbHost(null);
   $('bulbRound').textContent = `Round 1 of ${BULB_MAX}`;
   const best = Number(store(KEY_BULB, 0)) || 0;
   $('bulbBest').textContent = best ? `Best today: round ${best}` : '';
@@ -2128,13 +2136,15 @@ function bulbNextRound(){
 function bulbPlay(){
   bulbBusy = true;
   $('bulbRow').classList.add('bulbs-lock');
-  bulbSay('Watch\u2026');
+  bulbSay('');
+  bulbHost('me');
   const gap = Math.max(360, 620 - bulbRound * 22);   // speeds up as rounds go on
   bulbSeq.forEach((b, i) => bulbFlash(b, 'lit', 500 + i*gap, 500 + i*gap + gap*0.62));
   bulbLater(() => {
     bulbBusy = false;
     $('bulbRow').classList.remove('bulbs-lock');
-    bulbSay('Your turn.', 'go');
+    bulbSay('');
+    bulbHost('you');
   }, 500 + bulbSeq.length*gap + 120);
 }
 
@@ -2149,6 +2159,7 @@ function bulbTap(i){
     if(bulbStep === bulbSeq.length){
       bulbBusy = true;
       $('bulbRow').classList.add('bulbs-lock');
+      bulbHost(null);
       if(bulbRound >= BULB_MAX) return bulbWin();
       const z = BULB_ZIN[i] || 'stephen';
       bulbSay(`${HOST_NAME[z]} says yes!`, 'go');
@@ -2162,6 +2173,7 @@ function bulbTap(i){
 function bulbOver(i){
   bulbBusy = true;
   bulbClearTimers();
+  bulbHost(null);
   $('bulbRow').classList.add('bulbs-lock');
   const el = bulbEls()[i];
   el.classList.add('wrong');
@@ -2224,7 +2236,11 @@ function bulbWin(){
   }), 2200);
 }
 
-function openBulbs(){ show('bulbs'); bulbReset(); bulbRenderDash(); }
+function openBulbs(){
+  $('bulbHostMe').querySelector('img').src = MASCOT[BULB_HOST_ME];
+  $('bulbHostYou').querySelector('img').src = MASCOT[BULB_HOST_YOU];
+  show('bulbs'); bulbReset(); bulbRenderDash();
+}
 function bulbBegin(){ bulbReset(); $('bulbStart').hidden = true; bulbLater(bulbNextRound, 300); }
 
 
