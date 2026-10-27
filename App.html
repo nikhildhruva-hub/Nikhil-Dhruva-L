@@ -1043,36 +1043,44 @@ function shuffle(a){ const b=a.slice(); for(let i=b.length-1;i>0;i--){const j=Ma
 function clean(s){ return s.replace(/[<>]/g,'').trim().slice(0,18); }
 
 /* ---------- home: the welcome screen ----------
-   The Zinions pop up one by one, hop in turn, and take turns calling out to
-   passers-by. A touch anywhere on the screen opens the game choice. */
-/* Each Zinion says who they are and pitches one of the games; tapping them opens it. */
-const HOME_GAME = { tropido:'puzzle', niki:'binary', argon:'quiz', stephen:'binary', harsh:'quiz' };   // Bulbs is paused for now
-const HOME_TALK = {
-  tropido: 'I’m in pieces in the Zinion Puzzle. Put me back together!',
-  niki:    'Count the lit windows in each column and tell me the time!',
-  argon:   'Take the Zinion Quiz. Show us what you already know!',
-  stephen: 'My house tells the time with its windows. Can you read it?',
-  harsh:   'Find out how curious you are in the Zinion Quiz!'
-};
+   Light drifts and sparks rise behind it, a DNA helix twists in the middle,
+   and the title ripples. A touch anywhere sends out a ripple and opens the
+   game choice. */
 (function(){
-  const crew = $('homeCrew');
-  ['tropido','niki','argon','stephen','harsh'].forEach((k, i) => {
-    const z = document.createElement('div');
-    z.className = 'zin';
-    z.dataset.k = k;
-    z.style.setProperty('--d', `${0.35 + i*0.12}s`);
-    z.innerHTML = `<em class="homesay"></em><img src="${MASCOT[k]}" alt="" style="--h:${i*0.6}s">`;
-    z.setAttribute('role', 'button');
-    z.setAttribute('aria-label', `${HOST_NAME[k]}: tap to play`);
-    z.addEventListener('click', e => { e.stopPropagation(); askName(HOME_GAME[k], k); });
-    crew.appendChild(z);
-  });
+  // the helix: each bead pair runs a little behind the one before it
+  $('homeDna').innerHTML = Array.from({length: 22}, (_, i) =>
+    `<div class="bp" style="--d:${(-i * 0.16).toFixed(2)}s"><s></s><i class="a"></i><i class="b"></i></div>`).join('');
+  // sparks, each with its own size, colour, speed and sideways drift
+  const cols = ['var(--sky)', 'var(--accent)', 'var(--pale)', 'var(--innov)'];
+  $('homeSparks').innerHTML = Array.from({length: 38}, () => {
+    const size = 2 + Math.random() * 4;
+    return `<i style="left:${(Math.random() * 100).toFixed(1)}%;width:${size.toFixed(1)}px;height:${size.toFixed(1)}px;` +
+      `--c:${cols[Math.floor(Math.random() * cols.length)]};--t:${(9 + Math.random() * 12).toFixed(1)}s;` +
+      `--dl:${(-Math.random() * 20).toFixed(1)}s;--x:${(Math.random() * 16 - 8).toFixed(1)}vw"></i>`;
+  }).join('');
+  // the title, one letter at a time, so a wave can roll along it; each letter takes
+  // its colour from a white–lime–teal–white sweep
+  const t = document.querySelector('.hometitle'), chars = [...t.textContent];
+  const stops = [[245, 246, 255], [217, 255, 53], [63, 237, 224], [245, 246, 255]];
+  const tint = f => {
+    const x = f * (stops.length - 1), k = Math.min(Math.floor(x), stops.length - 2), u = x - k;
+    return `rgb(${stops[k].map((c, j) => Math.round(c + (stops[k + 1][j] - c) * u)).join(',')})`;
+  };
+  t.innerHTML = chars.map((ch, i) => ch === ' ' ? ' ' :
+    `<span style="--d:${(i * 0.07).toFixed(2)}s;color:${tint(i / (chars.length - 1))}">${ch}</span>`).join('');
 })();
-let homeTimer = null, homeSparkTimer = null, homeSpark = 0;
+let homeSparkTimer = null, homeSpark = 0;
+
 /* "Spark your …" steps through the three Cs; the matching card glows with it */
 function homeSparkStep(){
   const cards = [...document.querySelectorAll('#homeC .cc')], w = $('homeWord');
-  const card = cards[homeSpark++ % cards.length];
+  const at = homeSpark % cards.length, card = cards[at];
+  // a spark runs along the link into the next card; back along both when it loops round
+  const links = [...document.querySelectorAll('#homeC .ccl')];
+  const fire = (l, cls) => { l.classList.remove('go', 'back'); void l.offsetWidth; l.classList.add(cls); };
+  if(at > 0) fire(links[at - 1], 'go');
+  else if(homeSpark > 0){ fire(links[1], 'back'); setTimeout(() => fire(links[0], 'back'), 150); }
+  homeSpark++;
   w.classList.add('out');
   setTimeout(() => {
     w.textContent = card.dataset.w;
@@ -1094,30 +1102,23 @@ function homeYears(){
   }, 40);
 }
 function homeChat(on){
-  clearInterval(homeTimer); homeTimer = null;
   clearInterval(homeSparkTimer); homeSparkTimer = null;
-  const zins = [...document.querySelectorAll('#homeCrew .zin')];
-  const hush = () => zins.forEach(z => { z.classList.remove('talking'); z.querySelector('.homesay').classList.remove('on'); });
-  hush();
   if(!on) return;
   homeSpark = 0; homeSparkStep();
   homeSparkTimer = setInterval(homeSparkStep, 2400);
   homeYears();
-  // replay the entrance each time the screen comes back
-  document.querySelectorAll('#home .zin').forEach(z => { z.style.animation = 'none'; void z.offsetWidth; z.style.animation = ''; });
-  // they take turns along the line, each introducing themselves and a game
-  let who = Math.floor(Math.random() * zins.length);
-  const speak = () => {
-    hush();
-    const z = zins[who++ % zins.length], k = z.dataset.k, say = z.querySelector('.homesay');
-    say.innerHTML = `<b>Hi, I’m ${HOST_NAME[k]}!</b>${HOME_TALK[k]}`;
-    say.classList.add('on');
-    z.classList.add('talking');
-  };
-  setTimeout(() => { if($('home').classList.contains('on')) speak(); }, 1400);
-  homeTimer = setInterval(speak, 4000);
 }
-$('home').addEventListener('click', () => show('mode'));
+// a ripple spreads from the finger, then the game choice opens
+let homeLeaving = false;
+$('home').addEventListener('click', e => {
+  if(homeLeaving) return;
+  homeLeaving = true;
+  const r = document.createElement('span');
+  r.className = 'taprip';
+  r.style.left = `${e.clientX}px`; r.style.top = `${e.clientY}px`;
+  document.body.appendChild(r);
+  setTimeout(() => { r.remove(); homeLeaving = false; if($('home').classList.contains('on')) show('mode'); }, 380);
+});
 
 /* the drifting crowd behind the start screen */
 (function(){
@@ -1649,7 +1650,7 @@ function showThanks(){
   $('thanksImg').alt = HOST_NAME[k];
   $('thanksTitle').textContent = player ? `Thank you, ${player}!` : 'Thank you!';
   $('thanksLine').textContent =
-    `${HOST_NAME[k]} enjoyed that. Head back home to try the Zinion Puzzle or the Zinion Binary Clock next.`;
+    `${HOST_NAME[k]} enjoyed that. Head back home to try the Zinion Puzzle or Zinion Bulbs next.`;
   show('thanks');
 }
 

@@ -34,6 +34,8 @@
 
   <!-- HOME: the welcome screen that invites a passer-by to touch the kiosk -->
   <section id="home" class="screen on" aria-label="Touch the screen to play">
+    <!-- moving light and rising sparks behind the welcome screen -->
+    <div class="homefx" aria-hidden="true"><i class="blob"></i><i class="blob"></i><i class="blob"></i><div class="sparks" id="homeSparks"></div></div>
     <p class="homekicker">PARSEC Whitefield</p>
     <h1 class="hometitle">Zinia Experimental Lab</h1>
     <p class="homespark">Spark your <span class="homeword" id="homeWord">creativity</span></p>
@@ -42,16 +44,19 @@
         <span class="ccicon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg></span>
         <span class="cctext"><b>Creativity</b><i>Try it your way</i></span>
       </div>
+      <span class="ccl" aria-hidden="true"><i></i></span>
       <div class="cc" data-w="curiosity">
         <span class="ccicon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
         <span class="cctext"><b>Curiosity</b><i>Always ask why</i></span>
       </div>
+      <span class="ccl" aria-hidden="true"><i></i></span>
       <div class="cc" data-w="confidence">
         <span class="ccicon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3 6.5 7 .9-5.1 4.8 1.3 7L12 17.7l-6.2 3.5 1.3-7L2 9.4l7-.9z"/></svg></span>
         <span class="cctext"><b>Confidence</b><i>Give it a go</i></span>
       </div>
     </div>
-    <div class="homecrew" id="homeCrew"></div>
+    <!-- a DNA double helix, twisting: 3.8 billion years in the making -->
+    <div class="dna" id="homeDna" aria-hidden="true"></div>
     <button class="hometap" id="homeTap">
       <span class="ring"></span><span class="ring"></span>
       <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V5a2 2 0 0 1 4 0v6"/><path d="M13 10a2 2 0 0 1 4 0v1a2 2 0 0 1 4 0v4a7 7 0 0 1-7 7h-1a7 7 0 0 1-6-3.4L4.3 15a2 2 0 0 1 3.4-2L9 15"/></svg>
@@ -159,14 +164,14 @@
         <span>A Zinion has come apart into jigsaw pieces. Put them back together.</span>
         <!-- <img src="" alt="" id="modePuzzleImg"> -->
       </button>
-      <!-- Temporarily hidden while the Binary Clock takes its place. -->
-      <button class="mode" id="modeBulbs" hidden>
+      <button class="mode" id="modeBulbs">
         <span class="age">Quick play</span>
         <b>Zinion Bulbs</b>
         <span>The bulbs light up in an order. Watch, then tap them back in the same order.</span>
         <img src="" alt="" id="modeBulbsImg">
       </button>
-      <button class="mode" id="modeBinary">
+      <!-- Temporarily hidden while Zinion Bulbs is back on the floor. -->
+      <button class="mode" id="modeBinary" hidden>
         <span class="age">Brain teaser</span>
         <b>Zinion Binary Clock</b>
         <span>A little house tells the time with its lit windows. Can you read it?</span>
