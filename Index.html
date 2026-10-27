@@ -165,6 +165,11 @@
         <span>The bulbs light up in an order. Watch, then tap them back in the same order.</span>
         <img src="" alt="" id="modeBulbsImg">
       </button>
+      <button class="mode" id="modeBinary">
+        <span class="age">Brain teaser</span>
+        <b>Zinion Binary Clock</b>
+        <span>A little house tells the time with its lit windows. Can you read it?</span>
+      </button>
       <!-- Temporarily hidden while the Scream Lab experience is paused. -->
       <button class="mode" id="modeGame" hidden>
         <span class="age">Best for younger visitors</span>
@@ -175,6 +180,31 @@
     </div>
     <p class="footnote">Every great experiment starts with someone who stopped to look. Observe, wonder, share &mdash; the Zinions will do the rest.</p>
     <button class="ghost" id="modeBack">&larr; Back</button>
+  </section>
+
+  <!-- BINARY CLOCK: a little house whose windows tell a 24-hour time, one column per digit.
+       From the bottom floor up, a lit window is worth 1, 2, 4 and 8. -->
+  <section id="binary" class="screen">
+    <div class="topbar">
+      <div class="count"><em>Zinion Binary Clock</em><span id="binCount">Time 1 of 5</span></div>
+      <div class="binscore"><b id="binRight">0</b><span>read right</span></div>
+    </div>
+    <h2 class="title binq" id="binQ">What time does the house show?</h2>
+    <p class="sub binhow">Each column of windows is one digit. From the bottom floor up, a lit window is worth 1, 2, 4 and 8.</p>
+    <div class="binstage">
+      <div class="house" aria-hidden="true">
+        <div class="roof"><span class="chimney"></span><span class="dormer"></span><span class="dormer"></span></div>
+        <div class="facade" id="binHouse"></div>
+        <div class="plinth"></div>
+      </div>
+      <div class="binread" id="binRead" aria-hidden="true"></div>
+    </div>
+    <div class="binopts" id="binOpts"></div>
+    <p class="binsay" id="binSay" aria-live="polite"></p>
+    <div class="btnrow">
+      <button class="big-btn" id="binNext" hidden>Next time</button>
+      <button class="ghost" id="binBack" style="align-self:auto">Back</button>
+    </div>
   </section>
 
   <!-- WIND TUNNEL -->

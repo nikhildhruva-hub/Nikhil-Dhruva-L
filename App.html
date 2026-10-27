@@ -983,7 +983,9 @@ const TIMER_SECONDS    = 45;
 const KEY_PLAYERS = 'parsec_wf_quiz_players';
 const KEY_MISSES  = 'parsec_wf_quiz_misses';
 const KEY_DAY     = 'parsec_wf_quiz_day';
-const KEY_BULB_PLAYED = 'parsec_wf_bulb_players';   // everyone who played the bulbs today, in order   // every name used on this kiosk today, so no two visitors share one
+const KEY_BULB_PLAYED = 'parsec_wf_bulb_players';   // everyone who played the bulbs today, in order
+const KEY_BIN_PLAYED  = 'parsec_wf_binary_players'; // the same for the binary clock
+const KEY_BIN_DONE    = 'parsec_wf_binary_finishers';
 
 /* ================== STORAGE ================== */
 function today(){ return new Date().toDateString(); }
@@ -993,6 +995,8 @@ function store(key, fallback){
       localStorage.setItem(KEY_DAY, today());
       localStorage.removeItem(KEY_PLAYERS);
       localStorage.removeItem(KEY_BULB_PLAYED);
+      localStorage.removeItem(KEY_BIN_PLAYED);
+      localStorage.removeItem(KEY_BIN_DONE);
       localStorage.removeItem(KEY_MISSES);
       localStorage.removeItem(KEY_GAME);
       localStorage.removeItem(KEY_BULB);
@@ -1020,7 +1024,7 @@ let player='', zoneId=null, advanceTimer=null, tickTimer=null;
 function clearTimers(){ clearTimeout(advanceTimer); advanceTimer=null; clearInterval(tickTimer); tickTimer=null; }
 function show(n){
   document.body.classList.toggle('joining', n === 'join');
-  ['home','start','join','mode','pick','quiz','game','bulbs','puzzle','award','wind','end','thanks','dash','stats','leaders','answers','levels'].forEach(s => $(s).classList.toggle('on', s===n));
+  ['home','start','join','mode','pick','quiz','game','bulbs','binary','puzzle','award','wind','end','thanks','dash','stats','leaders','answers','levels'].forEach(s => $(s).classList.toggle('on', s===n));
   if(n !== 'quiz' && typeof stopClock === 'function') stopClock();
   if(n !== 'stats') stClear();   // the totals don't linger once the screen is left
   lockClose();
@@ -1042,12 +1046,12 @@ function clean(s){ return s.replace(/[<>]/g,'').trim().slice(0,18); }
    The Zinions pop up one by one, hop in turn, and take turns calling out to
    passers-by. A touch anywhere on the screen opens the game choice. */
 /* Each Zinion says who they are and pitches one of the games; tapping them opens it. */
-const HOME_GAME = { tropido:'puzzle', niki:'bulbs', argon:'quiz', stephen:'bulbs', harsh:'quiz' };
+const HOME_GAME = { tropido:'puzzle', niki:'bulbs', argon:'quiz', stephen:'binary', harsh:'quiz' };
 const HOME_TALK = {
   tropido: 'I’m in pieces in the Zinion Puzzle. Put me back together!',
   niki:    'Watch the Zinion Bulbs light up, then tap them back in order!',
   argon:   'Take the Zinion Quiz. Show us what you already know!',
-  stephen: 'Can you remember all 10 rounds of Zinion Bulbs?',
+  stephen: 'My house tells the time with its windows. Can you read it?',
   harsh:   'Find out how curious you are in the Zinion Quiz!'
 };
 (function(){
@@ -1166,13 +1170,13 @@ function autoHome(countId){
   }, 1000);
 }
 
-/* After a lost bulbs game: no medal for winning, but the visitor still learns
-   where they stand in today's queue. Each name is counted once a day, so a
+/* After a game that wasn't won: no medal, but the visitor still learns where they
+   stand in today's queue for that game. Each name is counted once a day, so a
    replay keeps the same place. */
-function showPlayed({game, zin, line, again}){
-  const list = store(KEY_BULB_PLAYED, []), name = player || 'Guest';
+function showPlayed({key = KEY_BULB_PLAYED, game, zin, line, again}){
+  const list = store(key, []), name = player || 'Guest';
   const at = list.findIndex(u => sameName(u, name));
-  if(at < 0){ list.push(name); save(KEY_BULB_PLAYED, list); }
+  if(at < 0){ list.push(name); save(key, list); }
   const n = at < 0 ? list.length : at + 1;
   $('awardConfetti').hidden = true;
   $('awardImg').src = MASCOT[zin];
@@ -1290,7 +1294,8 @@ function goPick(){
 const JOIN = {
   quiz:   { title:'Zinion Quiz', sub:'Tell the Zinions who you are, then step inside.', go: () => show('pick') },
   puzzle: { title:'Zinion Puzzle', sub:'Tell the Zinions who you are, then put the pieces back together.', go: () => puzOpen() },
-  bulbs:  { title:'Zinion Bulbs', sub:'Tell the Zinions who you are, then watch the bulbs closely.', go: () => openBulbs() }
+  bulbs:  { title:'Zinion Bulbs', sub:'Tell the Zinions who you are, then watch the bulbs closely.', go: () => openBulbs() },
+  binary: { title:'Zinion Binary Clock', sub:'Tell the Zinions who you are, then crack the time code.', go: () => binOpen() }
 };
 let joinFor = 'quiz';
 function askName(game, zin){
@@ -2346,6 +2351,136 @@ function bulbBegin(){
 
 
 /* =====================================================================
+   ZINION BINARY CLOCK — a little house tells a 24-hour time with its
+   windows. Each column of windows is one digit of HH:MM; from the bottom
+   floor up a lit window is worth 1, 2, 4 and 8. So 16:48 lights the
+   bottom window of column one (1), the 2 and 4 of column two (6), the 4 of
+   column three and the 8 of column four.
+   Five times get harder: on the hour, quarter hours, five minutes, then
+   whatever the clock on the wall says right now.
+   ===================================================================== */
+const BIN_ROUNDS = 5;
+const BIN_ROWS = [8, 4, 2, 1];   // top floor first
+let bin = null;   // { round, right, h, m, now, locked }
+
+const pad2 = n => String(n).padStart(2, '0');
+const binFmt = (h, m) => `${pad2(h)}:${pad2(m)}`;
+const binDigits = (h, m) => [Math.floor(h / 10), h % 10, Math.floor(m / 10), m % 10];
+/* "2 + 4 = 6", a single lit window on its own, or "0" when the column is dark */
+function binColumn(d){
+  const lit = [1, 2, 4, 8].filter(v => d & v);
+  return lit.length > 1 ? `${lit.join(' + ')} = ${d}` : String(d);
+}
+function binPickTime(r){
+  if(r === BIN_ROUNDS - 1){ const t = new Date(); return { h: t.getHours(), m: t.getMinutes(), now: true }; }
+  const step = [60, 60, 15, 5][r];
+  return { h: Math.floor(Math.random() * 24), m: step === 60 ? 0 : Math.floor(Math.random() * (60 / step)) * step };
+}
+/* Wrong answers one window away from the right one, so the windows decide it, not a guess. */
+function binChoices(h, m){
+  const d = binDigits(h, m), seen = new Set([binFmt(h, m)]), out = [[h, m]];
+  const flips = [];
+  d.forEach((x, c) => [1, 2, 4, 8].forEach(v => {
+    const e = d.slice(); e[c] = x ^ v;
+    const hh = e[0] * 10 + e[1], mm = e[2] * 10 + e[3];
+    if(e[1] <= 9 && e[3] <= 9 && hh <= 23 && mm <= 59) flips.push([hh, mm]);
+  }));
+  for(const [a, b] of shuffle(flips)){
+    if(out.length === 4) break;
+    if(!seen.has(binFmt(a, b))){ seen.add(binFmt(a, b)); out.push([a, b]); }
+  }
+  while(out.length < 4){
+    const a = Math.floor(Math.random() * 24), b = Math.floor(Math.random() * 60);
+    if(!seen.has(binFmt(a, b))){ seen.add(binFmt(a, b)); out.push([a, b]); }
+  }
+  return shuffle(out);
+}
+/* The house: four floors of four windows, the ground floor arched. */
+function binHouse(h, m){
+  const d = binDigits(h, m);
+  $('binHouse').innerHTML = BIN_ROWS.map(v =>
+    `<div class="hfloor${v === 1 ? ' ground' : ''}">` +
+      d.map(x => `<i class="hwin${x & v ? ' on' : ''}"></i>`).join('') +
+    `</div>`).join('');
+}
+/* The reading beside it, filled in once the visitor has answered. */
+function binReading(h, m){
+  const d = binDigits(h, m);
+  const cell = (c, v, n) => `<div class="rc${c % 2 ? ' mid' : ''}"><span style="--dl:${(n * 0.08).toFixed(2)}s">${d[c] & v ? '+' + v : ''}</span></div>`;
+  let html = '', n = 0;
+  BIN_ROWS.forEach(v => {
+    html += `<div class="rl">${v}</div>` + cell(0, v, n++) + cell(1, v, n++) + '<div class="gap"></div>' + cell(2, v, n++) + cell(3, v, n++);
+  });
+  html += '<div></div>' + d.slice(0, 2).map(x => `<div class="dg">${x}</div>`).join('') +
+          '<div class="colon">:</div>' + d.slice(2).map(x => `<div class="dg">${x}</div>`).join('');
+  $('binRead').innerHTML = html;
+  $('binRead').classList.remove('show');
+  // the digits stay hidden until the answer is in
+  [...$('binRead').querySelectorAll('.dg')].forEach(g => { g.dataset.d = g.textContent; g.textContent = '?'; });
+}
+function binReveal(){
+  $('binRead').classList.add('show');
+  [...$('binRead').querySelectorAll('.dg')].forEach(g => { g.textContent = g.dataset.d; });
+}
+function binOpen(){
+  bin = { round: 0, right: 0 };
+  show('binary');
+  binRound();
+}
+function binRound(){
+  const t = binPickTime(bin.round);
+  bin = { ...bin, h: t.h, m: t.m, now: !!t.now, locked: false };
+  $('binCount').textContent = `Time ${bin.round + 1} of ${BIN_ROUNDS}`;
+  $('binRight').textContent = bin.right;
+  $('binQ').textContent = t.now ? 'Bonus: what time is it right now?' : 'What time does the house show?';
+  binHouse(t.h, t.m);
+  binReading(t.h, t.m);
+  $('binSay').className = 'binsay'; $('binSay').textContent = '';
+  $('binNext').hidden = true;
+  const box = $('binOpts');
+  box.className = 'binopts'; box.innerHTML = '';
+  binChoices(t.h, t.m).forEach(([h, m]) => {
+    const b = el('button', 'binopt', binFmt(h, m));
+    b.addEventListener('click', () => binAnswer(b, h === t.h && m === t.m));
+    box.appendChild(b);
+  });
+}
+function binAnswer(btn, good){
+  if(bin.locked) return;
+  bin.locked = true;
+  const box = $('binOpts');
+  box.classList.add('locked');
+  const answer = binFmt(bin.h, bin.m);
+  [...box.children].forEach(b => { if(b.textContent === answer) b.classList.add('right'); });
+  if(good) bin.right++;
+  else btn.classList.add('wrong');
+  $('binRight').textContent = bin.right;
+  binReveal();
+  const say = $('binSay');
+  say.className = 'binsay ' + (good ? 'good' : 'bad');
+  say.innerHTML = `${good ? 'Yes!' : 'Not quite.'} The house says ${answer}.` +
+    `<small>Column by column: ${binDigits(bin.h, bin.m).map(binColumn).join(' &nbsp;|&nbsp; ')}</small>`;
+  $('binNext').textContent = bin.round + 1 < BIN_ROUNDS ? 'Next time' : 'See how you did';
+  $('binNext').hidden = false;
+}
+function binNext(){
+  bin.round++;
+  if(bin.round < BIN_ROUNDS) return binRound();
+  const zin = 'stephen', right = bin.right;
+  if(right === BIN_ROUNDS) return showAward({
+    key: KEY_BIN_DONE, game: 'Zinion Binary Clock', zin, again: binOpen,
+    line: `You read all ${BIN_ROUNDS} times from the windows without a slip, right up to the time on the clock right now!`
+  });
+  showPlayed({
+    key: KEY_BIN_PLAYED, game: 'Zinion Binary Clock', zin, again: binOpen,
+    line: right ? `You read ${right} of ${BIN_ROUNDS} times from the windows. Add up each column and try for all ${BIN_ROUNDS}!`
+                : 'Binary takes practice. Add up the lit windows in each column and try again!'
+  });
+}
+
+
+
+/* =====================================================================
    ZINION PUZZLE — a sliding tile puzzle made from the Zinion artwork.
    Shuffled by legal moves only, so every board can always be solved.
    ===================================================================== */
@@ -3073,6 +3208,9 @@ $('gMicBtn').addEventListener('click', async () => {
   await initMic();
 });
 $('modeBulbs').addEventListener('click', () => askName('bulbs'));
+$('modeBinary').addEventListener('click', () => askName('binary'));
+$('binNext').addEventListener('click', binNext);
+$('binBack').addEventListener('click', () => show('mode'));
 $('modePuzzle').addEventListener('click', () => askName('puzzle'));
 $('modeWind').addEventListener('click', windOpen);
 $('windBack').addEventListener('click', () => { windLeave(); show('mode'); });

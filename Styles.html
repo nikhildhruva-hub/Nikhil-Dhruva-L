@@ -445,6 +445,7 @@ body.joining{padding-bottom:clamp(80px,22vh,260px)}
 .mode.play{border-color:var(--accent)}
 .mode b{font-family:var(--display);font-size:clamp(20px,3vw,30px);font-weight:800;line-height:1.1}
 .mode span{color:var(--mute);font-size:clamp(12px,1.6vw,16px);line-height:1.45;max-width:26ch}
+.mode > b,.mode > span{position:relative;z-index:1}   /* card text reads in front of the Zinion */
 .mode .age{color:var(--accent);font-size:clamp(11px,1.4vw,14px);font-weight:700}
 .mode img{position:absolute;right:-6px;bottom:-6px;width:auto;height:auto;max-width:min(34%,110px);max-height:58%;opacity:.9;
   filter:drop-shadow(0 10px 16px rgba(0,0,0,.4));animation:bob 5.5s ease-in-out infinite}
@@ -489,6 +490,89 @@ body.joining{padding-bottom:clamp(80px,22vh,260px)}
 .meter .mark{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--pale);opacity:.85}
 .gnote{color:var(--mute);font-size:clamp(11px,1.4vw,14px);text-align:center}
 
+
+/* ---- Zinion Binary Clock ---- */
+#binary{align-items:center;text-align:center}
+#binary.screen.on{gap:clamp(8px,1.6vh,18px);overflow-y:auto;overflow-x:hidden;min-height:0}
+#binary .topbar{width:100%}
+.binscore{text-align:center;line-height:1}
+.binscore b{font-family:var(--display);font-size:clamp(26px,4.2vw,44px);font-weight:800;display:block;color:var(--accent)}
+.binscore span{color:var(--mute);font-size:clamp(10px,1.3vw,13px);display:block;margin-top:4px}
+.binq{text-align:center}
+.binhow{margin-top:-6px}
+.binstage{display:flex;align-items:flex-end;justify-content:center;gap:clamp(20px,5vw,72px);--floor:clamp(42px,7.4vh,66px)}
+
+/* the house: a warm, wooden town house with a mansard roof */
+.house{display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 26px 30px rgba(0,0,0,.45))}
+.roof{position:relative;width:100%;height:calc(var(--floor) * .8);
+  background:linear-gradient(180deg,#c9ad82,#b3946a);clip-path:polygon(6% 100%,12% 8%,88% 8%,94% 100%)}
+.chimney{position:absolute;left:18%;top:0;width:9%;height:40%;background:#b3946a;border-top:3px solid #d8c29d}
+.dormer{position:absolute;bottom:14%;width:13%;height:46%;background:#5b4632;border:3px solid #a8875a;border-radius:2px}
+.dormer:nth-of-type(2){left:34%} .dormer:nth-of-type(3){right:34%}
+.facade{
+  display:flex;flex-direction:column;padding:0 clamp(10px,1.6vw,18px);
+  background:repeating-linear-gradient(90deg,#dcc39b 0 22px,#d6bc93 22px 23px),#dcc39b;
+  border-left:4px solid #c7ab80;border-right:4px solid #c7ab80;
+}
+.hfloor{display:flex;gap:clamp(10px,1.6vw,20px);align-items:center;justify-content:center;height:var(--floor);
+  border-bottom:5px solid #c4a578;box-shadow:0 2px 0 #ead9bb}
+.hwin{position:relative;width:clamp(30px,calc(var(--floor) * .6),46px);height:calc(var(--floor) * .72);
+  background:#4f3c2a;border:3px solid #a8875a;border-radius:2px;transition:background .4s,box-shadow .4s}
+.hfloor.ground .hwin{border-radius:50% 50% 2px 2px / 32% 32% 2px 2px;height:calc(var(--floor) * .8)}
+/* window panes */
+.hwin::before,.hwin::after{content:"";position:absolute;background:rgba(80,58,36,.85)}
+.hwin::before{left:50%;top:0;bottom:0;width:2px;margin-left:-1px}
+.hwin::after{top:42%;left:0;right:0;height:2px}
+.hwin.on{background:radial-gradient(circle at 50% 45%,#FFFDF0 0%,#FFF1C2 45%,#F7D982 100%);
+  box-shadow:0 0 16px rgba(255,236,170,.85),0 0 34px rgba(255,220,130,.35);animation:winlight .5s ease both}
+.plinth{width:116%;height:clamp(12px,2vh,18px);background:linear-gradient(#efe6d6,#d8ccb6);border-radius:3px}
+@keyframes winlight{from{filter:brightness(.35)}to{filter:none}}
+
+/* the reading: dashed guides with +1, +2, +4, +8 where windows are lit, and the digits below */
+.binread{display:grid;grid-template-columns:1.6em repeat(2,minmax(46px,1fr)) 1.2em repeat(2,minmax(46px,1fr));
+  width:clamp(250px,30vw,380px);font-family:var(--display);font-weight:700}
+.binread .rl{color:var(--mute);opacity:.6;font-size:clamp(11px,1.3vw,14px);display:flex;align-items:center}
+.binread .rc{height:var(--floor);border-bottom:2px dashed rgba(185,188,235,.35);display:flex;align-items:center;justify-content:center;
+  color:var(--pale);font-size:clamp(16px,2.2vw,24px)}
+.binread .rc.mid{border-left:2px dashed rgba(185,188,235,.35)}
+.binread .gap{height:var(--floor)}
+.binread .rc span{opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s;transition-delay:var(--dl,0s)}
+.binread.show .rc span{opacity:1;transform:none}
+.binread .dg{border-top:4px solid var(--pale);margin-top:12px;padding-top:4px;font-size:clamp(38px,6.4vw,70px);line-height:1;color:var(--mute)}
+.binread .dg.mid{border-top-left-radius:0}
+.binread .colon{margin-top:16px;font-size:clamp(30px,4.6vw,52px);color:var(--mute);line-height:1;text-align:center}
+.binread.show .dg{color:var(--pale)}
+
+.binopts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(8px,1.4vw,16px);width:min(760px,100%)}
+.binopt{
+  background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:clamp(10px,1.8vh,16px) 8px;
+  font-family:var(--display);font-weight:800;font-size:clamp(20px,3vw,32px);color:var(--pale);transition:transform .12s,border-color .2s,background .2s;
+}
+.binopt:active{transform:scale(.96)}
+.binopt.right{border-color:var(--innov);background:rgba(63,232,39,.16)}
+.binopt.wrong{border-color:var(--coral);background:rgba(255,138,138,.14)}
+.binopts.locked .binopt:not(.right):not(.wrong){opacity:.45}
+.binsay{min-height:2.6em;font-family:var(--display);font-weight:700;font-size:clamp(14px,1.9vw,19px);line-height:1.4;max-width:62ch}
+.binsay.good{color:var(--innov)} .binsay.bad{color:var(--coral)}
+.binsay small{display:block;color:var(--mute);font-weight:600;font-size:.88em}
+@media (max-width:760px){
+  .binstage{flex-direction:column;align-items:center}
+  .binopts{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+/* shorter screens: drop the how-to line and tighten, so the buttons stay in view */
+@media (max-height:900px){
+  .binhow{display:none}
+  .binstage{--floor:clamp(38px,6.6vh,58px)}
+  .binread .dg{font-size:clamp(32px,5.4vw,58px);margin-top:8px}
+}
+@media (max-height:760px){
+  #binary h2.title{font-size:clamp(22px,3.4vw,32px)}
+  .binstage{--floor:clamp(34px,5.8vh,46px)}
+  .binread .dg{font-size:clamp(28px,4.6vw,46px)}
+  .binopt{padding:8px}
+  .binsay{min-height:2.4em}
+}
+@media (prefers-reduced-motion:reduce){.hwin.on{animation:none}.binread .rc span{transition:none}}
 
 /* ---- Zinion Bulbs ---- */
 .bulbstage{
