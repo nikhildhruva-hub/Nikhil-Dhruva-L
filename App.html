@@ -1046,10 +1046,10 @@ function clean(s){ return s.replace(/[<>]/g,'').trim().slice(0,18); }
    The Zinions pop up one by one, hop in turn, and take turns calling out to
    passers-by. A touch anywhere on the screen opens the game choice. */
 /* Each Zinion says who they are and pitches one of the games; tapping them opens it. */
-const HOME_GAME = { tropido:'puzzle', niki:'bulbs', argon:'quiz', stephen:'binary', harsh:'quiz' };
+const HOME_GAME = { tropido:'puzzle', niki:'binary', argon:'quiz', stephen:'binary', harsh:'quiz' };   // Bulbs is paused for now
 const HOME_TALK = {
   tropido: 'I’m in pieces in the Zinion Puzzle. Put me back together!',
-  niki:    'Watch the Zinion Bulbs light up, then tap them back in order!',
+  niki:    'Count the lit windows in each column and tell me the time!',
   argon:   'Take the Zinion Quiz. Show us what you already know!',
   stephen: 'My house tells the time with its windows. Can you read it?',
   harsh:   'Find out how curious you are in the Zinion Quiz!'
@@ -1649,7 +1649,7 @@ function showThanks(){
   $('thanksImg').alt = HOST_NAME[k];
   $('thanksTitle').textContent = player ? `Thank you, ${player}!` : 'Thank you!';
   $('thanksLine').textContent =
-    `${HOST_NAME[k]} enjoyed that. Head back home to try the Zinion Puzzle or Zinion Bulbs next.`;
+    `${HOST_NAME[k]} enjoyed that. Head back home to try the Zinion Puzzle or the Zinion Binary Clock next.`;
   show('thanks');
 }
 
