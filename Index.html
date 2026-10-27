@@ -17,7 +17,7 @@
   <div class="hostsay" id="hostsay"></div>
   <img class="mascot" id="hostimg" alt="">
 </div>
-<!-- Argon's secret door: double-tap Argon on the start screen to open -->
+<!-- The secret doors: double-tap (or hold) a Zinion on the game choice screen to open -->
 <div class="lock" id="lock" hidden>
   <div class="lockbox" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
     <img class="lockimg" id="lockImg" alt="">
@@ -32,8 +32,36 @@
 </div>
 <div class="stage">
 
-  <!-- NAME -->
-  <section id="start" class="screen on">
+  <!-- HOME: the welcome screen that invites a passer-by to touch the kiosk -->
+  <section id="home" class="screen on" aria-label="Touch the screen to play">
+    <p class="homekicker">PARSEC Whitefield</p>
+    <h1 class="hometitle">Zinia Experimental Lab</h1>
+    <p class="homespark">Spark your <span class="homeword" id="homeWord">creativity</span></p>
+    <div class="homec" id="homeC">
+      <div class="cc" data-w="creativity">
+        <span class="ccicon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg></span>
+        <span class="cctext"><b>Creativity</b><i>Try it your way</i></span>
+      </div>
+      <div class="cc" data-w="curiosity">
+        <span class="ccicon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
+        <span class="cctext"><b>Curiosity</b><i>Always ask why</i></span>
+      </div>
+      <div class="cc" data-w="confidence">
+        <span class="ccicon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3 6.5 7 .9-5.1 4.8 1.3 7L12 17.7l-6.2 3.5 1.3-7L2 9.4l7-.9z"/></svg></span>
+        <span class="cctext"><b>Confidence</b><i>Give it a go</i></span>
+      </div>
+    </div>
+    <div class="homecrew" id="homeCrew"></div>
+    <button class="hometap" id="homeTap">
+      <span class="ring"></span><span class="ring"></span>
+      <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V5a2 2 0 0 1 4 0v6"/><path d="M13 10a2 2 0 0 1 4 0v1a2 2 0 0 1 4 0v4a7 7 0 0 1-7 7h-1a7 7 0 0 1-6-3.4L4.3 15a2 2 0 0 1 3.4-2L9 15"/></svg>
+      Touch to play
+    </button>
+    <blockquote class="homequote">&ldquo;You are the result of <b><span id="homeYears">3.8</span> billion years</b> of evolutionary success.&rdquo;</blockquote>
+  </section>
+
+  <!-- NAME — temporarily hidden: the app opens straight on the game choice screen. -->
+  <section id="start" class="screen" hidden>
     <div class="orbit"></div>
     <h1>Zinia Experimental Lab</h1>
     <p class="sub">The Zinions are running experiments on our planet and they need a hand. Tell them who you are — first name or a nickname is plenty.</p>
@@ -46,6 +74,24 @@
       <div class="rule wonder"><b>Wonder</b><span>why it happens</span></div>
       <div class="rule share"><b>Share</b><span>your idea</span></div>
     </div>
+  </section>
+
+  <!-- NAME BEFORE A GAME -->
+  <section id="join" class="screen">
+    <div class="joinwrap">
+      <div class="joincard">
+        <img class="mascot joinmascot" id="joinImg" alt="">
+        <span class="joingame" id="joinGame"></span>
+        <h2 class="title">Enter your name</h2>
+        <p class="sub" id="joinSub"></p>
+        <div class="joinfield">
+          <input id="joinInput" maxlength="18" autocomplete="off" placeholder="Your name" aria-label="Your name">
+          <button class="joingo" id="joinGo">Go &rarr;</button>
+        </div>
+        <p class="joinhint">First name or a nickname is plenty.</p>
+      </div>
+    </div>
+    <button class="ghost" id="joinBack">Back</button>
   </section>
 
   <!-- ZONES -->
@@ -92,7 +138,7 @@
 
   <!-- MODE -->
   <section id="mode" class="screen">
-    <h2 class="title" id="modeHello">Pick what you fancy</h2>
+    <h2 class="title" id="modeHello">What shall it be?</h2>
     <div class="modes">
       <button class="mode play" id="modeQuiz">
         <span class="age">Everyone</span>
@@ -128,7 +174,7 @@
       </button>
     </div>
     <p class="footnote">Every great experiment starts with someone who stopped to look. Observe, wonder, share &mdash; the Zinions will do the rest.</p>
-    <button class="ghost" id="modeBack">Not me &mdash; change name</button>
+    <button class="ghost" id="modeBack">&larr; Back</button>
   </section>
 
   <!-- WIND TUNNEL -->
@@ -320,7 +366,7 @@
   <!-- THANK YOU -->
   <!-- AWARD: shown when someone finishes the puzzle or the bulbs -->
   <section id="award" class="screen">
-    <div class="confetti" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="confetti" id="awardConfetti" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
     <img class="mascot thanksimg" id="awardImg" alt="">
     <h1 id="awardTitle">Congratulations!</h1>
     <p class="sub" id="awardLine"></p>
@@ -335,6 +381,7 @@
       <button class="big-btn" id="awardAgain">Play again</button>
       <button class="ghost" id="awardHome" style="align-self:auto">Try another game</button>
     </div>
+    <p class="footnote homecount" id="awardCount"></p>
   </section>
 
   <section id="leaders" class="screen scrollable">
@@ -391,6 +438,7 @@
     <div class="btnrow">
       <button class="big-btn" id="thanksHome">Back to home</button>
     </div>
+    <p class="footnote homecount" id="thanksCount"></p>
     <p class="footnote">Now go and ask a Science Communicator what you are still wondering about.</p>
   </section>
 

@@ -784,6 +784,7 @@ function startPickRound(zid){
   $('zoneName').textContent = z ? z.name : '';
   setHost(zid);
   show('quiz');
+  stopClock(); timeLeft = TIMER_SECONDS; paintClock();
   renderPick();
 }
 
@@ -823,7 +824,8 @@ function renderPick(){
     return;
   }
 
-  // Step 2: one of the four questions.
+  // Step 2: one of the four questions, each on a fresh clock.
+  startClock();
   box.className = 'opts';
   const [q, options] = qs[pick.i];
   $('question').textContent = q;
@@ -886,6 +888,7 @@ const NOTED = ['Noted.', 'Interesting.', 'Got it.', 'Good thinking.', 'Hmm, nice
 
 function answerPick(card, value, tag){
   locked = true;
+  stopClock();
   const stage = STAGE_BY_TAG[tag] || null;
   // the wording too, since it depends on the branch; new column names so rows from
   // before, where "Question N" held the answer, don't get mixed up with these
@@ -903,14 +906,19 @@ function answerPick(card, value, tag){
   advanceTimer = setTimeout(() => {
     pick.i++;
     if(pick.i < pick.qs.length) return renderPick();
-    // Most frequent stage; walking up from Citizen and only moving on a strictly higher
-    // count means an even split stays on the lower stage. Nothing scored → Citizen.
-    const order = ['Citizen', 'Seeker', 'Solver', 'Innovator'];
-    c2iReached = order.reduce((a, b) => (pick.counts[b] || 0) > (pick.counts[a] || 0) ? b : a);
-    c2iFields = pick.fields;
-    pick = null;
-    finish();
+    pickFinish();
   }, 650);
+}
+
+/* Ends a gallery round, when the last question is answered or the clock runs out.
+   Most frequent stage; walking up from Citizen and only moving on a strictly higher
+   count means an even split stays on the lower stage. Nothing scored → Citizen. */
+function pickFinish(){
+  const order = ['Citizen', 'Seeker', 'Solver', 'Innovator'];
+  c2iReached = order.reduce((a, b) => (pick.counts[b] || 0) > (pick.counts[a] || 0) ? b : a);
+  c2iFields = pick.fields;
+  pick = null;
+  finish();
 }
 
 function isTextQuestion(item){ return item && item.type === 'text'; }
@@ -968,12 +976,14 @@ const IDLE_RESET_SEC   = 180;  // kiosk returns to the start screen after this l
 const AUTO_ADVANCE_SEC = 4;
 /* Timer. TIMER_MODE: 'round' = one clock for the whole round,
    'question' = a fresh clock on every question, 'off' = no timer.
-   The clock pauses while an explanation is on screen either way.   */
-const TIMER_MODE       = 'off';
-const TIMER_SECONDS    = 60;
+   The clock pauses while an explanation is on screen either way.
+   The gallery quiz gives each question its own clock; the "visited yet?" step has none. */
+const TIMER_MODE       = 'question';
+const TIMER_SECONDS    = 45;
 const KEY_PLAYERS = 'parsec_wf_quiz_players';
 const KEY_MISSES  = 'parsec_wf_quiz_misses';
 const KEY_DAY     = 'parsec_wf_quiz_day';
+const KEY_BULB_PLAYED = 'parsec_wf_bulb_players';   // everyone who played the bulbs today, in order   // every name used on this kiosk today, so no two visitors share one
 
 /* ================== STORAGE ================== */
 function today(){ return new Date().toDateString(); }
@@ -982,6 +992,7 @@ function store(key, fallback){
     if(localStorage.getItem(KEY_DAY) !== today()){
       localStorage.setItem(KEY_DAY, today());
       localStorage.removeItem(KEY_PLAYERS);
+      localStorage.removeItem(KEY_BULB_PLAYED);
       localStorage.removeItem(KEY_MISSES);
       localStorage.removeItem(KEY_GAME);
       localStorage.removeItem(KEY_BULB);
@@ -1008,20 +1019,101 @@ let player='', zoneId=null, advanceTimer=null, tickTimer=null;
 
 function clearTimers(){ clearTimeout(advanceTimer); advanceTimer=null; clearInterval(tickTimer); tickTimer=null; }
 function show(n){
-  ['start','mode','pick','quiz','game','bulbs','puzzle','award','wind','end','thanks','dash','stats','leaders','answers','levels'].forEach(s => $(s).classList.toggle('on', s===n));
+  document.body.classList.toggle('joining', n === 'join');
+  ['home','start','join','mode','pick','quiz','game','bulbs','puzzle','award','wind','end','thanks','dash','stats','leaders','answers','levels'].forEach(s => $(s).classList.toggle('on', s===n));
+  if(n !== 'quiz' && typeof stopClock === 'function') stopClock();
   if(n !== 'stats') stClear();   // the totals don't linger once the screen is left
   lockClose();
   $('hostwrap').classList.toggle('hide', n !== 'quiz' && n !== 'end');
   $('clock').classList.toggle('hide', n !== 'quiz' || TIMER_MODE === 'off');
-  $('drift').style.opacity = (n === 'start' || n === 'mode' || n === 'pick' || n === 'thanks') ? '1' : '0';
+  $('drift').style.opacity = (n === 'start' || n === 'join' || n === 'mode' || n === 'pick' || n === 'thanks') ? '1' : '0';
   $('drift').classList.toggle('bright', n === 'mode');
   if(n === 'mode') modeMascots();
+  homeChat(n === 'home');
+  autoHome(n === 'award' ? 'awardCount' : n === 'thanks' ? 'thanksCount' : null);
   if(n !== 'bulbs' && typeof bulbClearTimers === 'function') bulbClearTimers();
   if(n !== 'game' && typeof leaveGame === 'function') leaveGame();
   if(n !== 'wind' && typeof windLeave === 'function') windLeave();
 }
 function shuffle(a){ const b=a.slice(); for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];} return b; }
 function clean(s){ return s.replace(/[<>]/g,'').trim().slice(0,18); }
+
+/* ---------- home: the welcome screen ----------
+   The Zinions pop up one by one, hop in turn, and take turns calling out to
+   passers-by. A touch anywhere on the screen opens the game choice. */
+/* Each Zinion says who they are and pitches one of the games; tapping them opens it. */
+const HOME_GAME = { tropido:'puzzle', niki:'bulbs', argon:'quiz', stephen:'bulbs', harsh:'quiz' };
+const HOME_TALK = {
+  tropido: 'I’m in pieces in the Zinion Puzzle. Put me back together!',
+  niki:    'Watch the Zinion Bulbs light up, then tap them back in order!',
+  argon:   'Take the Zinion Quiz. Show us what you already know!',
+  stephen: 'Can you remember all 10 rounds of Zinion Bulbs?',
+  harsh:   'Find out how curious you are in the Zinion Quiz!'
+};
+(function(){
+  const crew = $('homeCrew');
+  ['tropido','niki','argon','stephen','harsh'].forEach((k, i) => {
+    const z = document.createElement('div');
+    z.className = 'zin';
+    z.dataset.k = k;
+    z.style.setProperty('--d', `${0.35 + i*0.12}s`);
+    z.innerHTML = `<em class="homesay"></em><img src="${MASCOT[k]}" alt="" style="--h:${i*0.6}s">`;
+    z.setAttribute('role', 'button');
+    z.setAttribute('aria-label', `${HOST_NAME[k]}: tap to play`);
+    z.addEventListener('click', e => { e.stopPropagation(); askName(HOME_GAME[k], k); });
+    crew.appendChild(z);
+  });
+})();
+let homeTimer = null, homeSparkTimer = null, homeSpark = 0;
+/* "Spark your …" steps through the three Cs; the matching card glows with it */
+function homeSparkStep(){
+  const cards = [...document.querySelectorAll('#homeC .cc')], w = $('homeWord');
+  const card = cards[homeSpark++ % cards.length];
+  w.classList.add('out');
+  setTimeout(() => {
+    w.textContent = card.dataset.w;
+    w.style.setProperty('--c', getComputedStyle(card).getPropertyValue('--c'));
+    w.classList.remove('out');
+    cards.forEach(c => c.classList.toggle('on', c === card));
+  }, 300);
+}
+/* 3.8 billion years, counted up from nothing as the quote arrives */
+let homeYearsTimer = null;
+function homeYears(){
+  clearInterval(homeYearsTimer);
+  const el = $('homeYears'), t0 = Date.now() + 1100, dur = 1800;
+  el.textContent = '0.0';
+  homeYearsTimer = setInterval(() => {
+    const p = Math.min(1, Math.max(0, (Date.now() - t0) / dur));
+    el.textContent = (3.8 * (1 - Math.pow(1 - p, 3))).toFixed(1);
+    if(p >= 1) clearInterval(homeYearsTimer);
+  }, 40);
+}
+function homeChat(on){
+  clearInterval(homeTimer); homeTimer = null;
+  clearInterval(homeSparkTimer); homeSparkTimer = null;
+  const zins = [...document.querySelectorAll('#homeCrew .zin')];
+  const hush = () => zins.forEach(z => { z.classList.remove('talking'); z.querySelector('.homesay').classList.remove('on'); });
+  hush();
+  if(!on) return;
+  homeSpark = 0; homeSparkStep();
+  homeSparkTimer = setInterval(homeSparkStep, 2400);
+  homeYears();
+  // replay the entrance each time the screen comes back
+  document.querySelectorAll('#home .zin').forEach(z => { z.style.animation = 'none'; void z.offsetWidth; z.style.animation = ''; });
+  // they take turns along the line, each introducing themselves and a game
+  let who = Math.floor(Math.random() * zins.length);
+  const speak = () => {
+    hush();
+    const z = zins[who++ % zins.length], k = z.dataset.k, say = z.querySelector('.homesay');
+    say.innerHTML = `<b>Hi, I’m ${HOST_NAME[k]}!</b>${HOME_TALK[k]}`;
+    say.classList.add('on');
+    z.classList.add('talking');
+  };
+  setTimeout(() => { if($('home').classList.contains('on')) speak(); }, 1400);
+  homeTimer = setInterval(speak, 4000);
+}
+$('home').addEventListener('click', () => show('mode'));
 
 /* the drifting crowd behind the start screen */
 (function(){
@@ -1058,11 +1150,51 @@ function ordinal(n){
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
+/* Game-end pages count down 30 seconds, then hand the kiosk back to the welcome screen. */
+const AUTO_HOME_SEC = 30;
+let autoHomeTimer = null;
+function autoHome(countId){
+  clearInterval(autoHomeTimer); autoHomeTimer = null;
+  if(!countId) return;
+  let left = AUTO_HOME_SEC;
+  const tick = () => { $(countId).textContent = `Back to the start in ${left} second${left === 1 ? '' : 's'}`; };
+  tick();
+  autoHomeTimer = setInterval(() => {
+    left--;
+    if(left <= 0){ player = ''; $('modeHello').textContent = 'What shall it be?'; show('home'); return; }
+    tick();
+  }, 1000);
+}
+
+/* After a lost bulbs game: no medal for winning, but the visitor still learns
+   where they stand in today's queue. Each name is counted once a day, so a
+   replay keeps the same place. */
+function showPlayed({game, zin, line, again}){
+  const list = store(KEY_BULB_PLAYED, []), name = player || 'Guest';
+  const at = list.findIndex(u => sameName(u, name));
+  if(at < 0){ list.push(name); save(KEY_BULB_PLAYED, list); }
+  const n = at < 0 ? list.length : at + 1;
+  $('awardConfetti').hidden = true;
+  $('awardImg').src = MASCOT[zin];
+  $('awardImg').alt = HOST_NAME[zin];
+  $('awardTitle').textContent = `Well played${player ? ', ' + player : ''}!`;
+  $('awardLine').textContent = line;
+  $('awardRank').textContent = ordinal(n);
+  $('awardText').textContent = n === 1
+    ? `You are the first person to play ${game} today!`
+    : `You are the ${ordinal(n)} person to play ${game} today.`;
+  const [q] = AWARD_QUOTES[Math.floor(Math.random() * AWARD_QUOTES.length)];
+  $('awardQuote').textContent = `“${q}”`;
+  awardAgain = again;
+  show('award');
+}
+
 function showAward({key, game, zin, line, again}){
   const list = store(key, []);
   list.push(player || 'Guest');
   save(key, list);
   const n = list.length;
+  $('awardConfetti').hidden = false;
   $('awardImg').src = MASCOT[zin];
   $('awardImg').alt = HOST_NAME[zin];
   $('awardTitle').textContent = `Congratulations${player ? ', ' + player : ''}!`;
@@ -1152,6 +1284,35 @@ function goPick(){
   $('hello').textContent = `Pick a gallery, ${player}`;
   $('modeHello').textContent = `What shall it be, ${player}?`;
   show('mode');
+}
+
+/* Each game asks for a name first, then opens. */
+const JOIN = {
+  quiz:   { title:'Zinion Quiz', sub:'Tell the Zinions who you are, then step inside.', go: () => show('pick') },
+  puzzle: { title:'Zinion Puzzle', sub:'Tell the Zinions who you are, then put the pieces back together.', go: () => puzOpen() },
+  bulbs:  { title:'Zinion Bulbs', sub:'Tell the Zinions who you are, then watch the bulbs closely.', go: () => openBulbs() }
+};
+let joinFor = 'quiz';
+function askName(game, zin){
+  const j = JOIN[game];
+  joinFor = game;
+  // the Zinion that was tapped, or the one on the game card, keeps the visitor company here
+  const card = $('mode' + game[0].toUpperCase() + game.slice(1)).querySelector('img');
+  $('joinImg').src = zin ? MASCOT[zin] : (card && card.getAttribute('src')) || MASCOT.argon;
+  $('joinGame').textContent = j.title;
+  $('joinSub').textContent = j.sub;
+  $('joinInput').value = '';
+  show('join');
+  $('joinInput').focus();
+}
+/* The name is kept exactly as typed; leaderboards show each name only once. */
+function joinGo(){
+  const v = clean($('joinInput').value);
+  if(!v){ $('joinInput').focus(); return; }
+  player = v;
+  $('hello').textContent = `Pick a gallery, ${player}`;
+  $('modeHello').textContent = `What shall it be, ${player}?`;
+  JOIN[joinFor].go();
 }
 
 function startRound(zid){
@@ -1281,6 +1442,12 @@ function stopClock(){ clearInterval(clockInt); clockInt = null; }
 
 function timeUp(){
   stopClock();
+  if(pick && TIMER_MODE === 'question'){
+    // gallery quiz: a question left unanswered moves on, counted as no answer
+    if(locked) return;
+    say("Time's up!", 1800);
+    return answerPick(null, 'No answer (time up)', 0);
+  }
   if(TIMER_MODE === 'question'){
     if(locked) return;
     const item = round[idx];
@@ -1417,7 +1584,7 @@ function finish(){
 
   if(c2iReached){
     const end = C2I_END_LINES[c2iReached] || { head:'', line:'' };
-    $('endWho').textContent = `${player},`;
+    $('endWho').textContent = player ? `${player},` : '';
     $('endWho').className = 'sub endname';
     $('final').textContent = end.head;
     $('final').className = 'final msg' + (end.head.length > 60 ? ' long' : '');   // long headlines: smaller, wider, ~2 lines
@@ -1432,7 +1599,7 @@ function finish(){
     const attempted = right + wrong;
     const max = (attempted || round.length) * POINTS_RIGHT;
     const pct = max ? score / max : 0;
-    $('endWho').textContent = `${player}, you brought back`;
+    $('endWho').textContent = player ? `${player}, you brought back` : 'You brought back';
     $('final').textContent = score;
     $('final').classList.toggle('neg', score < 0);
     $('endVerdict').textContent = lineFor(pct);
@@ -1445,7 +1612,7 @@ function finish(){
 
   const players = store(KEY_PLAYERS, []);
   players.push({
-    name: player,
+    name: player || 'Guest',
     score: score,
     right: right,
     wrong: wrong,
@@ -1460,7 +1627,7 @@ function finish(){
   try{
     if(window.google && google.script && google.script.run){
       google.script.run.withFailureHandler(() => {})
-        .logResult({ name: player, zone: z ? z.name : 'Mixed', stage: c2iReached || '',
+        .logResult({ name: player || 'Guest', zone: z ? z.name : 'Mixed', stage: c2iReached || '',
           score: score, right: right, wrong: wrong,
           fields: c2iFields || ['Innovator','Solver','Seeker','Citizen'].map(s => [`${s} answer`, c2iAnswers[s] || '']) });
     }
@@ -2105,13 +2272,22 @@ function bulbOver(i){
   $('bulbStart').textContent = 'Go again';
   // the button only comes back once the game is over
   bulbLater(() => { bulbBusy = false; $('bulbStart').hidden = false; }, 900);
+  // let the miss sink in, then show where they stand today
+  bulbLater(() => showPlayed({
+    game: 'Zinion Bulbs', zin: BULB_ZIN[Math.floor(Math.random()*BULB_ZIN.length)], again: openBulbs,
+    line: reached < 1 ? 'The bulbs got the better of you this time. Watch closely and try again!'
+                      : `You remembered ${reached} round${reached === 1 ? '' : 's'} of Zinion Bulbs before the pattern slipped.`
+  }), 2000);
 }
 
-/* One row per name, keeping that player's best — so replays don't fill the board
-   with the same person. `better(a, b)` is true when a beats b. */
+/* One row per name, keeping that name's best — so replays, or two visitors with the
+   same name, never put a name on the board twice. "Asha" and "asha " count as one.
+   `better(a, b)` is true when a beats b. */
+const nameKey = n => String(n || '').trim().toLowerCase();
+const sameName = (a, b) => nameKey(a) === nameKey(b);
 function lbBestPerName(list, better){
   const best = new Map();
-  list.forEach(r => { const had = best.get(r.name); if(!had || better(r, had)) best.set(r.name, r); });
+  list.forEach(r => { const k = nameKey(r.name), had = best.get(k); if(!had || better(r, had)) best.set(k, r); });
   return [...best.values()];
 }
 
@@ -2122,7 +2298,7 @@ function bulbRenderDash(){
   $('bulbDashList').innerHTML = !list.length
     ? '<p class="puzdashempty">No games yet today — be the first!</p>'
     : list.slice(0, BULB_LB_SIZE).map((r, i) => `
-      <div class="puzdashrow${r.name === player ? ' me' : ''}">
+      <div class="puzdashrow${sameName(r.name, player) ? ' me' : ''}">
         <span>${i+1}. ${r.name}</span><b>${r.rounds}</b>
       </div>`).join('');
 }
@@ -2239,7 +2415,7 @@ function puzRenderDash(){
     return;
   }
   el.innerHTML = list.slice(0, PUZ_LB_SIZE).map((r, i) => `
-    <div class="puzdashrow${r.name === player ? ' me' : ''}">
+    <div class="puzdashrow${sameName(r.name, player) ? ' me' : ''}">
       <span>${i+1}. ${r.name}</span><b>${r.moves}</b>
     </div>`).join('');
 }
@@ -2858,10 +3034,11 @@ function resetIdle(){
   clearTimeout(idleTimer);
   idleTimer = setTimeout(() => {
     // never wipe someone mid-typing, or a name already entered on the start screen
-    if(document.activeElement === $('nameInput')){ resetIdle(); return; }
+    if(document.activeElement === $('nameInput') || document.activeElement === $('joinInput')){ resetIdle(); return; }
+    if($('join').classList.contains('on') && $('joinInput').value.trim()){ resetIdle(); return; }
     if($('start').classList.contains('on') && $('nameInput').value.trim()){ resetIdle(); return; }
     if(window.ZIN_VIEW === 'dash') return;   // the owner's dashboard stays put
-    clearTimers(); player=''; $('nameInput').value=''; show('start');
+    clearTimers(); player=''; $('nameInput').value=''; $('modeHello').textContent = 'What shall it be?'; show('home');
   }, IDLE_RESET_SEC*1000);
 }
 ['click','keydown','keyup','input','touchstart','touchmove','pointerdown','focusin']
@@ -2874,8 +3051,11 @@ $('nameInput').addEventListener('keydown', e => { if(e.key === 'Enter') goPick()
 $('nameInput').addEventListener('focus', () => document.body.classList.add('typing'));
 $('nameInput').addEventListener('blur', () => document.body.classList.remove('typing'));
 $('backName').addEventListener('click', () => show('mode'));
-$('modeBack').addEventListener('click', () => { $('nameInput').value=''; show('start'); });
-$('modeQuiz').addEventListener('click', () => show('pick'));
+$('modeBack').addEventListener('click', () => show('home'));
+$('modeQuiz').addEventListener('click', () => askName('quiz'));
+$('joinGo').addEventListener('click', joinGo);
+$('joinInput').addEventListener('keydown', e => { if(e.key === 'Enter') joinGo(); });
+$('joinBack').addEventListener('click', () => show('mode'));
 $('modeGame').addEventListener('click', openGame);
 $('gSens').addEventListener('input', e => {
   micSens = Number(e.target.value)/100;
@@ -2892,8 +3072,8 @@ $('gMicBtn').addEventListener('click', async () => {
   stopMic();
   await initMic();
 });
-$('modeBulbs').addEventListener('click', openBulbs);
-$('modePuzzle').addEventListener('click', puzOpen);
+$('modeBulbs').addEventListener('click', () => askName('bulbs'));
+$('modePuzzle').addEventListener('click', () => askName('puzzle'));
 $('modeWind').addEventListener('click', windOpen);
 $('windBack').addEventListener('click', () => { windLeave(); show('mode'); });
 document.querySelectorAll('.fanbtn').forEach(b => b.addEventListener('click', () => {
@@ -2918,7 +3098,7 @@ $('quizBack').addEventListener('click', () => { clearTimers(); show('mode'); });
 $('doneBtn').addEventListener('click', showThanks);
 $('thanksHome').addEventListener('click', () => show('mode'));
 $('againBtn').addEventListener('click', () => show('mode'));
-$('dashBack').addEventListener('click', () => { player=''; $('nameInput').value=''; show('start'); });
+$('dashBack').addEventListener('click', () => { player=''; $('nameInput').value=''; show('mode'); });
 
 /* The curiosity levels sit behind the eye: two taps close together ask for the
    password, and the right one shows them; two more taps hide them again. Taps are
@@ -2951,7 +3131,7 @@ async function peekCheck(){
   $('peekPw').select();
 }
 /* ---------- Argon's secret door ----------
-   Double-tap Argon on the start screen, give the password, and the stats screen
+   Double-tap Argon on the game choice screen, give the password, and the stats screen
    opens. Argon floats in the background under the page, so a tap is matched to
    Argon by where it lands rather than by a click on the image. The server checks
    the password (getStageStats) and sends back totals only, never names. */
@@ -2964,7 +3144,7 @@ const DOOR_GAP_MS = 650; // longest pause between the two taps
 const DOOR_HOLD_MS = 1000; // holding a finger on the Zinion this long opens the door too
 let doorLast = 0, doorLastKey = '', lockDoor = 'argon', doorHold = null, doorAt = null;
 function doorAtPoint(x, y, target){
-  if(!$('start').classList.contains('on') || !$('lock').hidden) return null;
+  if(!$('mode').classList.contains('on') || !$('lock').hidden) return null;
   if(target && target.closest && target.closest('input,button')) return null;
   return Object.keys(DOORS).find(k => {
     const z = $('drift').querySelector(`[data-k="${k}"]`);
@@ -3036,9 +3216,9 @@ function lockTry(){
 $('lockGo').addEventListener('click', lockTry);
 $('lockPw').addEventListener('keydown', e => { if(e.key === 'Enter') lockTry(); });
 $('lockCancel').addEventListener('click', lockClose);
-$('stBack').addEventListener('click', () => show('start'));
-$('ldBack').addEventListener('click', () => show('start'));
-$('qaBack').addEventListener('click', () => show('start'));
+$('stBack').addEventListener('click', () => show('mode'));
+$('ldBack').addEventListener('click', () => show('mode'));
+$('qaBack').addEventListener('click', () => show('mode'));
 
 /* ---------- Axon's secret door: questions and answers ----------
    Every visit's questions and answers from the results Sheet, filtered by gallery
@@ -3164,7 +3344,7 @@ function lvShow(stage){
   });
 }
 document.querySelectorAll('#lvTabs .lv-tab').forEach(b => b.addEventListener('click', () => lvShow(b.dataset.s)));
-$('lvBack').addEventListener('click', () => show('start'));
+$('lvBack').addEventListener('click', () => show('mode'));
 
 /* Today's leaders on this kiosk: whole puzzle runs by fewest moves, cleared bulb games by fewest tries */
 function renderLeaders(){
@@ -3358,5 +3538,6 @@ function openSheetDash(){
     .getDashData();
 }
 if(window.ZIN_VIEW === 'dash') openSheetDash();
+else show('home');
 
 </script>
