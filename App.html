@@ -2200,6 +2200,8 @@ const BULB_HOST_ME = 'argon', BULB_HOST_YOU = 'stephen';   // who plays the bulb
 let bulbSeq = [], bulbStep = 0, bulbRound = 0, bulbBusy = false, bulbTimers = [];
 // the Zinion picked on the helper carousel, whether this is the practice round, and who has had one
 let bulbHelper = BULB_HOST_YOU, bulbPractice = false, bulbPracticedBy = null;
+const BULB_HELPS = 2;              // the helper shows the pattern again when asked, twice a game
+let bulbHelpsLeft = BULB_HELPS;
 
 function bulbEls(){ return [...document.querySelectorAll('#bulbRow .bulb')]; }
 function bulbClearTimers(){ bulbTimers.forEach(clearTimeout); bulbTimers = []; }
@@ -2230,7 +2232,9 @@ function bulbReset(){
   bulbEls().forEach(el => el.classList.remove('lit','wrong','dead'));
   $('bulbRow').classList.remove('bulbs-lock');
   bulbSeq = []; bulbStep = 0; bulbRound = 0; bulbBusy = false; bulbPractice = false;
+  bulbHelpsLeft = BULB_HELPS;
   bulbHost(null);
+  bulbHelpShow(false);
   $('bulbRound').textContent = `Round 1 of ${BULB_MAX}`;
   const best = Number(store(KEY_BULB, 0)) || 0;
   $('bulbBest').textContent = best ? `Best today: round ${best}` : '';
@@ -2303,6 +2307,7 @@ function bulbPlay(){
   $('bulbRow').classList.add('bulbs-lock');
   bulbSay('');
   bulbHost('me');
+  bulbHelpShow(false);
   const gap = Math.max(360, 620 - bulbRound * 22);   // speeds up as rounds go on
   bulbSeq.forEach((b, i) => bulbFlash(b, 'lit', 500 + i*gap, 500 + i*gap + gap*0.62));
   bulbLater(() => {
@@ -2310,7 +2315,33 @@ function bulbPlay(){
     $('bulbRow').classList.remove('bulbs-lock');
     bulbSay('');
     bulbHost('you');
+    bulbHelpShow(true);
   }, 500 + bulbSeq.length*gap + 120);
+}
+
+function bulbHelpShow(on){
+  $('bulbHelp').textContent = `Help me, ${HOST_NAME[bulbHelper]} (${bulbHelpsLeft} left)`;
+  $('bulbHelp').hidden = !on || bulbHelpsLeft < 1 || bulbPractice;
+}
+/* "Help me": the helper taps the whole pattern through again, slowly, and the
+   visitor starts over from the first bulb. Two helps a game, then the button goes. */
+function bulbHint(){
+  if(bulbBusy || bulbHelpsLeft < 1 || bulbPractice || !bulbSeq.length) return;
+  bulbHelpsLeft--;
+  bulbHelpShow(false);
+  bulbBusy = true; bulbStep = 0;
+  $('bulbRow').classList.add('bulbs-lock');
+  const name = HOST_NAME[bulbHelper], gap = 650;
+  bulbHost('help');
+  bulbSay(`${name}: Watch with me once more.`);
+  bulbSeq.forEach((b, i) => bulbFlash(b, 'tap', 600 + i*gap, 600 + i*gap + 400));
+  bulbLater(() => {
+    bulbBusy = false;
+    $('bulbRow').classList.remove('bulbs-lock');
+    bulbHost('you');
+    bulbSay(`${name}: Your go. Start from the first bulb.` + (bulbHelpsLeft ? '' : ' That was my last help!'));
+    bulbHelpShow(true);
+  }, 600 + bulbSeq.length * gap + 100);
 }
 
 function bulbTap(i){
@@ -2325,6 +2356,7 @@ function bulbTap(i){
       bulbBusy = true;
       $('bulbRow').classList.add('bulbs-lock');
       bulbHost(null);
+      bulbHelpShow(false);
       if(bulbPractice) return bulbPracticeDone();
       if(bulbRound >= BULB_MAX) return bulbWin();
       const z = BULB_ZIN[i] || 'stephen';
@@ -2342,6 +2374,7 @@ function bulbOver(i){
   bulbBusy = true;
   bulbClearTimers();
   bulbHost(null);
+  bulbHelpShow(false);
   $('bulbRow').classList.add('bulbs-lock');
   const el = bulbEls()[i];
   el.classList.add('wrong');
@@ -3431,6 +3464,7 @@ document.querySelectorAll('#puzModes .puzmode').forEach(b =>
 $('puzBack').addEventListener('click', () => show('mode'));
 $('bulbStart').addEventListener('click', bulbStartClick);
 $('bulbSkip').addEventListener('click', bulbBegin);
+$('bulbHelp').addEventListener('click', bulbHint);
 $('hcPrev').addEventListener('click', () => hcMove(-1));
 $('hcNext').addEventListener('click', () => hcMove(1));
 $('hcChoose').addEventListener('click', () => bulbsWith(HELPERS[hcAt].k));
