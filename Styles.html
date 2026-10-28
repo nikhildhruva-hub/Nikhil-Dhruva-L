@@ -729,7 +729,9 @@ body.joining{padding-bottom:clamp(80px,22vh,260px)}
   border:2px solid rgba(255,255,255,.7);border-radius:999px;padding:8px 18px}
 /* a real turntable: the Zinions stand round a ring that turns in depth, each one
    turning back as it goes so it always faces the visitor */
-.hc-ring{position:absolute;inset:0;z-index:3;perspective:1100px;perspective-origin:50% 30%}
+.hc-ring{position:absolute;inset:0;z-index:3;perspective:1100px;perspective-origin:50% 30%;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+#helper.hc-dragging .hc-ring{cursor:grabbing}
+#helper.hc-dragging .hc-spin,#helper.hc-dragging .hc-item{transition:none}   /* follow the finger exactly */
 .hc-floor{position:absolute;left:50%;bottom:9%;width:min(120vh,86vw);height:18vh;translate:-50% 0;border-radius:50%;pointer-events:none;
   background:radial-gradient(closest-side,rgba(255,255,255,.34),rgba(255,255,255,.12) 62%,transparent);box-shadow:0 0 60px rgba(255,255,255,.12)}
 .hc-spin{--h:min(48vh,50vw);--r:calc(var(--h) * .95);position:absolute;left:50%;bottom:17%;height:var(--h);width:calc(var(--h) * .8);
