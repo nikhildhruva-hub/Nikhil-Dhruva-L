@@ -2421,7 +2421,9 @@ function bulbWin(){
 /* Zinion Bulbs opens on the helper carousel. The chosen Zinion stands beside the bulbs
    on the visitor's side; if they pick the one who plays the bulbs, Zetta plays instead. */
 function openBulbs(){
-  hcAt = Math.max(0, HELPERS.findIndex(h => h.k === bulbHelper));
+  const at = Math.max(0, HELPERS.findIndex(h => h.k === bulbHelper));
+  hcTurn += (at - hcAt + HELPERS.length) % HELPERS.length;   // turn forward to the last helper chosen
+  hcAt = at;
   hcPaint();
   show('helper');
 }
@@ -2451,10 +2453,11 @@ const HELPERS = [
   { k:'harsh',   bg:'#4C98DE', line:"The fastest Zinion on the floor. Mach says speed comes from watching, not rushing." }
 ];
 const HC_ROLES = { 0:'center', 1:'right', 2:'backr', 3:'backl', 4:'left' };   // by place after the front one
-let hcAt = 0, hcBusy = false, hcSwipeX = null, hcSwiped = false;
+let hcAt = 0, hcTurn = 0, hcBusy = false, hcSwipeX = null, hcSwiped = false;   // hcTurn counts whole steps, so the ring never spins back the long way
+const HC_STEP = 360 / HELPERS.length;
 (function(){
-  $('hcRing').innerHTML = HELPERS.map((h, i) =>
-    `<div class="hc-item" data-i="${i}"><img src="${MASCOT[h.k]}" alt="${HOST_NAME[h.k]}" draggable="false"></div>`).join('');
+  $('hcRing').innerHTML = '<div class="hc-floor"></div><div class="hc-spin" id="hcSpin">' + HELPERS.map((h, i) =>
+    `<div class="hc-item" data-i="${i}"><img src="${MASCOT[h.k]}" alt="${HOST_NAME[h.k]}" draggable="false"></div>`).join('') + '</div>';
   $('hcRing').querySelectorAll('.hc-item').forEach(el => el.addEventListener('click', () => {
     if(hcSwiped){ hcSwiped = false; return; }   // the end of a swipe isn't a tap
     const off = (+el.dataset.i - hcAt + HELPERS.length) % HELPERS.length;
@@ -2463,8 +2466,16 @@ let hcAt = 0, hcBusy = false, hcSwipeX = null, hcSwiped = false;
   }));
 })();
 function hcPaint(){
-  $('hcRing').querySelectorAll('.hc-item').forEach(el =>
-    el.className = 'hc-item ' + HC_ROLES[(+el.dataset.i - hcAt + HELPERS.length) % HELPERS.length]);
+  // the ring turns one way, and each Zinion turns back the same amount, so it keeps facing out
+  const turn = hcTurn * HC_STEP;
+  $('hcSpin').style.transform = `translateZ(calc(var(--r) * -1)) rotateY(${-turn}deg)`;
+  $('hcRing').querySelectorAll('.hc-item').forEach(el => {
+    const a = +el.dataset.i * HC_STEP, role = HC_ROLES[(+el.dataset.i - hcAt + HELPERS.length) % HELPERS.length];
+    // the one in front stands tallest; the pictures differ in shape, so depth alone doesn't show it
+    const size = role === 'center' ? 1.3 : role === 'left' || role === 'right' ? .78 : .58;
+    el.style.transform = `rotateY(${a}deg) translateZ(var(--r)) rotateY(${turn - a}deg) scale(${size})`;
+    el.className = 'hc-item ' + role;
+  });
   const h = HELPERS[hcAt];
   $('helper').style.setProperty('--hc-bg', h.bg);
   $('hcGhost').textContent = HOST_NAME[h.k];
@@ -2474,9 +2485,10 @@ function hcPaint(){
 function hcMove(d){
   if(hcBusy) return;
   hcBusy = true;
+  hcTurn += d;
   hcAt = (hcAt + d + HELPERS.length) % HELPERS.length;
   hcPaint();
-  setTimeout(() => { hcBusy = false; }, 650);
+  setTimeout(() => { hcBusy = false; }, 850);
 }
 // a swipe across the carousel turns it too
 $('hcRing').addEventListener('pointerdown', e => { hcSwipeX = e.clientX; hcSwiped = false; });
