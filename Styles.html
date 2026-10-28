@@ -119,7 +119,7 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 .homekicker{color:var(--accent-ink);font-weight:700;letter-spacing:.18em;text-transform:uppercase;font-size:clamp(11px,1.4vw,14px);animation:homefade .8s ease both}
 /* the title: each letter has its own colour along a white–lime–teal sweep, and a wave
    rolls along it, lifting and lighting each letter in turn */
-.hometitle{font-size:clamp(38px,7vw,86px);animation:homefade .8s .1s ease both}
+.hometitle{font-size:clamp(38px,7.6vw,112px);animation:homefade .8s .1s ease both}
 .hometitle span{display:inline-block;animation:wave 4.5s ease-in-out infinite;animation-delay:var(--d)}
 @keyframes wave{0%,70%,100%{translate:0 0;text-shadow:none}80%{translate:0 -12px;text-shadow:0 0 22px currentColor}90%{translate:0 2px}}
 /* "Spark your …" cycles through the three Cs, and the matching card lights up */
@@ -129,7 +129,7 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 .homec{display:flex;justify-content:center;align-items:center}
 /* the links between the three Cs: dashes flow from one card's colour to the next, and
    a spark runs along a link as the next card lights up */
-.ccl{--a:var(--solver);--b:var(--seeker);position:relative;flex:none;width:clamp(26px,4.4vw,60px);height:5px;filter:drop-shadow(0 0 4px var(--b))}
+.ccl{--a:var(--solver);--b:var(--seeker);position:relative;flex:none;width:clamp(26px,7vw,130px);height:5px;filter:drop-shadow(0 0 4px var(--b))}
 .ccl + .cc + .ccl{--a:var(--seeker);--b:var(--innov)}
 .ccl::before{content:"";position:absolute;inset:0;border-radius:2px;opacity:.75;
   background:linear-gradient(90deg,var(--a),var(--b));
@@ -145,7 +145,7 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 @media (max-width:640px){.homec{flex-wrap:wrap;gap:10px}.ccl{display:none}}
 .cc{
   --c:var(--accent);display:flex;align-items:center;gap:12px;text-align:left;
-  background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:10px 18px 10px 10px;
+  background:var(--panel);border:2px solid var(--line);border-radius:20px;padding:12px 26px 12px 12px;
   transition:border-color .4s,box-shadow .4s,scale .4s;
 }
 .cc{animation:popin .7s cubic-bezier(.3,1.6,.5,1) both,float 4s ease-in-out infinite}
@@ -155,16 +155,16 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 @keyframes float{0%,100%{translate:0 0}50%{translate:0 -8px}}
 .cc.on .ccicon svg{animation:wiggle .9s ease-in-out}
 @keyframes wiggle{20%{rotate:-14deg}40%{rotate:12deg}60%{rotate:-8deg}80%{rotate:4deg}}
-.ccicon{flex:none;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;color:var(--c);background:var(--glass);transition:background .4s,color .4s}
-.cctext b{display:block;font-family:var(--display);font-weight:800;font-size:clamp(16px,2vw,21px);line-height:1.1;color:var(--pale)}
-.cctext i{font-style:normal;color:var(--mute);font-size:clamp(12px,1.4vw,14px)}
+.ccicon{flex:none;width:48px;height:48px;border-radius:12px;display:grid;place-items:center;color:var(--c);background:var(--glass);transition:background .4s,color .4s}
+.cctext b{display:block;font-family:var(--display);font-weight:800;font-size:clamp(16px,2vw,24px);line-height:1.1;color:var(--pale)}
+.cctext i{font-style:normal;color:var(--mute);font-size:clamp(12px,1.4vw,16px)}
 .cc.on{border-color:var(--c);box-shadow:0 0 28px -4px var(--c);scale:1.06}
 .cc.on .ccicon{background:var(--c);color:var(--on-accent)}
-.homequote{max-width:52ch;color:var(--mute);font-style:italic;font-size:clamp(14px,1.8vw,19px);line-height:1.45;animation:homefade .8s 1.1s ease both}
+.homequote{max-width:70ch;color:var(--mute);font-style:italic;font-size:clamp(14px,1.8vw,19px);line-height:1.45;animation:homefade .8s 1.1s ease both}
 .homequote b{color:var(--accent-ink);font-style:normal;font-weight:700}
 /* the helix: two glowing strands of beads crossing over, joined by rungs */
 .dna{--amp:clamp(28px,6vh,58px);display:flex;justify-content:space-between;align-items:center;
-  width:min(640px,82vw);height:calc(var(--amp) * 2 + 24px);margin:clamp(6px,1.6vh,18px) 0;animation:homefade .8s .6s ease both}
+  width:min(1000px,86vw);height:calc(var(--amp) * 2 + 24px);margin:clamp(6px,1.6vh,18px) 0;animation:homefade .8s .6s ease both}
 .bp{position:relative;width:12px;height:100%}
 .bp i{position:absolute;left:50%;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;
   animation:dnaY 1.8s ease-in-out infinite alternate,dnaZ 3.6s linear infinite;animation-delay:var(--d),var(--d)}
