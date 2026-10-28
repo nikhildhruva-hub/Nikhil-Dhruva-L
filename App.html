@@ -1024,7 +1024,7 @@ let player='', zoneId=null, advanceTimer=null, tickTimer=null;
 function clearTimers(){ clearTimeout(advanceTimer); advanceTimer=null; clearInterval(tickTimer); tickTimer=null; }
 function show(n){
   document.body.classList.toggle('joining', n === 'join');
-  ['home','start','join','mode','pick','quiz','game','bulbs','binary','puzzle','award','wind','end','thanks','dash','stats','leaders','answers','levels'].forEach(s => $(s).classList.toggle('on', s===n));
+  ['home','start','join','mode','pick','quiz','game','helper','bulbs','binary','puzzle','award','wind','end','thanks','dash','stats','leaders','answers','levels'].forEach(s => $(s).classList.toggle('on', s===n));
   if(n !== 'quiz' && typeof stopClock === 'function') stopClock();
   if(n !== 'stats') stClear();   // the totals don't linger once the screen is left
   lockClose();
@@ -1032,7 +1032,7 @@ function show(n){
   $('clock').classList.toggle('hide', n !== 'quiz' || TIMER_MODE === 'off');
   $('drift').style.opacity = (n === 'start' || n === 'join' || n === 'mode' || n === 'pick' || n === 'thanks') ? '1' : '0';
   $('drift').classList.toggle('bright', n === 'mode');
-  if(n === 'mode') modeMascots();
+  if(n === 'mode'){ weeklyGames(); modeMascots(); }
   homeChat(n === 'home');
   autoHome(n === 'award' ? 'awardCount' : n === 'thanks' ? 'thanksCount' : null);
   if(n !== 'bulbs' && typeof bulbClearTimers === 'function') bulbClearTimers();
@@ -1058,17 +1058,30 @@ function clean(s){ return s.replace(/[<>]/g,'').trim().slice(0,18); }
       `--c:${cols[Math.floor(Math.random() * cols.length)]};--t:${(9 + Math.random() * 12).toFixed(1)}s;` +
       `--dl:${(-Math.random() * 20).toFixed(1)}s;--x:${(Math.random() * 16 - 8).toFixed(1)}vw"></i>`;
   }).join('');
-  // the title, one letter at a time, so a wave can roll along it; each letter takes
-  // its colour from a white–lime–teal–white sweep
-  const t = document.querySelector('.hometitle'), chars = [...t.textContent];
-  const stops = [[245, 246, 255], [217, 255, 53], [63, 237, 224], [245, 246, 255]];
-  const tint = f => {
-    const x = f * (stops.length - 1), k = Math.min(Math.floor(x), stops.length - 2), u = x - k;
-    return `rgb(${stops[k].map((c, j) => Math.round(c + (stops[k + 1][j] - c) * u)).join(',')})`;
-  };
-  t.innerHTML = chars.map((ch, i) => ch === ' ' ? ' ' :
-    `<span style="--d:${(i * 0.07).toFixed(2)}s;color:${tint(i / (chars.length - 1))}">${ch}</span>`).join('');
+  // the title, one letter at a time, so a wave can roll along it
+  const t = document.querySelector('.hometitle');
+  t.innerHTML = [...t.textContent].map((ch, i) => ch === ' ' ? ' ' :
+    `<span style="--d:${(i * 0.07).toFixed(2)}s">${ch}</span>`).join('');
+  homeTitleTint();
 })();
+/* Each title letter takes its colour from a sweep: white–lime–orange–teal–white in dark mode,
+   navy–olive–orange–teal–navy in light mode, so it reads on either background.
+   The helix's second strand runs lime–orange–lime the same way. */
+function sweep(stops, t){
+  const x = t * (stops.length - 1), k = Math.min(Math.floor(x), stops.length - 2), u = x - k;
+  return `rgb(${stops[k].map((c, j) => Math.round(c + (stops[k + 1][j] - c) * u)).join(',')})`;
+}
+function homeTitleTint(){
+  const light = document.documentElement.dataset.theme === 'light';
+  const stops = light ? [[20, 22, 79], [78, 120, 0], [212, 106, 0], [11, 154, 146], [20, 22, 79]]
+                      : [[245, 246, 255], [217, 255, 53], [255, 140, 26], [63, 237, 224], [245, 246, 255]];
+  const spans = [...document.querySelectorAll('.hometitle span')], n = spans.length - 1 || 1;
+  spans.forEach((s, i) => { s.style.color = sweep(stops, i / n); });
+  const strand = light ? [[148, 199, 0], [230, 120, 0], [148, 199, 0]]
+                       : [[217, 255, 53], [255, 140, 26], [217, 255, 53]];
+  const beads = [...document.querySelectorAll('#homeDna .bp')], m = beads.length - 1 || 1;
+  beads.forEach((b, i) => b.style.setProperty('--b', sweep(strand, i / m)));
+}
 let homeSparkTimer = null, homeSpark = 0;
 
 /* "Spark your …" steps through the three Cs; the matching card glows with it */
@@ -1212,6 +1225,17 @@ function showAward({key, game, zin, line, again}){
   $('awardQuote').textContent = `“${q}”`;
   awardAgain = again;
   show('award');
+}
+
+/* Two games a week: the Quiz always, plus Bulbs and Puzzle taking turns.
+   Weeks start Monday; the week of 26 Oct 2026 is a Bulbs week. */
+const WEEK_ANCHOR = new Date(2026, 9, 26);
+function weeklyGames(){
+  const now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weeks = Math.floor(Math.round((today - WEEK_ANCHOR) / 864e5) / 7);
+  const bulbsWeek = ((weeks % 2) + 2) % 2 === 0;
+  $('modeBulbs').hidden = !bulbsWeek;
+  $('modePuzzle').hidden = bulbsWeek;
 }
 
 /* a different Zinion floats on each game card every visit, and they take
@@ -2174,6 +2198,9 @@ const BULB_ZIN = ['tropido','niki','stephen','argon','harsh'];
 const BULB_MAX = 10;   // clear this many rounds to win
 const BULB_HOST_ME = 'argon', BULB_HOST_YOU = 'stephen';   // who plays the bulbs, who hands over to the visitor
 let bulbSeq = [], bulbStep = 0, bulbRound = 0, bulbBusy = false, bulbTimers = [];
+// the Zinion picked on the helper carousel, whether this is the practice round, and who has had one
+let bulbHelper = BULB_HOST_YOU, bulbPractice = false, bulbPracticedBy = null;
+let bulbHintUsed = false;   // the helper replays the pattern once a round, when asked
 
 function bulbEls(){ return [...document.querySelectorAll('#bulbRow .bulb')]; }
 function bulbClearTimers(){ bulbTimers.forEach(clearTimeout); bulbTimers = []; }
@@ -2190,6 +2217,7 @@ function bulbFlash(i, cls, on, off){
 function bulbHost(who){
   $('bulbHostMe').classList.toggle('talk', who === 'me');
   $('bulbHostYou').classList.toggle('talk', who === 'you');
+  $('bulbHostYou').classList.toggle('help', who === 'help');
 }
 
 function bulbSay(text, tone){
@@ -2202,19 +2230,72 @@ function bulbReset(){
   bulbClearTimers();
   bulbEls().forEach(el => el.classList.remove('lit','wrong','dead'));
   $('bulbRow').classList.remove('bulbs-lock');
-  bulbSeq = []; bulbStep = 0; bulbRound = 0; bulbBusy = false;
+  bulbSeq = []; bulbStep = 0; bulbRound = 0; bulbBusy = false; bulbPractice = false;
   bulbHost(null);
+  bulbHelpShow(false);
   $('bulbRound').textContent = `Round 1 of ${BULB_MAX}`;
   const best = Number(store(KEY_BULB, 0)) || 0;
   $('bulbBest').textContent = best ? `Best today: round ${best}` : '';
-  bulbSay('Watch which bulbs light up.');
-  $('bulbStart').textContent = 'Start';
+  const practise = bulbNeedsPractice(), name = HOST_NAME[bulbHelper];
+  bulbSay(practise ? `${name} will show you how first. The practice round doesn't count.` : 'Watch which bulbs light up.');
+  $('bulbStart').textContent = practise ? `Practise with ${name}` : 'Start';
   $('bulbStart').hidden = false;
+  $('bulbSkip').hidden = !practise;
+}
+function bulbNeedsPractice(){ return !sameName(bulbPracticedBy, player || 'Guest'); }
+
+/* The practice round: two bulbs light, the helper taps them back to show how, then the
+   visitor has a go. A miss just shows it again; nothing is scored or saved. */
+function bulbPracticeStart(){
+  bulbClearTimers();
+  bulbEls().forEach(el => el.classList.remove('lit','wrong','dead','tap'));
+  bulbPractice = true;
+  $('bulbStart').hidden = true; $('bulbSkip').hidden = true;
+  const n = bulbEls().length, a = Math.floor(Math.random() * n);
+  let b = Math.floor(Math.random() * (n - 1)); if(b >= a) b++;
+  bulbSeq = [a, b]; bulbRound = 1;
+  $('bulbRound').textContent = 'Practice round';
+  bulbPracticeShow();
+}
+function bulbPracticeShow(){
+  const name = HOST_NAME[bulbHelper], gap = 700, demo = 500 + bulbSeq.length * gap + 900;
+  bulbBusy = true; bulbStep = 0;
+  $('bulbRow').classList.add('bulbs-lock');
+  bulbHost('me');
+  bulbSay('Watch the bulbs…');
+  bulbSeq.forEach((b, i) => bulbFlash(b, 'lit', 500 + i*gap, 500 + i*gap + 430));
+  bulbLater(() => { bulbHost('help'); bulbSay(`${name}: I tap them back in the same order, like this.`); }, demo - 600);
+  bulbSeq.forEach((b, i) => bulbFlash(b, 'tap', demo + i*gap, demo + i*gap + 430));
+  bulbLater(() => {
+    bulbBusy = false;
+    $('bulbRow').classList.remove('bulbs-lock');
+    bulbHost('you');
+    bulbSay(`${name}: Now you try. Tap the same ${bulbSeq.length} bulbs.`);
+  }, demo + bulbSeq.length * gap + 100);
+}
+function bulbPracticeMiss(i){
+  bulbBusy = true;
+  $('bulbRow').classList.add('bulbs-lock');
+  const el = bulbEls()[i];
+  el.classList.add('wrong');
+  setTimeout(() => el.classList.remove('wrong'), 700);
+  bulbHost('help');
+  bulbSay(`${HOST_NAME[bulbHelper]}: Not quite. No problem, watch once more.`, 'bad');
+  bulbLater(bulbPracticeShow, 1800);
+}
+function bulbPracticeDone(){
+  bulbPractice = false;
+  bulbPracticedBy = player || 'Guest';
+  bulbHost('help');
+  bulbSay(`${HOST_NAME[bulbHelper]}: You've got it! Now the real game. This one counts.`, 'go');
+  $('bulbStart').textContent = 'Start the game';
+  bulbLater(() => { $('bulbStart').hidden = false; }, 700);
 }
 
 function bulbNextRound(){
   bulbRound++;
   bulbStep = 0;
+  bulbHintUsed = false;
   bulbSeq.push(Math.floor(Math.random() * bulbEls().length));
   $('bulbRound').textContent = `Round ${bulbRound} of ${BULB_MAX}`;
   bulbPlay();
@@ -2225,6 +2306,7 @@ function bulbPlay(){
   $('bulbRow').classList.add('bulbs-lock');
   bulbSay('');
   bulbHost('me');
+  bulbHelpShow(false);
   const gap = Math.max(360, 620 - bulbRound * 22);   // speeds up as rounds go on
   bulbSeq.forEach((b, i) => bulbFlash(b, 'lit', 500 + i*gap, 500 + i*gap + gap*0.62));
   bulbLater(() => {
@@ -2232,7 +2314,32 @@ function bulbPlay(){
     $('bulbRow').classList.remove('bulbs-lock');
     bulbSay('');
     bulbHost('you');
+    bulbHelpShow(!bulbHintUsed);
   }, 500 + bulbSeq.length*gap + 120);
+}
+
+function bulbHelpShow(on){
+  $('bulbHelp').textContent = `Help me, ${HOST_NAME[bulbHelper]}`;
+  $('bulbHelp').hidden = !on;
+}
+/* "Help me": the helper taps the whole pattern through again, slowly, and the
+   visitor starts over from the first bulb. Once a round. */
+function bulbHint(){
+  if(bulbBusy || bulbHintUsed || bulbPractice || !bulbSeq.length) return;
+  bulbHintUsed = true;
+  bulbHelpShow(false);
+  bulbBusy = true; bulbStep = 0;
+  $('bulbRow').classList.add('bulbs-lock');
+  const name = HOST_NAME[bulbHelper], gap = 650;
+  bulbHost('help');
+  bulbSay(`${name}: Watch with me once more.`);
+  bulbSeq.forEach((b, i) => bulbFlash(b, 'tap', 600 + i*gap, 600 + i*gap + 400));
+  bulbLater(() => {
+    bulbBusy = false;
+    $('bulbRow').classList.remove('bulbs-lock');
+    bulbHost('you');
+    bulbSay(`${name}: Your go. Start from the first bulb.`);
+  }, 600 + bulbSeq.length * gap + 100);
 }
 
 function bulbTap(i){
@@ -2247,11 +2354,15 @@ function bulbTap(i){
       bulbBusy = true;
       $('bulbRow').classList.add('bulbs-lock');
       bulbHost(null);
+      bulbHelpShow(false);
+      if(bulbPractice) return bulbPracticeDone();
       if(bulbRound >= BULB_MAX) return bulbWin();
       const z = BULB_ZIN[i] || 'stephen';
       bulbSay(`${HOST_NAME[z]} says yes!`, 'go');
       bulbLater(bulbNextRound, 900);
     }
+  }else if(bulbPractice){
+    bulbPracticeMiss(i);
   }else{
     bulbOver(i);
   }
@@ -2261,6 +2372,7 @@ function bulbOver(i){
   bulbBusy = true;
   bulbClearTimers();
   bulbHost(null);
+  bulbHelpShow(false);
   $('bulbRow').classList.add('bulbs-lock');
   const el = bulbEls()[i];
   el.classList.add('wrong');
@@ -2337,17 +2449,78 @@ function bulbWin(){
   }), 2200);
 }
 
+/* Zinion Bulbs opens on the helper carousel. The chosen Zinion stands beside the bulbs
+   on the visitor's side; if they pick the one who plays the bulbs, Zetta plays instead. */
 function openBulbs(){
-  $('bulbHostMe').querySelector('img').src = MASCOT[BULB_HOST_ME];
-  $('bulbHostYou').querySelector('img').src = MASCOT[BULB_HOST_YOU];
+  hcAt = Math.max(0, HELPERS.findIndex(h => h.k === bulbHelper));
+  hcPaint();
+  show('helper');
+}
+function bulbsWith(k){
+  bulbHelper = k;
+  $('bulbHostMe').querySelector('img').src = MASCOT[k === BULB_HOST_ME ? BULB_HOST_YOU : BULB_HOST_ME];
+  $('bulbHostYou').querySelector('img').src = MASCOT[k];
   show('bulbs'); bulbReset(); bulbRenderDash();
 }
+function bulbStartClick(){ bulbNeedsPractice() ? bulbPracticeStart() : bulbBegin(); }
 function bulbBegin(){
   const tries = store(KEY_BULB_TRIES, {}), name = player || 'Guest';
   tries[name] = (tries[name] || 0) + 1;
   save(KEY_BULB_TRIES, tries);
+  bulbPracticedBy = name;   // skipping the practice counts as having had it
   bulbReset(); $('bulbStart').hidden = true; bulbLater(bulbNextRound, 300);
 }
+
+/* ---------- the helper carousel ----------
+   Five Zinions on a turntable: one big in front, one each side, two small at the back.
+   The page takes the front Zinion's colour, with its name large behind it. */
+const HELPERS = [
+  { k:'argon',   bg:'#3FA77A', line:"Eight arms and all the patience in the world. Argon stays calm when the pattern gets long." },
+  { k:'tropido', bg:'#E2704A', line:"Coils up close and never misses a flicker. Entropy loves finding the order hiding in a mess." },
+  { k:'niki',    bg:'#8C78E0', line:"Quick ears, quicker memory. Axon hears the pattern before the last bulb fades." },
+  { k:'stephen', bg:'#D38A2A', line:"Counts everything twice. Zetta will walk you through the pattern one bulb at a time." },
+  { k:'harsh',   bg:'#4C98DE', line:"The fastest Zinion on the floor. Mach says speed comes from watching, not rushing." }
+];
+const HC_ROLES = { 0:'center', 1:'right', 2:'backr', 3:'backl', 4:'left' };   // by place after the front one
+let hcAt = 0, hcBusy = false, hcSwipeX = null, hcSwiped = false;
+(function(){
+  $('hcRing').innerHTML = HELPERS.map((h, i) =>
+    `<div class="hc-item" data-i="${i}"><img src="${MASCOT[h.k]}" alt="${HOST_NAME[h.k]}" draggable="false"></div>`).join('');
+  $('hcRing').querySelectorAll('.hc-item').forEach(el => el.addEventListener('click', () => {
+    if(hcSwiped){ hcSwiped = false; return; }   // the end of a swipe isn't a tap
+    const off = (+el.dataset.i - hcAt + HELPERS.length) % HELPERS.length;
+    if(off === 0) bulbsWith(HELPERS[hcAt].k);
+    else hcMove(off <= 2 ? off : off - HELPERS.length);   // tap a Zinion to bring it to the front
+  }));
+})();
+function hcPaint(){
+  $('hcRing').querySelectorAll('.hc-item').forEach(el =>
+    el.className = 'hc-item ' + HC_ROLES[(+el.dataset.i - hcAt + HELPERS.length) % HELPERS.length]);
+  const h = HELPERS[hcAt];
+  $('helper').style.setProperty('--hc-bg', h.bg);
+  $('hcGhost').textContent = HOST_NAME[h.k];
+  $('hcName').textContent = HOST_NAME[h.k];
+  $('hcDesc').textContent = h.line;
+}
+function hcMove(d){
+  if(hcBusy) return;
+  hcBusy = true;
+  hcAt = (hcAt + d + HELPERS.length) % HELPERS.length;
+  hcPaint();
+  setTimeout(() => { hcBusy = false; }, 650);
+}
+// a swipe across the carousel turns it too
+$('hcRing').addEventListener('pointerdown', e => { hcSwipeX = e.clientX; hcSwiped = false; });
+$('hcRing').addEventListener('pointerup', e => {
+  if(hcSwipeX !== null && Math.abs(e.clientX - hcSwipeX) > 50){ hcSwiped = true; hcMove(e.clientX < hcSwipeX ? 1 : -1); }
+  hcSwipeX = null;
+});
+document.addEventListener('keydown', e => {
+  if(!$('helper').classList.contains('on')) return;
+  if(e.key === 'ArrowLeft') hcMove(-1);
+  if(e.key === 'ArrowRight') hcMove(1);
+  if(e.key === 'Enter') bulbsWith(HELPERS[hcAt].k);
+});
 
 
 
@@ -3181,6 +3354,23 @@ function resetIdle(){
   .forEach(e => document.addEventListener(e, resetIdle, {passive:true}));
 resetIdle();
 
+/* ---------- light and dark ----------
+   The sun/moon button in the corner switches themes; this kiosk remembers the
+   choice. Dark is the default. */
+const KEY_THEME = 'zinia_theme';
+function setTheme(t){
+  if(t === 'light') document.documentElement.dataset.theme = 'light';
+  else delete document.documentElement.dataset.theme;
+  try{ localStorage.setItem(KEY_THEME, t); }catch(e){}
+  $('themeBtn').setAttribute('aria-label', t === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+  homeTitleTint();
+}
+$('themeBtn').addEventListener('click', e => {
+  e.stopPropagation();   // a theme change on the welcome screen shouldn't also start a game
+  setTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
+});
+$('themeBtn').setAttribute('aria-label', document.documentElement.dataset.theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+
 /* ---------- wiring ---------- */
 $('nameGo').addEventListener('click', goPick);
 $('nameInput').addEventListener('keydown', e => { if(e.key === 'Enter') goPick(); });
@@ -3227,7 +3417,13 @@ $('awardHome').addEventListener('click', () => show('mode'));
 document.querySelectorAll('#puzModes .puzmode').forEach(b =>
   b.addEventListener('click', () => puzSetMode(b.dataset.m)));
 $('puzBack').addEventListener('click', () => show('mode'));
-$('bulbStart').addEventListener('click', bulbBegin);
+$('bulbStart').addEventListener('click', bulbStartClick);
+$('bulbSkip').addEventListener('click', bulbBegin);
+$('bulbHelp').addEventListener('click', bulbHint);
+$('hcPrev').addEventListener('click', () => hcMove(-1));
+$('hcNext').addEventListener('click', () => hcMove(1));
+$('hcChoose').addEventListener('click', () => bulbsWith(HELPERS[hcAt].k));
+$('hcBack').addEventListener('click', () => show('mode'));
 $('bulbBack').addEventListener('click', () => show('mode'));
 document.querySelectorAll('#bulbRow .bulb').forEach(b =>
   b.addEventListener('click', () => bulbTap(Number(b.dataset.b))));

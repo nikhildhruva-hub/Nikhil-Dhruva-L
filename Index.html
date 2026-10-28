@@ -9,10 +9,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <?!= include('Styles'); ?>
+<script>/* apply the saved theme before the page paints, so it never flashes the other one */
+try{ if(localStorage.getItem('zinia_theme') === 'light') document.documentElement.dataset.theme = 'light'; }catch(e){}</script>
 </head>
 <body>
 
 <div class="drift" id="drift" aria-hidden="true"></div>
+<!-- light/dark switch: shows the sun in dark mode, the moon in light mode -->
+<button class="themebtn" id="themeBtn" aria-label="Switch to light mode">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+</button>
 <div class="hostwrap hide" id="hostwrap" aria-hidden="true">
   <div class="hostsay" id="hostsay"></div>
   <img class="mascot" id="hostimg" alt="">
@@ -308,6 +315,25 @@
   </section>
 
   <!-- ZINION BULBS -->
+  <!-- HELPER: before Zinion Bulbs, pick the Zinion who practises with you, from a turning carousel -->
+  <section id="helper" class="screen">
+    <div class="hc-ghost" id="hcGhost" aria-hidden="true"></div>
+    <p class="hc-kicker">Zinion Bulbs &middot; choose your helper</p>
+    <button class="hc-back" id="hcBack">&larr; Back</button>
+    <div class="hc-ring" id="hcRing"></div>
+    <div class="hc-info">
+      <b class="hc-name" id="hcName"></b>
+      <p class="hc-desc" id="hcDesc"></p>
+      <div class="hc-nav">
+        <button class="hc-btn" id="hcPrev" aria-label="Previous Zinion"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <button class="hc-btn" id="hcNext" aria-label="Next Zinion"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+      </div>
+    </div>
+    <button class="hc-choose" id="hcChoose">Choose me
+      <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+  </section>
+
   <section id="bulbs" class="screen">
     <div class="bulbwrap">
     <div class="bulbstage">
@@ -385,6 +411,8 @@
     </div>
     <div class="btnrow">
       <button class="big-btn" id="bulbStart">Start</button>
+      <button class="ghost" id="bulbSkip" style="align-self:auto" hidden>Skip practice</button>
+      <button class="ghost" id="bulbHelp" style="align-self:auto" hidden>Help me</button>
       <button class="ghost" id="bulbBack" style="align-self:auto">Back</button>
     </div>
     <div class="howto">
