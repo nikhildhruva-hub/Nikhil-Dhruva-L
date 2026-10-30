@@ -1009,6 +1009,9 @@ function store(key, fallback){
       localStorage.removeItem(KEY_PUZ);
       localStorage.removeItem(KEY_PUZ_LB);
       localStorage.removeItem(KEY_WIND);
+      localStorage.removeItem(KEY_FLOW);
+      localStorage.removeItem(KEY_FLOW_DONE);
+      localStorage.removeItem('parsec_wf_probe_finishers');   // Zinion Probe, in Probe.html
     }
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : fallback;
@@ -1024,9 +1027,10 @@ let player='', zoneId=null, advanceTimer=null, tickTimer=null;
 function clearTimers(){ clearTimeout(advanceTimer); advanceTimer=null; clearInterval(tickTimer); tickTimer=null; }
 function show(n){
   document.body.classList.toggle('joining', n === 'join');
-  ['home','start','join','mode','pick','quiz','game','helper','bulbs','binary','puzzle','award','wind','end','thanks','dash','stats','leaders','answers','levels'].forEach(s => $(s).classList.toggle('on', s===n));
+  ['home','start','join','mode','pick','quiz','game','helper','bulbs','binary','puzzle','award','wind','flow','end','thanks','dash','stats','leaders','answers','levels','people'/*,'probe'*/].forEach(s => $(s).classList.toggle('on', s===n));
   if(n !== 'quiz' && typeof stopClock === 'function') stopClock();
   if(n !== 'stats') stClear();   // the totals don't linger once the screen is left
+  if(n !== 'people' && typeof pvClear === 'function') pvClear();   // nor do visitor names
   lockClose();
   $('hostwrap').classList.toggle('hide', n !== 'quiz' && n !== 'end');
   $('clock').classList.toggle('hide', n !== 'quiz' || TIMER_MODE === 'off');
@@ -1038,6 +1042,8 @@ function show(n){
   if(n !== 'bulbs' && typeof bulbClearTimers === 'function') bulbClearTimers();
   if(n !== 'game' && typeof leaveGame === 'function') leaveGame();
   if(n !== 'wind' && typeof windLeave === 'function') windLeave();
+  if(n !== 'flow' && typeof flowLeave === 'function') flowLeave();
+  if(n !== 'probe' && typeof probeLeave === 'function') probeLeave();
 }
 function shuffle(a){ const b=a.slice(); for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];} return b; }
 function clean(s){ return s.replace(/[<>]/g,'').trim().slice(0,18); }
@@ -1227,15 +1233,15 @@ function showAward({key, game, zin, line, again}){
   show('award');
 }
 
-/* Two games a week: the Quiz always, plus Bulbs and Puzzle taking turns.
-   Weeks start Monday; the week of 26 Oct 2026 is a Bulbs week. */
+/* Two games a week: the Quiz always, plus one of Bulbs, Laminar Flow and Puzzle, taking turns
+   in that order. Weeks start Monday; the week of 26 Oct 2026 is a Bulbs week. */
 const WEEK_ANCHOR = new Date(2026, 9, 26);
+const WEEKLY = ['modeBulbs', 'modeFlow', 'modePuzzle'];
 function weeklyGames(){
   const now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const weeks = Math.floor(Math.round((today - WEEK_ANCHOR) / 864e5) / 7);
-  const bulbsWeek = ((weeks % 2) + 2) % 2 === 0;
-  $('modeBulbs').hidden = !bulbsWeek;
-  $('modePuzzle').hidden = bulbsWeek;
+  const on = WEEKLY[((weeks % WEEKLY.length) + WEEKLY.length) % WEEKLY.length];
+  WEEKLY.forEach(id => { $(id).hidden = id !== on; });
 }
 
 /* a different Zinion floats on each game card every visit, and they take
@@ -1320,7 +1326,9 @@ const JOIN = {
   quiz:   { title:'Zinion Quiz', sub:'Tell the Zinions who you are, then step inside.', go: () => show('pick') },
   puzzle: { title:'Zinion Puzzle', sub:'Tell the Zinions who you are, then put the pieces back together.', go: () => puzOpen() },
   bulbs:  { title:'Zinion Bulbs', sub:'Tell the Zinions who you are, then watch the bulbs closely.', go: () => openBulbs() },
-  binary: { title:'Zinion Binary Clock', sub:'Tell the Zinions who you are, then crack the time code.', go: () => binOpen() }
+  binary: { title:'Zinion Binary Clock', sub:'Tell the Zinions who you are, then crack the time code.', go: () => binOpen() },
+  flow:   { title:'Laminar Flow', sub:'Tell the Zinions who you are, then take a slow, steady breath.', go: () => flowOpen() },
+  probe:  { title:'Zinion Probe', sub:'Tell the Zinions who you are. They want to know what the galleries taught you.', go: () => probeOpen() }
 };
 let joinFor = 'quiz';
 function askName(game, zin){
@@ -3382,6 +3390,250 @@ document.addEventListener('keydown', e => { if(e.key === ' ' && $('wind').classL
 document.addEventListener('keyup',   e => { if(e.key === ' ') wHold = false; });
 window.addEventListener('resize', () => { if($('wind').classList.contains('on')) windFit(); });
 
+/* =====================================================================
+   LAMINAR FLOW — a focus game. A nozzle on the left pours three thin
+   lines of dye to the right, and the finger steers it up and down.
+   Move gently and the dye stays in neat parallel lines (laminar flow);
+   move fast and it tears into swirls (turbulence) and drains focus.
+   Walls drift in from the right: thread the nozzle through each gap.
+   ===================================================================== */
+const KEY_FLOW = 'parsec_wf_flow_best';
+const KEY_FLOW_DONE = 'parsec_wf_flow_finishers';
+const FLOW_LEVELS = 5;
+
+// Each level: narrower gaps, walls coming faster, and less speed allowed before it goes turbulent.
+function flowLevel(n){
+  return {
+    gap: Math.max(118, 200 - 20*(n-1)),
+    speed: 125 + 15*(n-1),            // how fast the walls drift in, px a second
+    every: Math.max(230, 340 - 25*(n-1)),
+    calm: Math.max(260, 420 - 40*(n-1)),   // nozzle speed, px a second, that still counts as gentle
+    target: 5 + n
+  };
+}
+
+// one fact for each level cleared, and one for the turbulent ending
+const FLOW_FACTS = [
+  "Slow, smooth flow slides along in thin layers that never mix. Scientists call it laminar flow, from the Latin lamina: a thin sheet.",
+  "In 1883 Osborne Reynolds sent a thin line of dye down a glass pipe of water. Slow water kept the line straight; fast water tore it into swirls.",
+  "Honey pours in a smooth ribbon because it is thick and slow. Thin, fast water from a tap breaks up and splashes.",
+  "Blood flows smoothly through most of your body. Where it turns turbulent, a doctor can hear it through a stethoscope.",
+  "Aeroplane wings are shaped to keep the air flowing smoothly over them for as long as possible. Less turbulence means less drag and less fuel."
+];
+const FLOW_TURB_FACT = "Fast, sudden moves stir the water into whirls and eddies. That's turbulence, and it's what you feel as bumps on an aeroplane.";
+const FLOW_DYES = ['#D9FF35', '#3FEDE0', '#FF8C1A'];   // lime, teal and orange, like the welcome title
+
+let fCv, fCtx, fRaf = null, fRunning = false, fLast = 0;
+let fLvl = 1, fL = flowLevel(1), fWalls = [], fDye = [], fPassed = 0, fFocus = 100;
+let fNoz = {x: 70, y: 0, ty: 0, v: 0}, fTurb = 0, fHurt = 0;
+
+function flowFit(){
+  const r = fCv.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  fCv.width = Math.round(r.width*dpr); fCv.height = Math.round(r.height*dpr);
+  fCtx.setTransform(dpr,0,0,dpr,0,0);
+  return {w:r.width, h:r.height};
+}
+
+function flowSet(n){
+  fLvl = n; fL = flowLevel(n);
+  const {w, h} = flowFit();
+  fWalls = []; fDye = []; fPassed = 0; fFocus = 100; fTurb = 0; fHurt = 0;
+  fNoz = {x: Math.min(90, w*.12), y: h/2, ty: h/2, v: 0};
+  flowWall(w * .55, h);   // the first wall arrives in a few seconds; the rest follow at the level's spacing
+  $('fLevel').textContent = `Level ${n} of ${FLOW_LEVELS}`;
+  $('fGates').textContent = `0 / ${fL.target}`;
+  const best = Number(store(KEY_FLOW, 0)) || 0;
+  $('fBest').textContent = best ? `Best today: level ${best}` : '';
+  flowHud();
+}
+
+// Each gap sits a little way from the last, so a calm, steady glide can always reach it.
+function flowWall(x, h){
+  const last = fWalls.length ? fWalls[fWalls.length-1] : null;
+  const mid = last ? last.top + last.gap/2 : h/2;
+  const reach = Math.min(h*.32, 150);
+  let c = mid + (Math.random()*2 - 1)*reach;
+  c = Math.max(28 + fL.gap/2, Math.min(h - 28 - fL.gap/2, c));
+  fWalls.push({x, w: 26, gap: fL.gap, top: c - fL.gap/2, done: false, hit: false});
+}
+
+function flowHud(){
+  $('fFocus').style.width = fFocus + '%';
+  $('fFocusBar').classList.toggle('low', fFocus < 30);
+  $('fFocusBar').classList.toggle('calm', fTurb < .6 && fFocus >= 30);
+  $('fState').textContent = fTurb < .6 ? 'Focus · smooth flow' : fTurb < 1 ? 'Focus · steady…' : 'Focus · turbulent!';
+}
+
+function flowOpen(){
+  show('flow');
+  fCv = $('flowCanvas'); fCtx = fCv.getContext('2d');
+  $('fOverTitle').textContent = 'Laminar Flow';
+  $('fOverText').textContent = 'Put your finger on the water and slide it gently up and down to steer the dye through the gaps. Slow and steady keeps the flow smooth. Rush, and it swirls and your focus drains.';
+  $('fStart').textContent = 'Start level 1';
+  $('fStart').onclick = () => flowStart(1);
+  $('fOver').classList.add('on');
+  flowSet(1);
+  const r = fCv.getBoundingClientRect();
+  flowDraw(r.width, r.height);
+}
+
+function flowStart(n){
+  flowSet(n);
+  fRunning = true;
+  $('fOver').classList.remove('on');
+  fLast = performance.now();
+  cancelAnimationFrame(fRaf);
+  fRaf = requestAnimationFrame(flowLoop);
+}
+function flowLeave(){ fRunning = false; cancelAnimationFrame(fRaf); }
+
+function flowLoop(now){
+  if(!fRunning) return;
+  const dt = Math.min(0.034, (now - fLast)/1000);
+  fLast = now;
+  const r = fCv.getBoundingClientRect(), w = r.width, h = r.height;
+
+  // the nozzle glides after the finger; how fast it has to move is what stirs the water
+  const y0 = fNoz.y;
+  fNoz.y += (fNoz.ty - fNoz.y) * Math.min(1, dt*7);
+  fNoz.y = Math.max(10, Math.min(h - 10, fNoz.y));
+  fNoz.v = Math.abs(fNoz.y - y0) / Math.max(dt, .001);
+  fTurb += (fNoz.v / fL.calm - fTurb) * Math.min(1, dt*5);
+
+  // rushing drains focus; calm flow slowly brings it back
+  if(fTurb > 1) fFocus -= 38 * Math.min(fTurb, 3) * dt;
+  else fFocus = Math.min(100, fFocus + 7*dt);
+  fHurt = Math.max(0, fHurt - dt*2.5);
+
+  // the walls drift in; a new one follows when the last has come far enough
+  fWalls.forEach(g => { g.x -= fL.speed*dt; });
+  if(fWalls[fWalls.length-1].x < w - fL.every) flowWall(w + 30, h);
+  fWalls = fWalls.filter(g => g.x > -60);
+
+  for(const g of fWalls){
+    const over = fNoz.x + 9 > g.x && fNoz.x - 9 < g.x + g.w;
+    if(over && !g.hit && (fNoz.y - 9 < g.top || fNoz.y + 9 > g.top + g.gap)){
+      g.hit = true; fFocus -= 30; fHurt = 1;   // bumped the wall: a jolt to the focus
+    }
+    if(!g.done && g.x + g.w < fNoz.x - 9){
+      g.done = true;
+      if(!g.hit){ fPassed++; $('fGates').textContent = `${fPassed} / ${fL.target}`; }
+      if(fPassed >= fL.target) return flowUp();
+    }
+  }
+  if(fFocus <= 0){ fFocus = 0; flowHud(); return flowOver(); }
+
+  // pour the dye: three thin lines that wobble and spread more the more turbulent it is
+  const t = Math.max(0, fTurb - .45);
+  FLOW_DYES.forEach((col, i) => {
+    const off = (i - 1) * 6;
+    fDye.push({x: fNoz.x + 12, y: fNoz.y + off, vy: (Math.random()*2 - 1) * t * 70, col,
+               sw: t * (8 + Math.random()*16), ph: Math.random()*6.3, age: 0});
+  });
+  fDye.forEach(d => {
+    d.age += dt;
+    d.x += 230*dt;
+    d.y += d.vy*dt + Math.sin(d.age*9 + d.ph) * d.sw * dt * 6;
+  });
+  // dye stops where it meets a wall, and fades once off the screen
+  fDye = fDye.filter(d => d.x < w + 10 && !fWalls.some(g =>
+    d.x > g.x && d.x < g.x + g.w && (d.y < g.top || d.y > g.top + g.gap)));
+  if(fDye.length > 1800) fDye.splice(0, fDye.length - 1800);
+
+  flowHud();
+  flowDraw(w, h);
+  fRaf = requestAnimationFrame(flowLoop);
+}
+
+function flowDraw(w, h){
+  const c = fCtx;
+  c.clearRect(0,0,w,h);
+  const water = c.createLinearGradient(0,0,0,h);
+  water.addColorStop(0,'#0E3550'); water.addColorStop(1,'#08202F');
+  c.fillStyle = water; c.fillRect(0,0,w,h);
+  // faint lines in the water, sliding along: the layers of a laminar flow
+  c.strokeStyle = 'rgba(120,200,230,.07)'; c.lineWidth = 1;
+  const shift = (performance.now()/12) % 60;
+  for(let y = 18; y < h; y += 26){
+    c.beginPath();
+    for(let x = -60 + shift; x < w; x += 60){ c.moveTo(x, y); c.lineTo(x + 30, y); }
+    c.stroke();
+  }
+
+  // the dye: smooth lines stay thin and bright; stirred-up dye spreads into soft blobs
+  c.globalCompositeOperation = 'lighter';
+  fDye.forEach(d => {
+    const spread = 2 + Math.min(9, d.sw * d.age * .9);
+    c.globalAlpha = Math.max(.08, .75 - spread*.06);
+    c.fillStyle = d.col;
+    c.beginPath(); c.arc(d.x, d.y, spread, 0, Math.PI*2); c.fill();
+  });
+  c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
+
+  fWalls.forEach(g => {
+    c.fillStyle = g.hit ? '#5A2A3A' : '#16506A'; c.strokeStyle = g.hit ? '#FF6B6B' : '#2E7C96'; c.lineWidth = 2;
+    roundRect(c, g.x, -12, g.w, g.top + 12, 9); c.fill(); c.stroke();
+    roundRect(c, g.x, g.top + g.gap, g.w, h - (g.top + g.gap) + 12, 9); c.fill(); c.stroke();
+    if(!g.hit){
+      c.fillStyle = 'rgba(217,255,53,.55)';
+      c.fillRect(g.x + 4, g.top - 4, g.w - 8, 3);
+      c.fillRect(g.x + 4, g.top + g.gap + 1, g.w - 8, 3);
+    }
+  });
+
+  // the nozzle: a little glass tube on a stand, glowing red for a moment after a bump
+  c.fillStyle = fHurt ? `rgba(255,107,107,${.35 + fHurt*.5})` : 'rgba(255,255,255,.18)';
+  c.strokeStyle = fHurt ? '#FF6B6B' : 'rgba(255,255,255,.7)'; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(0, fNoz.y); c.lineTo(fNoz.x - 14, fNoz.y); c.stroke();
+  roundRect(c, fNoz.x - 16, fNoz.y - 11, 28, 22, 8); c.fill(); c.stroke();
+}
+
+function flowUp(){
+  fRunning = false;
+  const best = Number(store(KEY_FLOW, 0)) || 0;
+  if(fLvl > best) save(KEY_FLOW, fLvl);
+  const r = fCv.getBoundingClientRect(); flowDraw(r.width, r.height);
+  if(fLvl >= FLOW_LEVELS){
+    say(`Congratulations${player ? ', ' + player : ''}! Smooth as honey!`, 4000);
+    return showAward({
+      key: KEY_FLOW_DONE, game: 'Laminar Flow', zin: shuffle(['tropido','niki','stephen','argon','harsh'])[0], again: flowOpen,
+      line: `You steered the dye through all ${FLOW_LEVELS} levels of Laminar Flow — calm, steady and smooth the whole way!`
+    });
+  }
+  $('fOverTitle').textContent = `Level ${fLvl} — smooth flow!`;
+  $('fOverText').textContent = FLOW_FACTS[fLvl - 1];
+  $('fStart').textContent = `Start level ${fLvl + 1}`;
+  $('fStart').onclick = () => flowStart(fLvl + 1);
+  $('fOver').classList.add('on');
+}
+
+function flowOver(){
+  fRunning = false;
+  const reached = fLvl - 1, best = Number(store(KEY_FLOW, 0)) || 0;
+  if(reached > best) save(KEY_FLOW, reached);
+  $('fOverTitle').textContent = 'The flow went turbulent!';
+  $('fOverText').textContent = `${FLOW_TURB_FACT} You reached level ${fLvl}, with ${fPassed} of ${fL.target} gaps. Take it slower this time.`;
+  $('fStart').textContent = 'Try level 1 again';
+  $('fStart').onclick = () => flowStart(1);
+  $('fOver').classList.add('on');
+}
+
+// The finger (or mouse) sets where the nozzle heads; the arrow keys nudge it gently.
+function flowAim(e){
+  if(!fCv) return;
+  const r = fCv.getBoundingClientRect();
+  fNoz.ty = e.clientY - r.top;
+}
+$('flowCanvas').addEventListener('pointerdown', e => { flowAim(e); try{ $('flowCanvas').setPointerCapture(e.pointerId); }catch(_){} });
+$('flowCanvas').addEventListener('pointermove', e => { if(e.pointerType === 'mouse' || e.buttons) flowAim(e); });
+document.addEventListener('keydown', e => {
+  if(!$('flow').classList.contains('on') || !fRunning) return;
+  if(e.key === 'ArrowUp'){ fNoz.ty -= 24; e.preventDefault(); }
+  if(e.key === 'ArrowDown'){ fNoz.ty += 24; e.preventDefault(); }
+});
+window.addEventListener('resize', () => { if($('flow').classList.contains('on')) flowFit(); });
+
 /* ---------- idle reset ---------- */
 let idleTimer;
 function resetIdle(){
@@ -3449,6 +3701,10 @@ $('binNext').addEventListener('click', binNext);
 $('binBack').addEventListener('click', () => show('mode'));
 $('modePuzzle').addEventListener('click', () => askName('puzzle'));
 $('modeWind').addEventListener('click', windOpen);
+$('modeFlow').addEventListener('click', () => askName('flow'));
+// Zinion Probe is off for the time being.
+// $('modeProbe').addEventListener('click', () => askName('probe', 'harsh'));
+$('flowBack').addEventListener('click', () => { flowLeave(); show('mode'); });
 $('windBack').addEventListener('click', () => { windLeave(); show('mode'); });
 document.querySelectorAll('.fanbtn').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('.fanbtn').forEach(x => x.classList.remove('on'));
@@ -3518,7 +3774,7 @@ async function peekCheck(){
 const ST_STAGES = ['Citizen', 'Seeker', 'Solver', 'Innovator'];
 const ST_COLOUR = { Citizen:'var(--mute)', Seeker:'var(--seeker)', Solver:'var(--solver)', Innovator:'var(--innov)' };
 /* Zetta has a door too: same double tap and password, opening today's game leaders. */
-const DOORS = { argon: "Argon's secret door", stephen: "Zetta's secret door", niki: "Axon's secret door", tropido: "Entropy's secret door" };
+const DOORS = { argon: "Argon's secret door", stephen: "Zetta's secret door", niki: "Axon's secret door", tropido: "Entropy's secret door", harsh: "Mach's secret door" };
 const DOOR_PAD = 36;      // fingers miss a faint, bobbing Zinion, so its tap area reaches past the picture
 const DOOR_GAP_MS = 650; // longest pause between the two taps
 const DOOR_HOLD_MS = 1000; // holding a finger on the Zinion this long opens the door too
@@ -3582,6 +3838,7 @@ function lockTry(){
       if(lockDoor === 'stephen'){ show('leaders'); renderLeaders(); }
       else if(lockDoor === 'niki'){ show('answers'); qaOpen(rows || []); }
       else if(lockDoor === 'tropido'){ show('levels'); lvOpen(rows || []); }
+      else if(lockDoor === 'harsh'){ show('people'); pvOpen(rows || []); }
       else { show('stats'); renderStats(rows || []); }
     })
     .withFailureHandler(err => {
@@ -3591,6 +3848,7 @@ function lockTry(){
     });
   if(lockDoor === 'stephen') runner.checkLeadersPassword(pw);
   else if(lockDoor === 'niki' || lockDoor === 'tropido') runner.getAnswers(pw);
+  else if(lockDoor === 'harsh') runner.getVisitors(pw);
   else runner.getStageStats(pw);
 }
 $('lockGo').addEventListener('click', lockTry);
@@ -3725,6 +3983,72 @@ function lvShow(stage){
 }
 document.querySelectorAll('#lvTabs .lv-tab').forEach(b => b.addEventListener('click', () => lvShow(b.dataset.s)));
 $('lvBack').addEventListener('click', () => show('mode'));
+
+/* ---------- Mach's secret door: visitors by gallery ----------
+   A tab per gallery along the top. Each visitor gets a card: their name, the level
+   they reached (Citizen, Seeker, Solver, Innovator), and every question with their
+   answer. The hidden " (Level)" tag on an answer is shown as a coloured label. */
+let pvRows = [], pvGallery = '';
+function pvOpen(rows){
+  pvRows = rows;
+  const galleries = [...new Set(rows.map(r => r.gallery))].sort();
+  if(pvGallery && galleries.indexOf(pvGallery) < 0) pvGallery = '';
+  $('pvTabs').replaceChildren(...[''].concat(galleries).map(g => {
+    const b = el('button', 'lv-tab', g ? `${g} · ${rows.filter(r => r.gallery === g).length}` : `All · ${rows.length}`);
+    b.dataset.g = g;
+    b.addEventListener('click', () => { pvGallery = g; pvRender(); });
+    return b;
+  }));
+  const fill = (id, label, values) => {
+    const sel = $(id);
+    sel.replaceChildren(el('option', '', label));
+    sel.firstChild.value = '';
+    values.forEach(v => { const o = el('option', '', v.text); o.value = v.value; sel.appendChild(o); });
+  };
+  fill('pvStage', 'All levels', ST_STAGES.map(s => ({ value: s, text: s })));
+  fill('pvDay', 'All dates', [...new Set(rows.map(r => r.day))].sort().reverse().map(d => ({ value: d, text: stDay(d, true) })));
+  const days = [...new Set(rows.map(r => r.day))].sort();
+  $('pvRange').textContent = !days.length ? '' : days.length > 1 ? `${stDay(days[0], true)} – ${stDay(days[days.length - 1], true)}` : stDay(days[0], true);
+  pvRender();
+}
+function pvRender(){
+  document.querySelectorAll('#pvTabs .lv-tab').forEach(b => b.classList.toggle('on', b.dataset.g === pvGallery));
+  const s = $('pvStage').value, d = $('pvDay').value;
+  const rows = pvRows.filter(r => (!pvGallery || r.gallery === pvGallery) && (!s || r.stage === s) && (!d || r.day === d));
+  $('pvList').replaceChildren();
+  if(!rows.length){ $('pvTake').textContent = 'No visitors for this choice yet.'; return; }
+  const counts = ST_STAGES.map(st => [st, rows.filter(r => r.stage === st).length]).filter(c => c[1]);
+  $('pvTake').textContent = `${rows.length} visitor${rows.length === 1 ? '' : 's'}` +
+    (counts.length ? ` · ${counts.map(c => `${c[1]} ${c[0]}`).join(', ')}` : '') + '.';
+
+  // newest first
+  rows.slice().sort((a, b) => (b.day + b.time).localeCompare(a.day + a.time)).slice(0, 300).forEach(r => {
+    const card = el('div', 'st-card');
+    const head = el('div', 'pv-head');
+    head.appendChild(el('b', '', r.name || 'No name given'));
+    if(r.stage) head.appendChild(el('span', `stage-badge ${r.stage.toLowerCase()}`, r.stage));
+    card.appendChild(head);
+    card.appendChild(el('span', 'qa-gal', [stDay(r.day, true), r.time, pvGallery ? '' : r.gallery].filter(Boolean).join(' · ')));
+    const box = el('div', 'qa-visit');
+    r.qa.forEach(([q, a]) => {
+      const m = / \((Citizen|Seeker|Solver|Innovator)\)$/.exec(a);
+      const line = el('div', 'qa-line'), ans = el('b', '', m ? a.slice(0, m.index) : a);
+      if(m){
+        const tag = el('span', 'pv-tag', m[1]);
+        tag.style.color = ST_COLOUR[m[1]];
+        ans.appendChild(tag);
+      }
+      line.append(el('span', '', q), ans);
+      box.appendChild(line);
+    });
+    card.appendChild(box);
+    $('pvList').appendChild(card);
+  });
+}
+function pvClear(){ pvRows = []; ['pvTabs','pvList','pvTake','pvRange'].forEach(id => $(id).replaceChildren()); }
+$('pvStage').addEventListener('change', pvRender);
+$('pvDay').addEventListener('change', pvRender);
+$('pvBack').addEventListener('click', () => show('mode'));
 
 /* Today's leaders on this kiosk: whole puzzle runs by fewest moves, cleared bulb games by fewest tries */
 function renderLeaders(){

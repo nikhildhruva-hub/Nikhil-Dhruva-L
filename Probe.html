@@ -1,0 +1,1026 @@
+<!-- ZINION PROBE: the Zinions have come to PARSEC to study the human mind.
+     Six chambers: five of the galleries, picked at random each play, then the Zinia
+     Experimental Lab itself. Each chamber's Zinion asks about its gallery, using the
+     kiosk's own gallery quiz bank, and every answer also asks "how sure are you?",
+     because the Zinions measure confidence too. Answer right and the chamber's portal
+     opens onto the next. At the end the Zinion Council gives its verdict.
+
+     The chambers are a real-time 3D scene (three.js, loaded from the CDN only when the game
+     opens, so the rest of the kiosk never waits for it). Without WebGL, or offline, the game
+     still plays over a flat backdrop. Loaded before App, so nothing here runs App code
+     until the game is opened. -->
+<style>
+#probe{position:fixed;inset:0;z-index:30;background:#03051a;color:#EEF2FF;overflow:hidden;
+  font-family:'Space Grotesk','Trebuchet MS',system-ui,sans-serif;--pa:#3FA77A;--pa-soft:rgba(63,167,122,.18)}
+#probe.screen.on{display:block}
+body.probing .themebtn,body.probing .hostwrap{display:none}
+#probeCanvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:manipulation}
+.pr-fallback{position:absolute;inset:0;display:none;place-items:start center;padding-top:14vh;
+  background:radial-gradient(60% 50% at 50% 30%,var(--pa-soft),transparent 70%),radial-gradient(120% 80% at 50% 0%,#0d1440,#03051a)}
+.pr-fallback img{width:min(34vw,260px);filter:drop-shadow(0 0 30px var(--pa));animation:prbob 4s ease-in-out infinite}
+#probe.nogl .pr-fallback{display:grid}
+#probe.nogl #probeCanvas{display:none}
+@keyframes prbob{50%{transform:translateY(-12px)}}
+.pr-vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 75% 70% at 50% 35%,transparent 55%,rgba(0,0,8,.6))}
+.pr-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.pr-scan{position:absolute;left:0;right:0;top:0;height:2px;background:var(--pa);box-shadow:0 0 22px 6px var(--pa);opacity:0;pointer-events:none}
+.pr-scan.run{animation:prscan 1.3s cubic-bezier(.5,0,.5,1)}
+@keyframes prscan{0%{transform:translateY(0);opacity:0}10%{opacity:.9}90%{opacity:.9}100%{transform:translateY(100vh);opacity:0}}
+
+.pr-top{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:clamp(10px,1.6vh,16px) 16px;background:linear-gradient(180deg,rgba(3,5,26,.75),transparent)}
+.pr-brand{display:flex;flex-direction:column;line-height:1.1;min-width:0}
+.pr-brand b{font-family:var(--display);font-size:clamp(16px,2vw,22px);letter-spacing:.02em}
+.pr-brand span{font-size:12px;color:#9AA3D6;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pr-track{display:flex;align-items:center}
+.pr-node{--c:#888;width:clamp(26px,3.4vw,36px);height:clamp(26px,3.4vw,36px);border-radius:50%;display:grid;place-items:center;flex:none;
+  border:2px solid rgba(255,255,255,.22);background:rgba(6,9,32,.6);color:rgba(255,255,255,.55);font-weight:700;font-size:13px;transition:all .4s}
+.pr-node.on{border-color:var(--c);color:#fff;box-shadow:0 0 16px var(--c),inset 0 0 10px var(--c)}
+.pr-node.done{border-color:var(--c);background:var(--c);color:#06102a}
+.pr-link{width:clamp(8px,2.4vw,34px);height:2px;background:rgba(255,255,255,.16);flex:none}
+.pr-link.done{background:rgba(255,255,255,.55)}
+.pr-exit{border:1.5px solid rgba(255,255,255,.25);border-radius:999px;padding:9px 18px;font-weight:700;font-size:14px;background:rgba(6,9,32,.5);flex:none}
+@media (max-width:620px){.pr-brand span{display:none}.pr-link{width:6px}}
+
+.pr-card{position:absolute;left:50%;bottom:clamp(12px,2.4vh,26px);transform:translateX(-50%);width:min(1000px,calc(100% - 32px));
+  max-height:58vh;overflow:auto;padding:clamp(16px,2.2vw,26px);border-radius:24px;
+  background:linear-gradient(180deg,rgba(20,26,70,.70),rgba(6,8,30,.82));border:1px solid rgba(255,255,255,.13);
+  box-shadow:0 30px 80px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08);
+  -webkit-backdrop-filter:blur(16px) saturate(140%);backdrop-filter:blur(16px) saturate(140%);transition:opacity .45s,transform .45s}
+.pr-card.off{opacity:0;transform:translate(-50%,24px);pointer-events:none}
+.pr-host{display:flex;gap:12px;align-items:center}
+.pr-host img{width:54px;height:54px;object-fit:contain;filter:drop-shadow(0 0 10px var(--pa));flex:none}
+.pr-host div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pr-host small{color:var(--pa);font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+.pr-host span{color:#C9CEF0;font-size:clamp(13px,1.6vw,15px);line-height:1.4}
+.pr-q{font-family:var(--display);font-size:clamp(19px,2.6vw,27px);line-height:1.22;margin:14px 0 12px;font-weight:700}
+.pr-opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.pr-opts{grid-template-columns:1fr}}
+/* wide screens: the card and panels sit on the right, and the 3D scene is framed to the left of them */
+@media (min-width:1000px) and (min-aspect-ratio:5/4){
+  .pr-card{left:auto;right:clamp(16px,2vw,32px);top:clamp(76px,10vh,96px);bottom:clamp(16px,2.4vh,26px);transform:none;width:min(600px,42vw);max-height:none}
+  .pr-card.off{transform:translateX(30px)}
+  .pr-card .pr-opts{grid-template-columns:1fr}
+  .pr-over{place-items:center end;padding-right:clamp(16px,2vw,32px);background:linear-gradient(90deg,transparent 30%,rgba(3,5,22,.55))}
+  .pr-panel{width:min(640px,46vw)}
+}
+.pr-opt{display:flex;align-items:center;gap:12px;text-align:left;padding:13px 16px;border-radius:16px;border:1.5px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.05);font-size:clamp(15px,1.9vw,18px);font-weight:600;line-height:1.3;transition:border-color .2s,background .2s,transform .15s;min-width:0}
+.pr-opt:active{transform:scale(.98)}
+.pr-opt i{font-style:normal;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:rgba(255,255,255,.1);font-size:13px;font-weight:700;flex:none}
+.pr-opt svg{width:30px;height:30px;flex:none;filter:drop-shadow(0 0 5px currentColor)}
+.pr-opt.sel{border-color:var(--pa);background:var(--pa-soft)}
+.pr-opt.sel i{background:var(--pa);color:#06102a}
+.pr-opt.right{border-color:#3FE827;background:rgba(63,232,39,.14)}
+.pr-opt.wrong{border-color:#FF6B6B;background:rgba(255,107,107,.14)}
+.pr-opts.locked .pr-opt{pointer-events:none}
+.pr-opts.locked .pr-opt:not(.right):not(.wrong){opacity:.45}
+.pr-conf{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.pr-conf[hidden]{display:none}
+.pr-conf > span{font-size:13px;color:#9AA3D6;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+.pr-chips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:560px){.pr-chips{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pr-chip{padding:11px 8px;border-radius:14px;border:1.5px solid rgba(255,255,255,.18);background:rgba(255,255,255,.04);font-weight:700;font-size:clamp(13px,1.6vw,15px);
+  display:flex;flex-direction:column;align-items:center;gap:6px}
+.pr-chip u{text-decoration:none;display:block;width:100%;height:4px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}
+.pr-chip u::after{content:'';display:block;height:100%;width:var(--w);background:var(--pa)}
+.pr-chip.sel{border-color:var(--pa);background:var(--pa-soft)}
+.pr-msg{margin-top:14px;padding:14px 16px;border-radius:16px;background:rgba(255,255,255,.05);border-left:4px solid var(--pa);font-size:clamp(14px,1.7vw,16px);line-height:1.5}
+.pr-msg[hidden]{display:none}
+.pr-msg b{display:block;font-family:var(--display);font-size:clamp(17px,2.2vw,21px);margin-bottom:4px}
+.pr-msg.bad{border-left-color:#FF6B6B}
+.pr-row{display:flex;justify-content:flex-end;gap:10px;margin-top:14px;flex-wrap:wrap}
+.pr-row:empty{display:none}
+.pr-btn{background:var(--pa);color:#06102a;border-radius:999px;padding:14px 26px;font-family:var(--display);font-weight:800;font-size:clamp(16px,2vw,19px);
+  box-shadow:0 0 24px var(--pa-soft),0 8px 20px rgba(0,0,0,.35)}
+.pr-ghost{border:1.5px solid rgba(255,255,255,.25);border-radius:999px;padding:13px 22px;font-weight:700}
+
+.pr-over{position:absolute;inset:0;display:grid;place-items:center;padding:16px;background:rgba(3,5,22,.5);transition:opacity .5s}
+.pr-over[hidden]{display:none}
+.pr-panel{width:min(760px,100%);max-height:calc(100vh - 32px);overflow:auto;padding:clamp(20px,3vw,34px);border-radius:26px;
+  background:linear-gradient(180deg,rgba(20,26,70,.78),rgba(6,8,30,.88));border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 40px 100px rgba(0,0,0,.6);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);display:flex;flex-direction:column;gap:14px}
+.pr-panel small{color:var(--pa);font-weight:700;letter-spacing:.2em;text-transform:uppercase;font-size:12px}
+.pr-panel h2{font-family:var(--display);font-size:clamp(28px,4.4vw,46px);line-height:1.05;margin:0}
+.pr-panel p{margin:0;color:#C9CEF0;font-size:clamp(15px,1.9vw,18px);line-height:1.55}
+.pr-crew{display:flex;justify-content:center;gap:clamp(4px,1.5vw,14px);flex-wrap:wrap}
+.pr-crew figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:4px;width:clamp(64px,11vw,100px)}
+.pr-crew img{width:100%;aspect-ratio:1;object-fit:contain;filter:drop-shadow(0 0 10px var(--c))}
+.pr-crew figcaption{font-size:12px;font-weight:700;color:var(--c);letter-spacing:.08em;text-transform:uppercase;text-align:center;line-height:1.2}
+.pr-crew figcaption span{display:block;color:#9AA3D6;font-weight:500;letter-spacing:0;text-transform:none}
+.pr-bars{display:flex;flex-direction:column;gap:10px}
+.pr-bar{display:grid;grid-template-columns:minmax(110px,200px) 1fr 46px;align-items:center;gap:12px;font-size:14px}
+.pr-bar span:first-child{font-weight:700}
+.pr-bar span:last-child{text-align:right;font-variant-numeric:tabular-nums;color:#C9CEF0}
+.pr-bar i{display:block;height:10px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden}
+.pr-bar i::after{content:'';display:block;height:100%;width:var(--w);background:var(--c);box-shadow:0 0 12px var(--c);border-radius:6px;transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+.pr-cal{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.pr-cal{grid-template-columns:1fr}}
+.pr-cal div{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:12px 14px}
+.pr-cal b{display:block;font-family:var(--display);font-size:clamp(24px,3.4vw,32px);line-height:1}
+.pr-cal span{display:block;color:#9AA3D6;font-size:13px;margin-top:4px;line-height:1.3}
+.pr-load{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#9AA3D6}
+.pr-load[hidden]{display:none}
+</style>
+
+<section id="probe" class="screen" aria-label="Zinion Probe">
+  <canvas id="probeCanvas"></canvas>
+  <div class="pr-fallback" aria-hidden="true"><img id="prFallImg" alt=""></div>
+  <div class="pr-vig"></div>
+  <div class="pr-scan" id="prScan"></div>
+  <div class="pr-load" id="prLoad">Powering up the chambers…</div>
+
+  <div class="pr-top">
+    <div class="pr-brand"><b>Zinion Probe</b><span id="prSubject">Subject: human</span></div>
+    <div class="pr-track" id="prTrack"></div>
+    <button class="pr-exit" id="prExit">Exit</button>
+  </div>
+
+  <div class="pr-card off" id="prCard">
+    <div class="pr-host"><img id="prHostImg" alt=""><div><small id="prHostTag"></small><span id="prHostLine"></span></div></div>
+    <div class="pr-q" id="prQ"></div>
+    <div class="pr-opts" id="prOpts"></div>
+    <div class="pr-conf" id="prConf" hidden>
+      <span>How sure are you?</span>
+      <div class="pr-chips" id="prChips"></div>
+    </div>
+    <div class="pr-msg" id="prMsg" hidden></div>
+    <div class="pr-row" id="prRow"></div>
+  </div>
+
+  <div class="pr-over" id="prOver" hidden><div class="pr-panel" id="prPanel"></div></div>
+  <div class="pr-flash" id="prFlash"></div>
+</section>
+
+<script>
+const pq = id => document.getElementById(id);
+function prMake(tag, cls, text){
+  const e = document.createElement(tag);
+  if(cls) e.className = cls;
+  if(text != null) e.textContent = text;
+  return e;
+}
+const prRand = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const prMix = a => { const b = a.slice(); for(let i = b.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+const prSoft = (hex, a) => `rgba(${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)},${a})`;
+
+/* ---------- the chambers: five galleries, then the Zinia Experimental Lab ----------
+   The questions come from the kiosk's own gallery quiz bank (QUESTIONS in App), so the
+   Probe asks what the galleries teach. Each play takes five of the galleries that have
+   quiz questions, in a random order, each hosted by its own Zinion (HOST in App).
+   The Zinia Lab chamber, with the rain, wind and clock questions, always comes last. */
+const PR_NAME = { argon:'Argon', niki:'Axon', stephen:'Zetta', harsh:'Mach', tropido:'Entropy' };
+const PR_HOSTS = ['argon', 'niki', 'stephen', 'harsh', 'tropido'];
+const PR_COL = { cymatics:'#3FD6C8', raga:'#FFA63D', scale:'#4FB2FF', road:'#FFD23F', yoga:'#7CFF6B', youq:'#FF6FB5', zinia:'#9B86FF' };
+const PR_ZINIA = { id:'zinia', name:'Zinia Experimental Lab', host:'niki', zones:['rain', 'wind', 'clock'],
+  hello:"The last chamber is this lab itself: rain, wind and time. The Zinions built it to test you." };
+const PR_GALLERIES = 5;
+const PR_COUNCIL = '#D9FF35';
+const PR_TRIES = 3;   // after this many misses the door opens anyway, so nobody is stuck at the kiosk
+const PR_CONF = [[25, 'Just guessing'], [50, 'Not sure'], [75, 'Quite sure'], [95, 'Certain']];
+
+let PR_STAGES = [];   // this play's chambers, in order
+function prChambers(){
+  const bank = typeof QUESTIONS !== 'undefined' ? QUESTIONS : [];
+  const zones = typeof ZONES !== 'undefined' ? ZONES : [];
+  const hosts = typeof HOST !== 'undefined' ? HOST : {};
+  const galleries = prMix(zones.filter(z => bank.filter(q => q.zone === z.id).length >= 3)).slice(0, PR_GALLERIES)
+    .map(z => ({ id: z.id, name: z.name, host: hosts[z.id] || 'argon', zones: [z.id],
+                 hello: `${z.tag}. Let's see what you took away from ${z.name}.` }));
+  return galleries.concat([PR_ZINIA]).map(c => Object.assign({}, c, {
+    col: PR_COL[c.id] || '#4FB2FF', pool: bank.filter(q => c.zones.indexOf(q.zone) >= 0), used: [] }));
+}
+// a question from the chamber's gallery, not repeated until the gallery runs out; options shuffled
+function prQuestion(ch){
+  let left = ch.pool.map((_, i) => i).filter(i => ch.used.indexOf(i) < 0);
+  if(!left.length){ ch.used.length = 0; left = ch.pool.map((_, i) => i); }
+  const i = left[prRand(0, left.length - 1)], p = ch.pool[i];
+  ch.used.push(i);
+  const order = prMix(p.options.map((_, k) => k));
+  return { prompt: p.q, opts: order.map(k => ({ text: p.options[k] })), ans: order.indexOf(p.answer), why: p.explain };
+}
+
+/* ---------- the run ---------- */
+let prRun = null, prTimers = [];
+function prLater(fn, ms){ prTimers.push(setTimeout(fn, ms)); }
+function prClearTimers(){ prTimers.forEach(clearTimeout); prTimers = []; }
+
+function probeOpen(){
+  prClearTimers();
+  pq('prFlash').getAnimations().forEach(a => a.cancel());
+  if(P3) P3.tw = [];
+  show('probe');
+  document.body.classList.add('probing');
+  PR_STAGES = prChambers();
+  prRun = { stage: 0, tries: 0, log: [], q: null };
+  pq('prSubject').textContent = `Subject: ${(typeof player !== 'undefined' && player) || 'Human'}`;
+  pq('prCard').classList.add('off');
+  prTrack(); prAccent(PR_STAGES[0].col); prFallArt(PR_STAGES[0].host);
+  prIntro();
+  pq('prLoad').hidden = false;
+  p3Boot().then(ok => {
+    pq('prLoad').hidden = true;
+    if(!ok){ pq('probe').classList.add('nogl'); return; }
+    if(!pq('probe').classList.contains('on')) return;
+    p3Stage(prRun.stage, true); p3Start();
+    if(prRun.started) p3Materialise(PR_STAGES[prRun.stage].host);   // the game began before the 3D finished loading
+  });
+}
+function probeLeave(){
+  prClearTimers();
+  prRun = null;
+  document.body.classList.remove('probing');
+  p3Stop();
+}
+
+function prAccent(col){
+  pq('probe').style.setProperty('--pa', col);
+  pq('probe').style.setProperty('--pa-soft', prSoft(col, .2));
+}
+function prFallArt(host){ pq('prFallImg').src = (window.ZIN || {})[host] || ''; }
+
+function prTrack(){
+  const box = pq('prTrack');
+  box.replaceChildren();
+  PR_STAGES.concat([{ name:'Zinion Council', col: PR_COUNCIL }]).forEach((s, i) => {
+    if(i) box.appendChild(prMake('i', 'pr-link' + (i <= prRun.stage ? ' done' : '')));
+    const n = prMake('span', 'pr-node' + (i < prRun.stage ? ' done' : i === prRun.stage ? ' on' : ''), i < PR_STAGES.length ? String(i + 1) : '★');
+    n.style.setProperty('--c', s.col);
+    n.title = s.name;
+    box.appendChild(n);
+  });
+}
+
+function prPanel(build){
+  const p = pq('prPanel');
+  p.replaceChildren();
+  build(p);
+  pq('prOver').hidden = false;
+}
+function prIntro(){
+  prPanel(p => {
+    p.append(prMake('small', '', 'Incoming transmission'), prMake('h2', '', 'The Zinions have come to study you.'));
+    p.appendChild(prMake('p', '', 'They crossed a long way to reach PARSEC with one question: how does a human mind work? They have walked through the galleries and built six chambers to find out what you took away from them. The last is the Zinia Experimental Lab itself.'));
+    const crew = prMake('div', 'pr-crew');
+    PR_STAGES.forEach(s => {
+      const f = prMake('figure');
+      f.style.setProperty('--c', s.col);
+      const img = prMake('img'); img.src = (window.ZIN || {})[s.host] || ''; img.alt = '';
+      const cap = prMake('figcaption', '', PR_NAME[s.host]);
+      cap.appendChild(prMake('span', '', s.name));
+      f.append(img, cap);
+      crew.appendChild(f);
+    });
+    p.appendChild(crew);
+    p.appendChild(prMake('p', '', 'After every answer, tell them how sure you are. They are measuring your confidence too: knowing what you know is a kind of intelligence. Solve a chamber’s test and its door opens onto the next.'));
+    const row = prMake('div', 'pr-row'), go = prMake('button', 'pr-btn', 'Enter chamber 1');
+    go.addEventListener('click', () => {
+      const run = prRun;
+      run.started = true; pq('prOver').hidden = true;
+      p3Arrive(() => { if(prRun === run) prAsk(); });
+    });
+    row.appendChild(go);
+    p.appendChild(row);
+  });
+}
+
+function prAsk(){
+  if(!prRun) return;
+  const st = PR_STAGES[prRun.stage], q = prQuestion(st);
+  prRun.q = q; prRun.pick = -1; prRun.t0 = 0;
+  pq('prHostImg').src = (window.ZIN || {})[st.host] || '';
+  pq('prHostTag').textContent = `${PR_NAME[st.host]} · Chamber ${prRun.stage + 1} · ${st.name}`;
+  pq('prHostLine').textContent = prRun.tries === 0 ? st.hello
+    : prRun.tries === 1 ? 'The door is still sealed. Here is another question from this gallery.' : 'One more try. Think about what you saw in there.';
+  pq('prQ').textContent = q.prompt;
+  pq('prOpts').replaceChildren(); pq('prOpts').className = 'pr-opts';
+  pq('prConf').hidden = true; pq('prMsg').hidden = true; pq('prRow').replaceChildren();
+  pq('prCard').classList.remove('off');
+  pq('prCard').scrollTop = 0;
+  const scan = pq('prScan'); scan.classList.remove('run'); void scan.offsetWidth; scan.classList.add('run');
+  p3Screen({ status: 'TESTING' });
+  prOptions();
+}
+
+function prOptions(){
+  const q = prRun.q;
+  q.opts.forEach((o, i) => {
+    const b = prMake('button', 'pr-opt');
+    b.appendChild(prMake('i', '', 'ABCD'[i]));
+    b.appendChild(prMake('span', '', o.text));
+    b.addEventListener('click', () => prPick(i));
+    pq('prOpts').appendChild(b);
+  });
+  prRun.t0 = performance.now();
+  // the confidence chips, ready for when an answer is picked
+  const chips = pq('prChips');
+  chips.replaceChildren();
+  PR_CONF.forEach(([v, label]) => {
+    const c = prMake('button', 'pr-chip', label), u = prMake('u');
+    u.style.setProperty('--w', v + '%');
+    c.appendChild(u);
+    c.addEventListener('click', () => prLock(v, c));
+    chips.appendChild(c);
+  });
+}
+
+function prPick(i){
+  if(!prRun || pq('prOpts').classList.contains('locked')) return;
+  prRun.pick = i;
+  if(!prRun.ms) prRun.ms = performance.now() - prRun.t0;
+  pq('prOpts').querySelectorAll('.pr-opt').forEach((b, k) => b.classList.toggle('sel', k === i));
+  if(pq('prConf').hidden){
+    pq('prConf').hidden = false;
+    pq('prConf').scrollIntoView({ block:'nearest', behavior:'smooth' });
+  }
+}
+
+function prLock(conf, chip){
+  if(!prRun || prRun.pick < 0 || pq('prOpts').classList.contains('locked')) return;
+  const q = prRun.q, ok = prRun.pick === q.ans, st = PR_STAGES[prRun.stage];
+  chip.classList.add('sel');
+  pq('prChips').querySelectorAll('.pr-chip').forEach(c => c.disabled = true);
+  pq('prOpts').classList.add('locked');
+  const btns = pq('prOpts').querySelectorAll('.pr-opt');
+  btns[q.ans].classList.add('right');
+  if(!ok) btns[prRun.pick].classList.add('wrong');
+  prRun.log.push({ stage: prRun.stage, ok, conf, ms: prRun.ms || 0 });
+  prRun.ms = 0;
+  prRun.tries++;
+  p3Screen({});
+
+  const msg = pq('prMsg'), row = pq('prRow');
+  msg.className = 'pr-msg' + (ok ? '' : ' bad'); msg.hidden = false; msg.replaceChildren();
+  const opens = ok || prRun.tries >= PR_TRIES;
+  const sure = conf >= 75;
+  const head = ok ? (sure ? 'Correct, and you knew it.' : 'Correct! You were more right than you felt.')
+    : opens ? 'Not this time, but the door opens anyway.' : (sure ? 'Not quite, and you felt sure.' : 'Not quite.');
+  msg.append(prMake('b', '', head), prMake('span', '', q.why));
+  if(!ok && opens) msg.appendChild(prMake('span', '', ` ${PR_NAME[st.host]} has noted your persistence.`));
+  if(!ok && !opens) msg.appendChild(prMake('span', '', ' The chamber stays sealed.'));
+
+  if(opens){
+    p3Unlock();
+    const last = prRun.stage === PR_STAGES.length - 1;
+    const go = prMake('button', 'pr-btn', last ? 'Meet the Zinion Council' : `Enter chamber ${prRun.stage + 2}`);
+    go.addEventListener('click', prNext);
+    prLater(() => row.appendChild(go), 900);
+  }else{
+    p3Alarm();
+    const again = prMake('button', 'pr-btn', 'Try a new test');
+    again.addEventListener('click', prAsk);
+    row.appendChild(again);
+  }
+  msg.scrollIntoView({ block:'nearest', behavior:'smooth' });
+}
+
+function prNext(){
+  if(!prRun) return;
+  pq('prCard').classList.add('off');
+  const next = prRun.stage + 1, run = prRun;
+  p3Travel(next, () => {
+    if(prRun !== run) return;
+    prRun.stage = next; prRun.tries = 0;
+    prTrack();
+    if(next >= PR_STAGES.length) return prVerdict();
+    prAccent(PR_STAGES[next].col); prFallArt(PR_STAGES[next].host);
+    prAsk();
+  });
+}
+
+/* ---------- the council's verdict ---------- */
+function prStats(log){
+  const n = log.length || 1;
+  const acc = Math.round(log.filter(r => r.ok).length / n * 100);
+  const conf = Math.round(log.reduce((s, r) => s + r.conf, 0) / n);
+  const right = log.filter(r => r.ok), wrong = log.filter(r => !r.ok);
+  const avg = a => a.length ? Math.round(a.reduce((s, r) => s + r.conf, 0) / a.length) : null;
+  // Brier score turned into 0–100: 100 means every confidence matched what happened
+  const brier = log.reduce((s, r) => s + Math.pow(r.conf / 100 - (r.ok ? 1 : 0), 2), 0) / n;
+  return { acc, conf, gap: conf - acc, calib: Math.round((1 - brier) * 100), confRight: avg(right), confWrong: avg(wrong) };
+}
+function prVerdict(){
+  const log = prRun.log, s = prStats(log);
+  prAccent(PR_COUNCIL);
+  p3Screen({ status: 'COMPLETE' });
+  const traits = PR_STAGES.map((st, i) => {
+    const tries = log.filter(r => r.stage === i), at = tries.findIndex(r => r.ok);
+    return { st, score: at === 0 ? 100 : at === 1 ? 70 : at === 2 ? 45 : 20 };
+  });
+  const overall = Math.round(traits.reduce((a, t) => a + t.score, 0) / traits.length);
+  const style = s.gap > 15 ? 'bold' : s.gap < -15 ? 'modest' : 'calibrated';
+  const title = overall >= 85 && style === 'calibrated' ? 'A Zinion-class mind'
+    : overall >= 85 && style === 'bold' ? 'Brilliant and bold'
+    : overall >= 70 && style === 'modest' ? 'The quiet genius'
+    : style === 'calibrated' ? 'The clear-sighted thinker'
+    : style === 'bold' ? 'The fearless explorer' : 'The careful thinker';
+  const verdict = {
+    calibrated: 'Your confidence matched how often you were right. That is rarer than being clever. Weather forecasters train for years to do it: when they say “70% chance of rain”, it rains about 70% of the time.',
+    bold: 'You felt surer than your answers turned out to be. Most humans do! Good scientists learn to say “I might be wrong” and then check.',
+    modest: 'You were right more often than you believed. Your mind is sharper than you give it credit for. Trust yourself a little more.'
+  }[style];
+  const ms = log.map(r => r.ms).filter(Boolean).sort((a, b) => a - b), mid = ms.length ? ms[Math.floor(ms.length / 2)] / 1000 : 0;
+  prRun.title = title;
+
+  prPanel(p => {
+    p.append(prMake('small', '', `The Zinion Council · subject ${(typeof player !== 'undefined' && player) || 'human'}`), prMake('h2', '', title));
+    p.appendChild(prMake('p', '', verdict));
+    const cal = prMake('div', 'pr-cal');
+    [[s.acc + '%', 'How often you were right'], [s.conf + '%', 'How sure you felt, on average'], [s.calib, 'Calibration score out of 100']]
+      .forEach(([b, t]) => { const d = prMake('div'); d.append(prMake('b', '', b), prMake('span', '', t)); cal.appendChild(d); });
+    p.appendChild(cal);
+    const bars = prMake('div', 'pr-bars');
+    traits.forEach(t => {
+      const r = prMake('div', 'pr-bar'), i = prMake('i');
+      r.style.setProperty('--c', t.st.col); r.style.setProperty('--w', '0%');
+      r.append(prMake('span', '', t.st.name), i, prMake('span', '', String(t.score)));
+      bars.appendChild(r);
+      prLater(() => r.style.setProperty('--w', t.score + '%'), 250);
+    });
+    p.appendChild(bars);
+    const notes = [];
+    if(s.confRight != null && s.confWrong != null)
+      notes.push(s.confRight > s.confWrong + 10 ? 'You felt surer when you were right than when you were wrong: your mind can tell the difference. That is called metacognition.'
+        : 'You felt about as sure when you were wrong as when you were right. Noticing that feeling of doubt is a skill you can practise.');
+    if(mid) notes.push(`Your usual answer took ${mid.toFixed(1)} seconds.`);
+    if(notes.length) p.appendChild(prMake('p', '', notes.join(' ')));
+    const row = prMake('div', 'pr-row');
+    const again = prMake('button', 'pr-ghost', 'Play again'), done = prMake('button', 'pr-btn', 'Collect your award');
+    again.addEventListener('click', probeOpen);
+    done.addEventListener('click', () => showAward({
+      key: 'parsec_wf_probe_finishers', game: 'Zinion Probe', zin: prMix(['argon','niki','stephen','harsh','tropido'])[0], again: probeOpen,
+      line: `You passed all ${PR_STAGES.length} chambers. The Zinion Council named you “${title}”.`
+    }));
+    row.append(again, done);
+    p.appendChild(row);
+  });
+}
+
+pq('prExit').addEventListener('click', () => { probeLeave(); show('mode'); });
+
+/* =====================================================================
+   THE CHAMBERS IN 3D
+   One round chamber, re-lit in each Zinion's colour: brushed-metal hex floor,
+   ribbed wall panels with light strips between them, a lathe-turned pedestal
+   projecting the Zinion as a hologram, two wall monitors reading out the
+   subject live, and a bulkhead with an iris door that opens onto the next
+   chamber. The camera flies through it on the way.
+   ===================================================================== */
+const P3_BASE = 'https://cdn.jsdelivr.net/npm/three@0.147.0/';
+const P3_R = 12;            // the chamber's radius
+const P3_DOOR_Y = 3.6;      // the portal's centre height
+let P3 = null, p3Ready = null;
+
+function p3Script(src){
+  return new Promise((ok, no) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = ok; s.onerror = no;
+    document.head.appendChild(s);
+  });
+}
+function p3Boot(){
+  if(!p3Ready){
+    const slow = new Promise(ok => setTimeout(() => ok('slow'), 15000));
+    const load = (window.THREE ? Promise.resolve() : p3Script(P3_BASE + 'build/three.min.js'))
+      .then(() => THREE.RoomEnvironment ? 0 : p3Script(P3_BASE + 'examples/js/environments/RoomEnvironment.js').catch(() => 0))
+      .then(() => p3Build());
+    p3Ready = Promise.race([load, slow]).then(r => r === true).catch(() => false);
+  }
+  return p3Ready;
+}
+
+function p3Build(){
+  const cv = pq('probeCanvas');
+  let R;
+  try{ R = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' }); }
+  catch(e){ return false; }
+  R.outputEncoding = THREE.sRGBEncoding;
+  R.toneMapping = THREE.ACESFilmicToneMapping;
+  R.toneMappingExposure = 1.15;
+  R.shadowMap.enabled = true;
+  R.shadowMap.type = THREE.PCFSoftShadowMap;
+  R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+
+  const S = new THREE.Scene();
+  S.background = new THREE.Color(0x03051a);
+  S.fog = new THREE.FogExp2(0x03051a, 0.03);
+  if(THREE.RoomEnvironment){
+    const pm = new THREE.PMREMGenerator(R);
+    S.environment = pm.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+    pm.dispose();
+  }
+  const cam = new THREE.PerspectiveCamera(48, 1, 0.1, 140);
+  const aniso = Math.min(8, R.capabilities.getMaxAnisotropy());
+  const tex = (w, h, draw, colour) => {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    draw(c.getContext('2d'), w, h);
+    const t = new THREE.CanvasTexture(c);
+    if(colour !== false) t.encoding = THREE.sRGBEncoding;
+    t.anisotropy = aniso;
+    return t;
+  };
+  const glowTex = tex(128, 128, (g, w) => {
+    const r = g.createRadialGradient(w/2, w/2, 0, w/2, w/2, w/2);
+    r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.25, 'rgba(255,255,255,.45)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = r; g.fillRect(0, 0, w, w);
+  });
+  const P = { R, S, cam, tw: [], on: false, t: 0, acc: new THREE.Color(PR_STAGES[0].col), accTo: new THREE.Color(PR_STAGES[0].col),
+    px: 0, py: 0, tx: 0, ty: 0, shake: 0, open: 0, rig: { x: 0, y: 2.9, z: 9.6, fov: 48 }, look: new THREE.Vector3(0, 2.6, -2),
+    frames: 0, slow: 0, screen: { status: 'SEALED' }, screenAt: 0 };
+
+  // accent-coloured materials: they all follow the stage colour together
+  const matStrip = new THREE.MeshBasicMaterial({ color: P.acc, toneMapped: false, fog: false, side: THREE.DoubleSide });
+  const matHalo = new THREE.SpriteMaterial({ map: glowTex, color: P.acc, blending: THREE.AdditiveBlending, transparent: true, opacity: .3, depthWrite: false, fog: false });
+  const matHaloMesh = new THREE.MeshBasicMaterial({ color: P.acc, blending: THREE.AdditiveBlending, transparent: true, opacity: .16, depthWrite: false, toneMapped: false });
+  P.accent = [matStrip.color, matHalo.color, matHaloMesh.color];
+
+  /* --- floor: brushed-metal hex plates with dark seams, scuffs and fine grain --- */
+  const tiles = [];
+  {
+    const s = 1024 / (12 * Math.sqrt(3)), sx = 1024 / (7 * 3 * s);
+    for(let c = -1; c <= 15; c++) for(let r = -1; r <= 13; r++)
+      tiles.push({ x: c * 1.5 * s * sx, y: (r + (c % 2 ? .5 : 0)) * Math.sqrt(3) * s, v: Math.random(), s, sx });
+  }
+  const hexPath = (g, t, inset) => {
+    g.beginPath();
+    for(let k = 0; k < 6; k++){
+      const a = Math.PI / 3 * k;
+      g.lineTo(t.x + Math.cos(a) * (t.s - inset) * t.sx, t.y + Math.sin(a) * (t.s - inset));
+    }
+    g.closePath();
+  };
+  const floorMap = tex(1024, 1024, g => {
+    g.fillStyle = '#15171f'; g.fillRect(0, 0, 1024, 1024);
+    tiles.forEach(t => {
+      const l = 52 + t.v * 26, grd = g.createLinearGradient(t.x - t.s, t.y - t.s, t.x + t.s, t.y + t.s);
+      grd.addColorStop(0, `rgb(${l+8},${l+10},${l+16})`); grd.addColorStop(1, `rgb(${l-10},${l-8},${l-2})`);
+      g.fillStyle = grd; hexPath(g, t, 3); g.fill();
+      g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = 1.5; hexPath(g, t, 6); g.stroke();
+    });
+    for(let i = 0; i < 26000; i++){ g.fillStyle = `rgba(${Math.random() < .5 ? '255,255,255' : '0,0,0'},${Math.random() * .06})`; g.fillRect(Math.random() * 1024, Math.random() * 1024, 1.5, 1.5); }
+    g.lineWidth = 1;
+    for(let i = 0; i < 160; i++){
+      const x = Math.random() * 1024, y = Math.random() * 1024, a = Math.random() * Math.PI, l = 10 + Math.random() * 60;
+      g.strokeStyle = `rgba(200,210,230,${.03 + Math.random() * .06})`;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke();
+    }
+  });
+  const floorRough = tex(1024, 1024, g => {
+    g.fillStyle = '#f0f0f0'; g.fillRect(0, 0, 1024, 1024);
+    tiles.forEach(t => { const v = 70 + t.v * 70; g.fillStyle = `rgb(${v},${v},${v})`; hexPath(g, t, 3); g.fill(); });
+    for(let i = 0; i < 9000; i++){ const v = 60 + Math.random() * 120; g.fillStyle = `rgba(${v},${v},${v},.35)`; g.fillRect(Math.random() * 1024, Math.random() * 1024, 2, 2); }
+  }, false);
+  [floorMap, floorRough].forEach(t => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(6, 6); });
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(20, 96),
+    new THREE.MeshStandardMaterial({ map: floorMap, roughnessMap: floorRough, roughness: 1, metalness: .82, bumpMap: floorRough, bumpScale: .012, envMapIntensity: .55 }));
+  floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
+  S.add(floor);
+  // light rings and spokes set into the floor
+  [[2.05, 2.11], [5.4, 5.44], [P3_R - .9, P3_R - .86]].forEach(([a, b]) => {
+    const ring = new THREE.Mesh(new THREE.RingGeometry(a, b, 160), matStrip);
+    ring.rotation.x = -Math.PI / 2; ring.position.y = .006; S.add(ring);
+  });
+  for(let k = 0; k < 12; k++){
+    const spoke = new THREE.Mesh(new THREE.PlaneGeometry(.035, 2.9), matStrip);
+    const a = k / 12 * Math.PI * 2 + Math.PI / 12;
+    spoke.rotation.set(-Math.PI / 2, 0, a);
+    spoke.position.set(Math.sin(a) * -3.75, .006, Math.cos(a) * -3.75);
+    S.add(spoke);
+  }
+
+  /* --- walls: ribbed panels with rivets and vents, a light strip in every seam --- */
+  const panelMap = tex(256, 1024, g => {
+    const grd = g.createLinearGradient(0, 0, 0, 1024);
+    grd.addColorStop(0, '#3a4052'); grd.addColorStop(.6, '#4a5164'); grd.addColorStop(1, '#262a36');
+    g.fillStyle = grd; g.fillRect(0, 0, 256, 1024);
+    const inset = (x, y, w, h) => {
+      g.fillStyle = 'rgba(0,0,0,.28)'; g.fillRect(x, y, w, h);
+      g.strokeStyle = 'rgba(0,0,0,.6)'; g.lineWidth = 3; g.strokeRect(x, y, w, h);
+      g.strokeStyle = 'rgba(255,255,255,.14)'; g.lineWidth = 1.5; g.strokeRect(x + 3, y + 3, w - 6, h - 6);
+    };
+    inset(26, 60, 204, 380); inset(26, 470, 204, 300);
+    g.fillStyle = 'rgba(0,0,0,.55)';
+    for(let i = 0; i < 9; i++) g.fillRect(56, 812 + i * 18, 144, 7);
+    for(let y = 24; y < 1024; y += 120) [14, 242].forEach(x => {
+      g.fillStyle = 'rgba(0,0,0,.5)'; g.beginPath(); g.arc(x, y + 1, 5, 0, 7); g.fill();
+      g.fillStyle = 'rgba(210,220,240,.45)'; g.beginPath(); g.arc(x - 1, y, 3.5, 0, 7); g.fill();
+    });
+    for(let i = 0; i < 5000; i++){ g.fillStyle = `rgba(0,0,0,${Math.random() * .08})`; g.fillRect(Math.random() * 256, Math.random() * 1024, 2, 2); }
+    const dirt = g.createLinearGradient(0, 860, 0, 1024); dirt.addColorStop(0, 'rgba(0,0,0,0)'); dirt.addColorStop(1, 'rgba(0,0,0,.45)');
+    g.fillStyle = dirt; g.fillRect(0, 860, 256, 164);
+  });
+  const panelMat = new THREE.MeshStandardMaterial({ map: panelMap, bumpMap: panelMap, bumpScale: .02, metalness: .72, roughness: .42, envMapIntensity: .5 });
+  const N = 30, step = Math.PI * 2 / N, door = 0.42;
+  const panelGeo = new THREE.BoxGeometry(2 * Math.PI * P3_R / N - .1, 10, .5);
+  const stripGeo = new THREE.BoxGeometry(.07, 9.2, .07);
+  for(let k = 0; k < N; k++){
+    const a = (k + .5) * step - Math.PI;    // angle from the back wall
+    const near = Math.abs(a);
+    if(near < door || near > 2.1) continue; // the bulkhead sits at the back; nothing is needed behind the camera
+    const panel = new THREE.Mesh(panelGeo, panelMat);
+    panel.position.set(Math.sin(a) * P3_R, 5, -Math.cos(a) * P3_R);
+    panel.rotation.y = -a;
+    panel.receiveShadow = true;
+    S.add(panel);
+    const b = a + step / 2;
+    if(Math.abs(b) < door + .02 || Math.abs(b) > 2.08) continue;
+    const strip = new THREE.Mesh(stripGeo, matStrip);
+    strip.position.set(Math.sin(b) * (P3_R - .32), 4.9, -Math.cos(b) * (P3_R - .32));
+    S.add(strip);
+    const halo = new THREE.Sprite(matHalo);
+    halo.scale.set(.9, 10.5, 1);
+    halo.position.set(Math.sin(b) * (P3_R - .4), 4.9, -Math.cos(b) * (P3_R - .4));
+    S.add(halo);
+  }
+  const trim = new THREE.Mesh(new THREE.CylinderGeometry(P3_R - .3, P3_R - .3, .1, 96, 1, true, Math.PI - 2.1, 4.2), matStrip);
+  trim.position.y = .5; S.add(trim);
+
+  /* --- ceiling: a dark dome cap with a great ring light and an emitter over the pedestal --- */
+  const ceil = new THREE.Mesh(new THREE.CircleGeometry(P3_R + .5, 64), new THREE.MeshStandardMaterial({ color: 0x10131c, metalness: .6, roughness: .6 }));
+  ceil.rotation.x = Math.PI / 2; ceil.position.y = 10; S.add(ceil);
+  const ringLight = new THREE.Mesh(new THREE.TorusGeometry(5.6, .08, 16, 160), new THREE.MeshBasicMaterial({ color: 0xe8eeff, toneMapped: false }));
+  ringLight.rotation.x = Math.PI / 2; ringLight.position.y = 9.5; S.add(ringLight);
+  const ringHalo = new THREE.Mesh(new THREE.TorusGeometry(5.6, .45, 16, 160), matHaloMesh);
+  ringHalo.rotation.x = Math.PI / 2; ringHalo.position.y = 9.5; S.add(ringHalo);
+  const emitter = new THREE.Mesh(new THREE.CylinderGeometry(.55, .9, .7, 48), new THREE.MeshStandardMaterial({ color: 0x5c6478, metalness: .9, roughness: .3 }));
+  emitter.position.y = 9.6; S.add(emitter);
+  const lens = new THREE.Mesh(new THREE.CircleGeometry(.5, 48), matStrip);
+  lens.rotation.x = Math.PI / 2; lens.position.y = 9.24; S.add(lens);
+
+  /* --- lights --- */
+  S.add(new THREE.HemisphereLight(0x7d8cff, 0x080818, .55));
+  const fill = new THREE.DirectionalLight(0x9fb4ff, .35); fill.position.set(0, 6, 14); S.add(fill);
+  const spot = new THREE.SpotLight(0xffffff, 2.4, 30, .42, .6, 1.2);
+  spot.position.set(0, 9.2, 1.6); spot.target.position.set(0, 1, 0);
+  spot.castShadow = true; spot.shadow.mapSize.set(1024, 1024); spot.shadow.bias = -.0004;
+  S.add(spot, spot.target);
+  const l1 = new THREE.PointLight(P.acc, 1.5, 28, 1.6); l1.position.set(-8, 5, -4);
+  const l2 = new THREE.PointLight(P.acc, 1.5, 28, 1.6); l2.position.set(8, 5, -4);
+  const lp = new THREE.PointLight(P.acc, .9, 9, 2); lp.position.set(0, 1.6, .6);
+  S.add(l1, l2, lp);
+  P.accent.push(l1.color, l2.color, lp.color);
+
+  /* --- pedestal and hologram --- */
+  const pedPts = [[0,0],[1.75,0],[1.75,.12],[1.5,.2],[1.5,.32],[1.18,.44],[1.0,1.0],[1.14,1.08],[1.14,1.17],[.92,1.22],[0,1.22]].map(([x, y]) => new THREE.Vector2(x, y));
+  const ped = new THREE.Mesh(new THREE.LatheGeometry(pedPts, 128), new THREE.MeshStandardMaterial({ color: 0x8b93a8, metalness: .92, roughness: .26, envMapIntensity: .9 }));
+  ped.castShadow = ped.receiveShadow = true; S.add(ped);
+  const pedRing = new THREE.Mesh(new THREE.TorusGeometry(1.14, .022, 12, 128), matStrip);
+  pedRing.rotation.x = Math.PI / 2; pedRing.position.y = 1.13; S.add(pedRing);
+  const pedHalo = new THREE.Mesh(new THREE.TorusGeometry(1.14, .12, 12, 128), matHaloMesh);
+  pedHalo.rotation.x = Math.PI / 2; pedHalo.position.y = 1.13; S.add(pedHalo);
+  const holoMat = new THREE.ShaderMaterial({
+    uniforms: { uCol: { value: P.acc.clone() }, uT: { value: 0 }, uOn: { value: 1 } },
+    vertexShader: `varying vec2 vUv; varying vec3 vN; varying vec3 vV;
+      void main(){ vUv = uv; vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position, 1.0); vV = -mv.xyz; gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `uniform vec3 uCol; uniform float uT; uniform float uOn; varying vec2 vUv; varying vec3 vN; varying vec3 vV;
+      void main(){ float fade = pow(1.0 - vUv.y, 1.6); float scan = .72 + .28 * sin(vUv.y * 140.0 - uT * 6.0);
+        float rim = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 2.0);
+        gl_FragColor = vec4(uCol * (.7 + rim), fade * scan * (.12 + .55 * rim) * uOn); }`,
+    transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
+  });
+  const holo = new THREE.Mesh(new THREE.CylinderGeometry(1.3, .88, 3.2, 64, 1, true), holoMat);
+  holo.position.y = 1.22 + 1.6; S.add(holo);
+  const scanRing = new THREE.Mesh(new THREE.TorusGeometry(1, .012, 8, 96), matStrip);
+  scanRing.rotation.x = Math.PI / 2; S.add(scanRing);
+
+  // every Zinion, ready to be projected; the council stands all five in an arc
+  const loader = new THREE.TextureLoader();
+  P.zin = {};
+  PR_HOSTS.forEach(host => {
+    const src = (window.ZIN || {})[host];
+    const m = new THREE.SpriteMaterial({ transparent: true, toneMapped: false, opacity: 0, alphaTest: .02 });
+    const sp = new THREE.Sprite(m);
+    sp.userData = { aspect: 1, h: 2.4, show: 0 };
+    if(src) loader.load(src, t => { t.encoding = THREE.sRGBEncoding; m.map = t; m.needsUpdate = true; sp.userData.aspect = t.image.width / t.image.height; });
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: new THREE.Color(PR_COL.zinia), blending: THREE.AdditiveBlending, transparent: true, opacity: 0, depthWrite: false }));
+    S.add(glow, sp);
+    P.zin[host] = { sp, glow, pos: new THREE.Vector3(0, 2.85, 0) };
+  });
+
+  /* --- the bulkhead: a thick plate with a round hole, bolts, a lit frame and an iris door --- */
+  const plate = new THREE.Shape();
+  plate.moveTo(-5.4, 0); plate.lineTo(5.4, 0); plate.lineTo(5.4, 10); plate.lineTo(-5.4, 10); plate.lineTo(-5.4, 0);
+  const hole = new THREE.Path(); hole.absarc(0, P3_DOOR_Y, 3.0, 0, Math.PI * 2, true);
+  plate.holes.push(hole);
+  // the plate's UVs are in metres, so the wall-panel texture is tiled one panel per 2.5 m
+  const bulkMap = panelMap.clone();
+  bulkMap.wrapS = bulkMap.wrapT = THREE.RepeatWrapping; bulkMap.repeat.set(.4, .1); bulkMap.needsUpdate = true;
+  const bulk = new THREE.Mesh(new THREE.ExtrudeGeometry(plate, { depth: .8, bevelEnabled: true, bevelThickness: .08, bevelSize: .06, bevelSegments: 3, curveSegments: 96 }),
+    new THREE.MeshStandardMaterial({ map: bulkMap, bumpMap: bulkMap, bumpScale: .02, color: 0x8a90a0, metalness: .7, roughness: .45, envMapIntensity: .3 }));
+  bulk.position.set(0, 0, -P3_R - .5); bulk.receiveShadow = true;
+  S.add(bulk);
+  const front = -P3_R + .4;
+  const frame = new THREE.Mesh(new THREE.TorusGeometry(3.08, .2, 24, 128), new THREE.MeshStandardMaterial({ color: 0x9aa2b6, metalness: .95, roughness: .22 }));
+  frame.position.set(0, P3_DOOR_Y, front); S.add(frame);
+  const frameLit = new THREE.Mesh(new THREE.TorusGeometry(2.86, .035, 12, 128), matStrip);
+  frameLit.position.set(0, P3_DOOR_Y, front + .05); S.add(frameLit);
+  const frameHalo = new THREE.Mesh(new THREE.TorusGeometry(2.86, .2, 12, 128), matHaloMesh);
+  frameHalo.position.set(0, P3_DOOR_Y, front + .05); S.add(frameHalo);
+  const boltGeo = new THREE.CylinderGeometry(.07, .07, .08, 12), boltMat = new THREE.MeshStandardMaterial({ color: 0xb8bfd0, metalness: 1, roughness: .3 });
+  for(let k = 0; k < 28; k++){
+    const a = k / 28 * Math.PI * 2, bolt = new THREE.Mesh(boltGeo, boltMat);
+    bolt.rotation.x = Math.PI / 2;
+    bolt.position.set(Math.cos(a) * 3.55, P3_DOOR_Y + Math.sin(a) * 3.55, front + .02);
+    S.add(bolt);
+  }
+  const iris = new THREE.Group(); iris.position.set(0, P3_DOOR_Y, -P3_R - .62); S.add(iris);
+  const bladeMat = new THREE.MeshStandardMaterial({ color: 0x232838, metalness: .9, roughness: .34, envMapIntensity: .8 });
+  P.blades = [];
+  for(let k = 0; k < 10; k++){
+    const a0 = k / 10 * Math.PI * 2, span = Math.PI * 2 / 10 * 1.25, sh = new THREE.Shape();
+    sh.moveTo(0, 0); sh.lineTo(Math.cos(a0) * 3.5, Math.sin(a0) * 3.5); sh.absarc(0, 0, 3.5, a0, a0 + span, false); sh.lineTo(0, 0);
+    const blade = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: .05 + k * .004, bevelEnabled: false, curveSegments: 24 }), bladeMat);
+    blade.userData.dir = new THREE.Vector2(Math.cos(a0 + span / 2), Math.sin(a0 + span / 2));
+    iris.add(blade); P.blades.push(blade);
+  }
+  // the light beyond the door
+  const beyondMat = new THREE.MeshBasicMaterial({ color: P.acc.clone(), toneMapped: false });
+  const beyond = new THREE.Mesh(new THREE.CircleGeometry(3.4, 64), beyondMat);
+  beyond.position.set(0, P3_DOOR_Y, -P3_R - 2.2); S.add(beyond);
+  const beyondGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: P.acc.clone(), blending: THREE.AdditiveBlending, transparent: true, opacity: 0, depthWrite: false, fog: false }));
+  beyondGlow.scale.set(13, 13, 1); beyondGlow.position.set(0, P3_DOOR_Y, -P3_R + .6); S.add(beyondGlow);
+  const doorLight = new THREE.PointLight(P.acc, 0, 24, 1.4); doorLight.position.set(0, P3_DOOR_Y, -P3_R + 1.4); S.add(doorLight);
+  P.accent.push(beyondMat.color, beyondGlow.material.color, doorLight.color);
+
+  // the chamber's name glowing above the door
+  const signCv = document.createElement('canvas'); signCv.width = 1024; signCv.height = 128;
+  const signTex = new THREE.CanvasTexture(signCv); signTex.encoding = THREE.sRGBEncoding;
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(6.4, .8), new THREE.MeshBasicMaterial({ map: signTex, transparent: true, toneMapped: false, depthWrite: false }));
+  sign.position.set(0, 7.65, front + .1); S.add(sign);
+
+  /* --- two wall monitors that read out the subject live --- */
+  P.mon = [];
+  [-1, 1].forEach(side => {
+    const a = side * .72, r = P3_R - .55;
+    const g = new THREE.Group();
+    g.position.set(Math.sin(a) * r, 5.4, -Math.cos(a) * r); g.rotation.y = -a;
+    const bezel = new THREE.Mesh(new THREE.BoxGeometry(3.7, 2.4, .16), new THREE.MeshStandardMaterial({ color: 0x1a1e29, metalness: .7, roughness: .4 }));
+    const cv2 = document.createElement('canvas'); cv2.width = 640; cv2.height = 400;
+    const t = new THREE.CanvasTexture(cv2); t.encoding = THREE.sRGBEncoding; t.anisotropy = aniso;
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(3.45, 2.16), new THREE.MeshBasicMaterial({ map: t, toneMapped: false }));
+    scr.position.z = .085;
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(.3, .3, .5), bezel.material); arm.position.z = -.3;
+    g.add(bezel, scr, arm); S.add(g);
+    P.mon.push({ cv: cv2, g: cv2.getContext('2d'), t, side, wave: [] });
+  });
+
+  /* --- dust drifting through the light --- */
+  const DUST = 700, dpos = new Float32Array(DUST * 3);
+  for(let i = 0; i < DUST; i++){
+    const r = Math.sqrt(Math.random()) * 9, a = Math.random() * Math.PI * 2;
+    dpos[i*3] = Math.cos(a) * r; dpos[i*3+1] = Math.random() * 9.5; dpos[i*3+2] = Math.sin(a) * r - 1;
+  }
+  const dgeo = new THREE.BufferGeometry(); dgeo.setAttribute('position', new THREE.BufferAttribute(dpos, 3));
+  const dust = new THREE.Points(dgeo, new THREE.PointsMaterial({ size: .045, map: glowTex, color: 0xcfd8ff, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false }));
+  S.add(dust);
+
+  Object.assign(P, { matStrip, holoMat, holo, scanRing, beyondGlow, beyondMat, doorLight, sign, signCv, signTex, dust, spot });
+  P3 = P;
+  window.addEventListener('resize', p3Size);
+  pq('probe').addEventListener('pointermove', e => {
+    if(e.pointerType !== 'mouse') return;
+    P3.tx = e.clientX / innerWidth * 2 - 1; P3.ty = e.clientY / innerHeight * 2 - 1;
+  });
+  return true;
+}
+
+function p3Size(){
+  if(!P3) return;
+  const cv = pq('probeCanvas'), w = cv.clientWidth || innerWidth, h = cv.clientHeight || innerHeight;
+  P3.R.setSize(w, h, false);
+  P3.cam.aspect = w / h;
+  // the scene is framed clear of the card: to the left of it on wide screens, above it otherwise
+  if(w >= 1000 && w / h >= 1.25) P3.cam.setViewOffset(w, h, w * .21, h * .05, w, h);
+  else P3.cam.setViewOffset(w, h, 0, h * .14, w, h);
+  P3.cam.updateProjectionMatrix();
+}
+
+/* small tween helper: fn(k) runs every frame with k eased from 0 to 1 */
+const p3Ease = { io: k => k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2, in: k => k*k*k, out: k => 1 - Math.pow(1 - k, 3) };
+function p3Tween(ms, fn, done, ease){ if(P3) P3.tw.push({ t0: performance.now(), ms, fn, done, ease: ease || p3Ease.io }); }
+
+function p3Start(){
+  if(!P3 || P3.on) return;
+  P3.on = true; P3.frames = 0; P3.slow = 0; P3.t = performance.now() / 1000;
+  p3Size();
+  P3.raf = requestAnimationFrame(p3Loop);
+}
+function p3Stop(){ if(P3){ P3.on = false; cancelAnimationFrame(P3.raf); P3.tw = []; } }
+
+function p3Loop(now){
+  if(!P3 || !P3.on) return;
+  P3.raf = requestAnimationFrame(p3Loop);
+  const P = P3, t = now / 1000, dt = Math.min(.05, t - P.t);
+  P.t = t;
+  P.tw = P.tw.filter(w => {
+    const k = Math.min(1, (now - w.t0) / w.ms);
+    w.fn(w.ease(k));
+    if(k >= 1){ if(w.done) w.done(); return false; }
+    return true;
+  });
+
+  // the stage colour eases across, so every light and strip shifts together
+  if(P.acc.r !== P.accTo.r || P.acc.g !== P.accTo.g || P.acc.b !== P.accTo.b){
+    P.acc.lerp(P.accTo, Math.min(1, dt * 3));
+    if(Math.abs(P.acc.r - P.accTo.r) + Math.abs(P.acc.g - P.accTo.g) + Math.abs(P.acc.b - P.accTo.b) < .004) P.acc.copy(P.accTo);
+    P.accent.forEach(c => c.copy(P.acc));
+    P.holoMat.uniforms.uCol.value.copy(P.acc);
+  }
+
+  // camera: a slow handheld drift, a touch of mouse parallax, and a shake after a wrong answer
+  P.px += (P.tx - P.px) * .04; P.py += (P.ty - P.py) * .04;
+  P.shake = Math.max(0, P.shake - dt * 2.2);
+  const sh = P.shake * P.shake * .12;
+  P.cam.position.set(P.rig.x + P.px * .45 + Math.sin(t * .37) * .06 + (Math.random() - .5) * sh,
+                     P.rig.y - P.py * .22 + Math.sin(t * .53) * .04 + (Math.random() - .5) * sh, P.rig.z);
+  if(P.cam.fov !== P.rig.fov){ P.cam.fov = P.rig.fov; P.cam.updateProjectionMatrix(); }
+  P.cam.lookAt(P.look.x + P.px * .2, P.look.y, P.look.z);
+
+  // hologram, scanning ring and the Zinions floating in it
+  P.holoMat.uniforms.uT.value = t;
+  const sk = (t * .35) % 1;
+  P.scanRing.position.y = 1.3 + sk * 3;
+  P.scanRing.scale.setScalar(.92 + sk * .38);
+  Object.values(P.zin).forEach((z, i) => {
+    const u = z.sp.userData, show = u.show;
+    const flick = show > .98 ? (Math.random() < .02 ? .75 : 1) : 1;
+    z.sp.material.opacity = show * flick;
+    z.sp.visible = show > .01;
+    z.sp.scale.set(u.h * u.aspect * (1 + (1 - show) * .25), u.h * show, 1);
+    z.sp.position.set(z.pos.x, z.pos.y + Math.sin(t * 1.4 + i) * .07, z.pos.z);
+    z.glow.position.copy(z.sp.position); z.glow.position.z -= .2;
+    z.glow.scale.setScalar(u.h * 1.9); z.glow.material.opacity = show * .33; z.glow.visible = z.sp.visible;
+  });
+
+  // the iris door and the light behind it
+  P.blades.forEach((b, k) => {
+    const o = P.open * 3.7;
+    b.position.set(b.userData.dir.x * o, b.userData.dir.y * o, 0);
+    b.rotation.z = P.open * .35;
+  });
+  P.beyondGlow.material.opacity = P.open * .85;
+  P.doorLight.intensity = P.open * 4;
+
+  // dust rises slowly and wraps round
+  const d = P.dust.geometry.attributes.position;
+  for(let i = 0; i < d.count; i++){
+    let y = d.getY(i) + dt * (.05 + (i % 7) * .012);
+    if(y > 9.5) y = 0;
+    d.setY(i, y);
+    d.setX(i, d.getX(i) + Math.sin(t * .3 + i) * dt * .03);
+  }
+  d.needsUpdate = true;
+
+  if(now - P.screenAt > 110){ P.screenAt = now; p3DrawScreens(t); }
+  P.R.render(P.S, P.cam);
+
+  // a slow tablet drops to a lighter render after the first couple of seconds
+  if(P.frames < 120){ P.frames++; P.slow += dt; if(P.frames === 120 && P.slow / 120 > 1 / 34){ P.R.setPixelRatio(1); p3Size(); } }
+}
+
+function p3Sign(text){
+  if(!P3) return;
+  const g = P3.signCv.getContext('2d');
+  g.clearRect(0, 0, 1024, 128);
+  const spaced = text.split('').join('\u200A');
+  let size = 58;
+  do { g.font = `700 ${size}px "Space Grotesk", "Trebuchet MS", sans-serif`; size -= 2; } while(g.measureText(spaced).width > 980 && size > 24);
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.shadowColor = '#' + P3.accTo.getHexString(); g.shadowBlur = 24;
+  g.fillStyle = '#EEF4FF';
+  g.fillText(spaced, 512, 66);
+  P3.signTex.needsUpdate = true;
+}
+
+/* the live readouts: subject and scores on the left, a "neural" trace on the right */
+function p3Screen(s){ if(P3) Object.assign(P3.screen, s); }
+function p3DrawScreens(t){
+  const P = P3, col = '#' + P.acc.getHexString(), log = prRun ? prRun.log : [], s = prStats(log);
+  const stage = prRun ? Math.min(prRun.stage, PR_STAGES.length - 1) : 0;
+  P.mon.forEach(m => {
+    const g = m.g, W = 640, H = 400;
+    const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#071029'); bg.addColorStop(1, '#030716');
+    g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    g.strokeStyle = 'rgba(120,150,255,.07)'; g.lineWidth = 1;
+    for(let x = 0; x < W; x += 32){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+    for(let y = 0; y < H; y += 32){ g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+    g.font = '600 22px ui-monospace, Consolas, monospace'; g.textBaseline = 'top'; g.textAlign = 'left';
+    g.fillStyle = col; g.fillText(m.side < 0 ? 'SUBJECT ANALYSIS' : 'NEURAL ACTIVITY', 28, 24);
+    g.fillStyle = 'rgba(200,215,255,.55)'; g.font = '500 16px ui-monospace, Consolas, monospace';
+    g.fillText(`ZINION PROBE · CH.${stage + 1}/${PR_STAGES.length} · ${PR_STAGES[stage].name.toUpperCase()}`.slice(0, 58), 28, 56);
+    if(m.side < 0){
+      const name = String((typeof player !== 'undefined' && player) || 'HUMAN').toUpperCase().slice(0, 18);
+      g.fillStyle = '#EEF4FF'; g.font = '700 40px ui-monospace, Consolas, monospace'; g.fillText(name, 28, 94);
+      [['ACCURACY', log.length ? s.acc : null], ['CONFIDENCE', log.length ? s.conf : null], ['CALIBRATION', log.length ? s.calib : null]].forEach(([k, v], i) => {
+        const y = 170 + i * 66;
+        g.fillStyle = 'rgba(200,215,255,.7)'; g.font = '600 17px ui-monospace, Consolas, monospace'; g.fillText(k, 28, y);
+        g.textAlign = 'right'; g.fillStyle = '#EEF4FF'; g.fillText(v == null ? '--' : String(v), W - 28, y); g.textAlign = 'left';
+        g.fillStyle = 'rgba(255,255,255,.08)'; g.fillRect(28, y + 28, W - 56, 12);
+        if(v != null){ g.fillStyle = col; g.shadowColor = col; g.shadowBlur = 12; g.fillRect(28, y + 28, (W - 56) * v / 100, 12); g.shadowBlur = 0; }
+      });
+    }else{
+      const busy = P.screen.status === 'TESTING' ? 1 : .35;
+      m.wave.push(Math.sin(t * 9) * .4 + Math.sin(t * 23.7) * .25 + (Math.random() - .5) * .9 * busy);
+      if(m.wave.length > 90) m.wave.shift();
+      g.strokeStyle = col; g.lineWidth = 3; g.shadowColor = col; g.shadowBlur = 14;
+      g.beginPath();
+      m.wave.forEach((v, i) => { const x = 28 + i * (W - 56) / 89, y = 190 + v * 70 * busy; i ? g.lineTo(x, y) : g.moveTo(x, y); });
+      g.stroke(); g.shadowBlur = 0;
+      g.fillStyle = 'rgba(200,215,255,.7)'; g.font = '600 17px ui-monospace, Consolas, monospace';
+      g.fillText('CHAMBER DOOR', 28, 300);
+      const open = P.open > .5;
+      g.fillStyle = open ? col : '#FF6B6B'; g.font = '700 30px ui-monospace, Consolas, monospace';
+      g.fillText(P.screen.status === 'COMPLETE' ? 'ALL CHAMBERS PASSED' : open ? 'OPEN' : 'SEALED', 28, 326);
+      g.fillStyle = 'rgba(200,215,255,.5)'; g.font = '500 15px ui-monospace, Consolas, monospace';
+      g.textAlign = 'right'; g.fillText(`TESTS ${log.length}`, W - 28, 300); g.textAlign = 'left';
+    }
+    // scanlines over the whole screen
+    g.fillStyle = 'rgba(0,0,0,.16)';
+    for(let y = 0; y < H; y += 4) g.fillRect(0, y, W, 2);
+    m.t.needsUpdate = true;
+  });
+}
+
+/* ---------- what the game asks of the scene ---------- */
+function p3Stage(i, instant){
+  if(!P3) return;
+  const council = i >= PR_STAGES.length;
+  P3.accTo.set(council ? PR_COUNCIL : PR_STAGES[i].col);
+  if(instant){ P3.acc.copy(P3.accTo); P3.accent.forEach(c => c.copy(P3.acc)); P3.holoMat.uniforms.uCol.value.copy(P3.acc); }
+  P3.open = 0;
+  if(instant){ Object.assign(P3.rig, { x: 0, y: 2.9, z: 9.6, fov: 48 }); P3.look.set(0, 2.6, -2); }
+  p3Screen({ status: council ? 'COMPLETE' : 'SEALED' });
+  p3Sign(council ? 'THE ZINION COUNCIL' : `CHAMBER ${i + 1} · ${PR_STAGES[i].name.toUpperCase()}`);
+  // each hologram's halo takes the chamber's colour
+  Object.values(P3.zin).forEach(z => z.glow.material.color.set(council ? PR_COUNCIL : PR_STAGES[i].col));
+  Object.values(P3.zin).forEach(z => { z.sp.userData.show = 0; z.sp.userData.h = 2.4; z.pos.set(0, 2.85, 0); });
+}
+function p3Materialise(host, delay){
+  if(!P3) return;
+  const u = P3.zin[host].sp.userData;
+  prLater(() => p3Tween(900, k => { u.show = k; }, null, p3Ease.out), delay || 0);
+}
+// the camera glides in from the doorway when a chamber begins
+function p3Arrive(done){
+  if(!P3 || !P3.on){ return done(); }
+  const st = PR_STAGES[prRun ? prRun.stage : 0];
+  P3.rig.z = 17; P3.rig.y = 3.4;
+  p3Tween(1500, k => { P3.rig.z = 17 - 7.4 * k; P3.rig.y = 3.4 - .5 * k; }, null, p3Ease.out);
+  p3Materialise(st.host, 500);
+  prLater(done, 1100);
+}
+function p3Unlock(){
+  if(!P3) return;
+  p3Screen({ status: 'OPEN' });
+  p3Tween(1300, k => { P3.open = k; });
+  P3.shake = .6;
+}
+function p3Alarm(){
+  if(!P3) return;
+  P3.accTo.set('#FF3B3B'); P3.shake = 1;
+  prLater(() => { if(P3 && prRun) P3.accTo.set(PR_STAGES[prRun.stage].col); }, 650);
+}
+function p3Flash(to, ms){
+  pq('prFlash').animate([{ opacity: +getComputedStyle(pq('prFlash')).opacity }, { opacity: to }], { duration: ms, fill: 'forwards', easing: 'ease-in-out' });
+}
+// beam the Zinion away, fly through the open door, and arrive in the next chamber
+function p3Travel(next, done){
+  const council = next >= PR_STAGES.length;
+  if(!P3 || !P3.on){
+    p3Flash(1, 350);
+    return prLater(() => { p3Flash(0, 600); done(); }, 400);
+  }
+  const cur = PR_STAGES[next - 1];
+  const u = P3.zin[cur.host].sp.userData;
+  p3Tween(500, k => { u.show = 1 - k; }, null, p3Ease.in);
+  P3.open = Math.max(P3.open, 1);
+  prLater(() => {
+    p3Tween(1900, k => {
+      P3.rig.z = 9.6 - 22.4 * k;
+      P3.rig.y = 2.9 + (P3_DOOR_Y - .2 - 2.9) * k;
+      P3.rig.fov = 48 + 30 * k;
+      P3.look.set(0, 2.6 + (P3_DOOR_Y - 2.6) * k, -2 - 20 * k);
+    }, () => {
+      p3Stage(next, true);
+      P3.rig.z = 18; P3.rig.y = 3.6; P3.rig.fov = 62; P3.look.set(0, 2.6, -2);
+      p3Flash(0, 900);
+      p3Tween(1700, k => { P3.rig.z = 18 - 8.4 * k; P3.rig.y = 3.6 - .7 * k; P3.rig.fov = 62 - 14 * k; }, null, p3Ease.out);
+      if(council){
+        // the whole crew gathers in an arc in front of the door
+        const xs = [-4.6, -2.3, 0, 2.3, 4.6], zs = [-4.2, -3.2, -2.8, -3.2, -4.2];
+        PR_HOSTS.forEach((host, i) => {
+          const z = P3.zin[host];
+          z.pos.set(xs[i], 3.1, zs[i]); z.sp.userData.h = 2;
+          p3Materialise(host, 700 + i * 220);
+        });
+        P3.open = 0;
+        prLater(done, 1900);
+      }else{
+        p3Materialise(PR_STAGES[next].host, 900);
+        prLater(done, 1300);
+      }
+    }, p3Ease.in);
+    prLater(() => p3Flash(1, 420), 1500);
+  }, 450);
+}
+</script>

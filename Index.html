@@ -177,6 +177,18 @@ try{ if(localStorage.getItem('zinia_theme') === 'light') document.documentElemen
         <span>The bulbs light up in an order. Watch, then tap them back in the same order.</span>
         <img src="" alt="" id="modeBulbsImg">
       </button>
+      <!-- Zinion Probe is off the floor for the time being.
+      <button class="mode" id="modeProbe">
+        <span class="age">Ages 10 and up</span>
+        <b>Zinion Probe</b>
+        <span>The Zinions have come to study the human mind. Answer their questions on the galleries and the Zinia Experimental Lab, and find out how well you know your own.</span>
+      </button>
+      -->
+      <button class="mode" id="modeFlow">
+        <span class="age">Steady hands</span>
+        <b>Laminar Flow</b>
+        <span>Steer a stream of dye through the gaps. Move gently and it flows smooth; rush and it swirls.</span>
+      </button>
       <!-- Temporarily hidden while Zinion Bulbs is back on the floor. -->
       <button class="mode" id="modeBinary" hidden>
         <span class="age">Brain teaser</span>
@@ -221,6 +233,31 @@ try{ if(localStorage.getItem('zinia_theme') === 'light') document.documentElemen
   </section>
 
   <!-- WIND TUNNEL -->
+  <!-- LAMINAR FLOW: a focus game. Steer the dye stream gently, or it turns turbulent. -->
+  <section id="flow" class="screen">
+    <div class="windwrap">
+      <canvas id="flowCanvas"></canvas>
+      <div class="whud">
+        <div>
+          <span class="lab" id="fLevel">Level 1</span>
+          <b id="fGates">0 / 6</b>
+          <span class="lab" id="fBest"></span>
+        </div>
+        <div style="text-align:right">
+          <span class="lab" id="fState">Focus · smooth</span>
+          <div class="fanbar" id="fFocusBar"><i id="fFocus"></i></div>
+        </div>
+      </div>
+      <div class="wover on" id="fOver">
+        <h3 id="fOverTitle">Laminar Flow</h3>
+        <p id="fOverText"></p>
+        <button class="big-btn" id="fStart">Start level 1</button>
+      </div>
+    </div>
+    <p class="footnote">Slide your finger slowly to steer. Fast moves stir the water up and drain your focus.</p>
+    <div class="btnrow"><button class="ghost" id="flowBack" style="align-self:auto">Back</button></div>
+  </section>
+
   <section id="wind" class="screen" hidden>
     <div class="fanstr">
       <button class="fanbtn on" data-f="gentle">Gentle fan</button>
@@ -495,6 +532,23 @@ try{ if(localStorage.getItem('zinia_theme') === 'light') document.documentElemen
     <p class="footnote">Answers only. Visitor names never reach this screen.</p>
   </section>
 
+  <!-- VISITORS: each visitor's name, level, questions and answers, a tab per gallery. Mach's secret door. -->
+  <section id="people" class="screen scrollable">
+    <div class="dashhead">
+      <h2 class="title">Visitors by gallery</h2>
+      <div class="daystamp" id="pvRange"></div>
+    </div>
+    <div class="lv-tabs" id="pvTabs"></div>
+    <div class="qa-filters">
+      <label>Level <select id="pvStage"></select></label>
+      <label>Date <select id="pvDay"></select></label>
+    </div>
+    <p class="sub st-take" id="pvTake"></p>
+    <div class="st-grid" id="pvList"></div>
+    <div class="btnrow"><button class="big-btn" id="pvBack">Close</button></div>
+    <p class="footnote">Visitor names: for Science Communicators only. Close this screen before stepping away.</p>
+  </section>
+
   <section id="thanks" class="screen">
     <img class="mascot thanksimg" id="thanksImg" alt="">
     <h1 id="thanksTitle">Thank you!</h1>
@@ -573,6 +627,7 @@ try{ if(localStorage.getItem('zinia_theme') === 'light') document.documentElemen
 <?!= include('Zin3'); ?>
 <?!= include('Zin4'); ?>
 <?!= include('Zin5'); ?>
+<!-- Zinion Probe is off for the time being: include('Probe') -->
 <script>window.ZIN_VIEW = '<?= view ?>';</script>
 <?!= include('App'); ?>
 </body>

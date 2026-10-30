@@ -172,6 +172,18 @@ function checkLeadersPassword(password) {
  * with day, time, gallery and stage. Same password; names are never sent. */
 function getAnswers(password) {
   checkPassword_(password);
+  return answerRows_(false);
+}
+
+/* Mach's secret door (double-tap or hold Mach): the same visits, each with the
+ * visitor's name, for the gallery-by-gallery visitor list. Names leave the server
+ * only after the password is checked here. */
+function getVisitors(password) {
+  checkPassword_(password);
+  return answerRows_(true);
+}
+
+function answerRows_(withNames) {
   const out = [];
   logBook_().getSheets().forEach(t => {
     const v = t.getDataRange().getDisplayValues();
@@ -191,7 +203,9 @@ function getAnswers(password) {
     v.slice(1).forEach(r => {
       const qa = pairs.map(p => [p.q || r[p.qCol], r[p.a]]).filter(x => x[0] && x[1]);
       if (!qa.length) return;
-      out.push({ day: cell(r, 'Date'), time: cell(r, 'Time'), gallery: cell(r, 'Gallery'), stage: cell(r, 'Stage reached'), qa: qa });
+      const row = { day: cell(r, 'Date'), time: cell(r, 'Time'), gallery: cell(r, 'Gallery'), stage: cell(r, 'Stage reached'), qa: qa };
+      if (withNames) row.name = cell(r, 'Name');
+      out.push(row);
     });
   });
   return out;
@@ -308,6 +322,43 @@ function testDataDoc() {
   const today = Utilities.formatDate(new Date(), REPORT_TZ, 'yyyy-MM-dd');
   const now = Utilities.formatDate(new Date(), REPORT_TZ, 'HH:mm');
   appendToDataDoc_(LOG_HEADERS, [today, now, 'TEST ROW', 'Water Cymatics', 'Solver', '', '', 'Test — delete me', '']);
+}
+
+/* Staff test plays, removed from the Sheet and the Doc. Run from the editor (or clasp run):
+ *   removeStaffRows()      lists the matching rows, deletes nothing
+ *   removeStaffRows(true)  deletes them
+ * A row matches when its Name contains one of these, any case. Only someone signed in can
+ * run it, so the public kiosk link (anonymous visitors) can never call it. */
+const STAFF_NAMES = /nikhil|sitesh/i;
+
+function removeStaffRows(apply) {
+  if (!Session.getActiveUser().getEmail()) throw new Error('Run this from the Apps Script editor.');
+  const found = [];
+  logBook_().getSheets().forEach(t => {
+    const v = t.getDataRange().getDisplayValues();
+    if (!v.length || v[0][0] !== BASE_HEADERS[0]) return;
+    const nameCol = v[0].indexOf('Name');
+    if (nameCol < 0) return;
+    // bottom up, so deleting a row doesn't shift the ones still to check
+    for (let i = v.length - 1; i >= 1; i--) {
+      if (!STAFF_NAMES.test(v[i][nameCol])) continue;
+      found.push(`Sheet · ${t.getName()} · ${v[i][0]} ${v[i][1]} · ${v[i][nameCol]}`);
+      if (apply) t.deleteRow(i + 1);
+    }
+  });
+  const doc = DocumentApp.openById(DATA_DOC_ID);
+  doc.getBody().getTables().forEach(table => {
+    if (!table.getNumRows() || table.getRow(0).getNumCells() < 4 || table.getRow(0).getCell(2).getText() !== 'Name') return;
+    for (let i = table.getNumRows() - 1; i >= 1; i--) {
+      const row = table.getRow(i);
+      if (row.getNumCells() < 4 || !STAFF_NAMES.test(row.getCell(2).getText())) continue;
+      found.push(`Doc · ${row.getCell(3).getText()} · ${row.getCell(0).getText()} ${row.getCell(1).getText()} · ${row.getCell(2).getText()}`);
+      if (apply) table.removeRow(i);
+    }
+  });
+  if (apply) doc.saveAndClose();
+  console.log(`${apply ? 'Removed' : 'Would remove'} ${found.length} rows:\n` + found.join('\n'));
+  return found;
 }
 
 /** Builds today's report as a Google Doc and emails it as a PDF. Run daily by the trigger. */

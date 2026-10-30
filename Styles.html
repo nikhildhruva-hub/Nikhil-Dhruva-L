@@ -449,6 +449,11 @@ body.joining{padding-bottom:clamp(80px,22vh,260px)}
 .qa-filters label{display:flex;align-items:center;gap:8px;color:var(--mute);font-size:14px}
 .qa-filters select{background:var(--panel);color:var(--pale);border:2px solid var(--line);border-radius:999px;padding:8px 14px;font:inherit;max-width:100%}
 .qa-gal{color:var(--mute);font-size:12px;margin-top:-8px}
+/* Mach's door: one card per visitor, name and level on top */
+.pv-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.pv-head b{font-size:clamp(17px,2.2vw,20px);overflow-wrap:anywhere}
+.pv-head .stage-badge{margin-bottom:0}
+.pv-tag{font-weight:700;font-size:12px;margin-left:6px}
 .qa-visits{display:flex;flex-direction:column;gap:10px;max-height:480px;overflow:auto}
 .qa-visit{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:4px}
 .qa-visit:first-child{border-top:0;padding-top:0}
@@ -859,6 +864,10 @@ body.joining{padding-bottom:clamp(80px,22vh,260px)}
 /* ---- Wind Tunnel ---- */
 .windwrap{position:relative;border-radius:22px;overflow:hidden;border:2px solid var(--line);background:#161966}
 #windCanvas{display:block;width:100%;height:clamp(280px,52vh,500px)}
+/* ---- Laminar Flow: same frame as the wind tunnel; the finger steers, so no scrolling or text picking ---- */
+#flowCanvas{display:block;width:100%;height:clamp(300px,58vh,560px);touch-action:none;cursor:ns-resize}
+#flow .whud b{font-variant-numeric:tabular-nums}
+#fFocusBar.calm i{background:var(--sky)}
 .whud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;
   gap:14px;padding:12px 16px;pointer-events:none}
 .whud .lab{color:var(--mute);font-size:clamp(10px,1.3vw,13px)}
