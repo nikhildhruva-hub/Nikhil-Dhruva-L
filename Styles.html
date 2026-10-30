@@ -212,8 +212,8 @@ h2.title{font-size:clamp(26px,4.4vw,44px);font-weight:700;letter-spacing:-.02em}
 :root[data-theme="light"] .themebtn{rotate:180deg}
 :root[data-theme="light"] .themebtn .sun{display:none}
 :root[data-theme="light"] .themebtn .moon{display:block;rotate:180deg}
-/* the refresh button sits just above it, and doesn't flip with the theme */
-.refreshbtn{bottom:calc(clamp(10px,1.6vh,22px) + 56px)}
+/* the refresh button, in the top-right corner, and it doesn't flip with the theme */
+.refreshbtn{left:auto;bottom:auto;right:clamp(10px,1.6vw,22px);top:clamp(10px,1.6vh,22px)}
 :root[data-theme="light"] .refreshbtn{rotate:none}
 
 /* a glowing ripple where the screen is touched */
