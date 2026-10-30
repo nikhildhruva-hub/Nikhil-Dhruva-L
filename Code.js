@@ -39,6 +39,8 @@
 function doGet(e) {
   const t = HtmlService.createTemplateFromFile('Index');
   t.view = (e && e.parameter && e.parameter.view === 'dash') ? 'dash' : '';
+  // the refresh button reloads the whole web app, so the kiosk picks up the newest deployment
+  t.url = ScriptApp.getService().getUrl() + (t.view ? '?view=' + t.view : '');
   return t
     .evaluate()
     .setTitle('Zinia Experimental Lab')
